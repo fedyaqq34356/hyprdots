@@ -1,0 +1,53 @@
+[manager]
+keymap = [
+  { on = "h", run = "leave",              desc = "Перейти в родительскую папку" },
+  { on = "l", run = "enter",              desc = "Войти в папку / открыть файл" },
+  { on = "j", run = "arrow 1",            desc = "Вниз" },
+  { on = "k", run = "arrow -1",           desc = "Вверх" },
+  { on = "J", run = "arrow 5",            desc = "Вниз x5" },
+  { on = "K", run = "arrow -5",           desc = "Вверх x5" },
+  { on = "g", run = "arrow -99999",       desc = "В начало списка" },
+  { on = "G", run = "arrow  99999",       desc = "В конец списка" },
+
+  { on = "<Enter>", run = "open",         desc = "Открыть" },
+  { on = "o",       run = "open",         desc = "Открыть" },
+  { on = "e",       run = "open --interactive", desc = "Открыть с выбором приложения" },
+
+  { on = "y", run = "yank",              desc = "Копировать (yank)" },
+  { on = "x", run = "yank --cut",        desc = "Вырезать" },
+  { on = "p", run = "paste",             desc = "Вставить" },
+  { on = "P", run = "paste --force",     desc = "Вставить с заменой" },
+  { on = "d", run = "trash",             desc = "В корзину" },
+  { on = "D", run = "remove",            desc = "Удалить насовсем" },
+  { on = "r", run = "rename --cursor=before_ext", desc = "Переименовать" },
+  { on = "a", run = "create",            desc = "Создать файл/папку" },
+
+  { on = "<Space>", run = "select --state=none", desc = "Выделить/снять" },
+  { on = "A",       run = "select_all --state=none", desc = "Выделить всё" },
+
+  { on = "/", run = "find --smart",      desc = "Поиск (умный)" },
+  { on = "n", run = "find_arrow",        desc = "Следующий результат" },
+  { on = "N", run = "find_arrow --previous", desc = "Предыдущий результат" },
+  { on = "f", run = "search fd",         desc = "Поиск файлов через fd" },
+  { on = "F", run = "search rg",         desc = "Поиск содержимого через rg" },
+  { on = "<Esc>", run = "escape",        desc = "Отмена / снять выделение" },
+
+  { on = ".", run = "toggle_hidden",     desc = "Показать/скрыть dotfiles" },
+
+  { on = "t",       run = "tab_create --current", desc = "Новая вкладка" },
+  { on = "<Tab>",   run = "tab_switch 1 --relative", desc = "Следующая вкладка" },
+  { on = "<S-Tab>", run = "tab_switch -1 --relative", desc = "Предыдущая вкладка" },
+  { on = "1", run = "tab_switch 0", desc = "Вкладка 1" },
+  { on = "2", run = "tab_switch 1", desc = "Вкладка 2" },
+  { on = "3", run = "tab_switch 2", desc = "Вкладка 3" },
+
+  { on = ["s", "n"], run = "sort natural  --dir-first", desc = "По имени" },
+  { on = ["s", "m"], run = "sort modified --dir-first", desc = "По дате изменения" },
+  { on = ["s", "s"], run = "sort size     --dir-first", desc = "По размеру" },
+
+  { on = "g", run = "shell 'kitty @ launch --type=overlay lazygit' --confirm", desc = "lazygit" },
+
+  { on = "q", run = "quit",             desc = "Выйти" },
+  { on = "Q", run = "quit --no-cwd-file", desc = "Выйти без смены директории" },
+  { on = "~", run = "help",             desc = "Помощь" },
+]

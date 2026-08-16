@@ -1,0 +1,44 @@
+format = """
+$directory$git_branch$git_status
+$character"""
+
+add_newline = false
+
+[directory]
+style             = "bold cyan"
+format            = "[$path]($style)"
+truncation_length  = 3
+truncate_to_repo   = true
+home_symbol        = ""
+repo_root_style   = "bold cyan"
+repo_root_format  = "[$repo_root]($repo_root_style)[$path]($style)"
+
+[git_branch]
+symbol = ""
+style  = "bold magenta"
+format = " [$branch]($style)"
+
+[git_status]
+disabled = true
+
+[character]
+success_symbol = "[>](bold green)"
+error_symbol   = "[>](bold red)"
+vimcmd_symbol  = "[<](bold cyan)"
+
+[cmd_duration]
+disabled = true
+[python]
+disabled = true
+[nodejs]
+disabled = true
+[rust]
+disabled = true
+[package]
+disabled = true
+[battery]
+disabled = true
+[time]
+disabled = true
+[os]
+disabled = true

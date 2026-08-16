@@ -1,0 +1,34 @@
+[manager]
+ratio          = [1, 3, 4]
+sort_by        = "natural"
+sort_sensitive = false
+sort_reverse   = false
+show_hidden    = false
+show_symlink   = true
+scrolloff      = 5
+
+[preview]
+tab_size   = 2
+max_width  = 1920
+max_height = 1080
+image_filter  = "triangle"
+image_quality = 85
+
+[opener]
+edit = [
+  { run = '${EDITOR:-nvim} "$@"', block = true, for = "unix" },
+]
+open = [
+  { run = 'xdg-open "$@"', for = "unix" },
+]
+reveal = [
+  { run = 'xdg-open "$(dirname "$1")"', for = "unix" },
+]
+
+[open]
+rules = [
+  { mime = "text/*",        use = "edit" },
+  { mime = "application/json", use = "edit" },
+
+  { mime = "*", use = "open" },
+]

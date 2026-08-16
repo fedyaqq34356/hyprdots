@@ -1,0 +1,12 @@
+@define-color base        {{colors.surface.default.hex}};
+@define-color mantle      {{colors.surface_variant.default.hex}};
+@define-color text        {{colors.on_surface.default.hex}};
+@define-color subtext     {{colors.on_surface_variant.default.hex}};
+@define-color surface0    {{colors.surface_variant.default.hex}};
+@define-color surface1    {{colors.outline.default.hex}};
+@define-color blue        {{colors.primary.default.hex}};
+@define-color mauve       {{colors.tertiary.default.hex}};
+
+@define-color green       #a6e3a1;
+@define-color yellow      #f5c777;
+@define-color red         #f38ba8;

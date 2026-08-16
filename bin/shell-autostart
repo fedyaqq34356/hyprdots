@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+CHOICE=$(cat "$HOME/.config/hypr/shell-choice" 2>/dev/null || echo waybar)
+
+if [[ "$CHOICE" == "qs" ]] && command -v quickshell >/dev/null; then
+    pkill -x dunst 2>/dev/null
+    QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
+    sleep 2
+    pgrep -x quickshell >/dev/null && exit 0
+fi
+
+pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
+pgrep -x dunst  >/dev/null || setsid -f dunst  >/dev/null 2>&1
+
+setsid -f "$HOME/.local/bin/shell-watchdog" >/dev/null 2>&1

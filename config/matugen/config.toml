@@ -1,0 +1,40 @@
+[config]
+reload_apps = true
+set_wallpaper = false
+
+[config.reload_apps_list]
+kitty = true
+
+[templates.kitty-colors]
+input_path  = "~/.config/matugen/templates/kitty-colors.conf"
+output_path = "~/.config/kitty/colors.conf"
+
+[templates.cava]
+input_path  = "~/.config/matugen/templates/cava.conf"
+output_path = "~/.config/cava/config"
+
+[templates.rofi]
+input_path  = "~/.config/matugen/templates/rofi-colors.rasi"
+output_path = "~/.config/rofi/colors/matugen.rasi"
+
+[templates.waybar]
+input_path  = "~/.config/matugen/templates/waybar-colors.css"
+output_path = "~/.config/waybar/colors.css"
+
+[templates.hyprland]
+input_path  = "~/.config/matugen/templates/hyprland-colors.conf"
+output_path = "~/.config/hypr/config/colors.conf"
+post_hook   = "hyprctl reload"
+
+[templates.hyprlock]
+input_path  = "~/.config/matugen/templates/hyprlock-colors.conf"
+output_path = "~/.config/hypr/config/lock-colors.conf"
+
+[templates.quickshell]
+input_path  = "~/.config/matugen/templates/quickshell-colors.qml"
+output_path = "~/.config/quickshell/f/Colors.qml"
+
+[templates.dunst]
+input_path  = "~/.config/matugen/templates/dunstrc"
+output_path = "~/.config/dunst/dunstrc"
+post_hook   = "pkill dunst; setsid -f dunst >/dev/null 2>&1"

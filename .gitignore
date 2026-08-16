@@ -1,0 +1,14 @@
+config/hypr/config/colors.conf
+config/hypr/config/lock-colors.conf
+config/hypr/current-wallpaper
+config/hypr/hyprpaper.conf
+config/hypr/shell-choice
+config/waybar/colors.css
+config/kitty/colors.conf
+config/quickshell/f/Colors.qml
+config/rofi/colors/matugen.rasi
+config/cava/config
+config/dunst/dunstrc
+*.log
+*.bak
+*.swp
