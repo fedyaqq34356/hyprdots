@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+exec 9>"$HOME/.cache/shell-watchdog.lock"
+flock -n 9 || exit 0
+
+CHOICE_FILE="$HOME/.config/hypr/shell-choice"
+CHECK_INTERVAL=5
+FAIL_LIMIT=3
+FAIL_WINDOW=120
+
+fails=0
+last_fail=0
+
+start_qs() {
+    QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
+}
+
+while true; do
+    sleep "$CHECK_INTERVAL"
+
+    choice=$(cat "$CHOICE_FILE" 2>/dev/null || echo waybar)
+
+    if [[ "$choice" != "qs" ]]; then
+        fails=0
+        continue
+    fi
+
+    if pgrep -x quickshell >/dev/null; then
+        fails=0
+        continue
+    fi
+
+    now=$SECONDS
+    (( now - last_fail > FAIL_WINDOW )) && fails=0
+    last_fail=$now
+    fails=$((fails + 1))
+
+    if (( fails >= FAIL_LIMIT )); then
+        echo waybar > "$CHOICE_FILE"
+        pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
+        pgrep -x dunst  >/dev/null || setsid -f dunst  >/dev/null 2>&1
+        sleep 2
+        notify-send -u critical "Shell" \
+            "quickshell crashed $fails times, fell back to waybar" 2>/dev/null
+        fails=0
+        continue
+    fi
+
+    start_qs
+done

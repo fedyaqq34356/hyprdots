@@ -1,0 +1,76 @@
+@import "colors.css";
+
+* {
+  font-family: 'JetBrainsMono Nerd Font';
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  border-radius: 0;
+  padding: 0 0;
+  margin: 0;
+}
+
+window#waybar {
+  background-color: transparent;
+  color: @text;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+  background-color: alpha(@base, 0.78);
+  border: 1px solid alpha(@surface1, 0.45);
+  border-radius: 12px;
+  padding: 0 4px;
+}
+
+#clock,
+#battery,
+#language {
+  padding: 0 8px;
+  margin: 3px 0;
+}
+
+#clock    { color: @text; font-weight: 600; }
+#language { color: @subtext; }
+#battery  { color: @subtext; }
+
+#battery.charging                { color: @green; }
+#battery.warning:not(.charging)  { color: @yellow; }
+#battery.critical:not(.charging) { color: @red; }
+
+#tray {
+  padding: 0 8px;
+  margin: 3px 0;
+}
+
+#tray > .passive { -gtk-icon-effect: dim; }
+
+#workspaces { padding: 0 6px; }
+
+#workspaces button {
+  padding: 0 5px;
+  margin: 0;
+  color: alpha(@subtext, 0.30);
+  font-size: 7px;
+  background: transparent;
+  box-shadow: none;
+  text-shadow: none;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
+}
+
+#workspaces button.active {
+  color: @blue;
+  font-size: 9px;
+  text-shadow: 0 0 6px alpha(@blue, 0.55);
+}
+
+#workspaces button.urgent {
+  color: @red;
+  text-shadow: 0 0 6px alpha(@red, 0.55);
+}
+
+#workspaces button:hover {
+  background: transparent;
+  color: alpha(@mauve, 0.75);
+}
