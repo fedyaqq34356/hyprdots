@@ -25,6 +25,7 @@ ShellRoot {
     AudioPanel { id: audioPanel }
     PowerMenu { id: powerMenu }
     WifiPanel { id: wifi }
+    Overview { id: overview }
 
     GlobalShortcut {
         appid: "quickshell"
@@ -69,6 +70,12 @@ ShellRoot {
             const a = Pipewire.defaultAudioSink?.audio;
             if (a) a.muted = !a.muted;
         }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "overview"
+        onPressed: overview.toggle()
     }
 
     GlobalShortcut {

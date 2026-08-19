@@ -7,6 +7,8 @@ CLONE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots"
 DRY_RUN=0
 SKIP_PACKAGES=0
 ASSUME_YES=0
+UPDATE=0
+PULLED=0
 
 BOLD=$'\e[1m'; DIM=$'\e[2m'; RED=$'\e[31m'; GREEN=$'\e[32m'
 YELLOW=$'\e[33m'; BLUE=$'\e[34m'; RESET=$'\e[0m'
@@ -21,6 +23,7 @@ usage() {
     cat <<EOF
 ${BOLD}usage:${RESET} install.sh [options]
 
+  --update        pull the latest revision and refresh an existing install
   --no-packages   skip package installation, only deploy the configuration
   --dry-run       print every action without touching the system
   -y, --yes       do not ask for confirmation
@@ -30,6 +33,8 @@ EOF
 
 while (($#)); do
     case "$1" in
+    --update) UPDATE=1 ;;
+    --pulled) PULLED=1 ;;
     --no-packages) SKIP_PACKAGES=1 ;;
     --dry-run) DRY_RUN=1 ;;
     -y | --yes) ASSUME_YES=1 ;;
@@ -49,6 +54,27 @@ if [[ ! -d "$SRC_DIR/config" ]]; then
         git clone --depth 1 "$REPO_URL" "$CLONE_DIR"
     fi
     exec bash "$CLONE_DIR/install.sh" "$@"
+fi
+
+if ((UPDATE)) && ((!PULLED)) && [[ -d "$SRC_DIR/.git" ]]; then
+    command -v git >/dev/null || die "git is required to update"
+    log "Fetching the latest revision"
+    before=$(git -C "$SRC_DIR" rev-parse HEAD)
+    run git -C "$SRC_DIR" pull --ff-only
+    after=$(git -C "$SRC_DIR" rev-parse HEAD)
+    if [[ "$before" == "$after" ]]; then
+        ok "already up to date ($(git -C "$SRC_DIR" log -1 --format=%h))"
+    else
+        printf '\n'
+        git -C "$SRC_DIR" log --oneline "$before..$after"
+        printf '\n'
+    fi
+    # the script may have changed underneath us, so start the new one
+    args=(--update --pulled)
+    ((DRY_RUN)) && args+=(--dry-run)
+    ((SKIP_PACKAGES)) && args+=(--no-packages)
+    ((ASSUME_YES)) && args+=(-y)
+    exec bash "$SRC_DIR/install.sh" "${args[@]}"
 fi
 
 command -v pacman >/dev/null || die "this installer targets Arch-based systems (pacman not found)"
@@ -91,7 +117,13 @@ bootstrap_aur_helper() {
 
 install_packages() {
     log "Installing packages from the official repositories"
-    run sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}"
+    # An update of the configuration should not drag the whole system with
+    # it: only pull in packages that are actually missing.
+    if ((UPDATE)); then
+        run sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
+    else
+        run sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}"
+    fi
     ok "repository packages ready"
 
     local helper
@@ -175,6 +207,15 @@ set_shell() {
     run chsh -s "$(command -v zsh)" || warn "could not change the login shell, do it manually with chsh -s \$(which zsh)"
 }
 
+if ((UPDATE)); then
+cat <<EOF
+${BOLD}Hyprland desktop — update${RESET}
+  source      ${SRC_DIR/#$HOME/\~}
+  target      ~/.config, ~/.local/bin, ~
+  packages    checked, only missing ones are installed
+  replaced files are backed up first
+EOF
+else
 cat <<EOF
 ${BOLD}Hyprland desktop — automatic installation${RESET}
   source      ${SRC_DIR/#$HOME/\~}
@@ -182,13 +223,40 @@ ${BOLD}Hyprland desktop — automatic installation${RESET}
   packages    $((SKIP_PACKAGES ? 0 : ${#PACMAN_PKGS[@]} + ${#AUR_PKGS[@]}))
   existing files are backed up before being replaced
 EOF
+fi
 confirm || die "aborted"
 
 ((SKIP_PACKAGES)) || install_packages
 deploy_config
-seed_wallpapers || true
+((UPDATE)) || seed_wallpapers || true
 generate_theme
-set_shell
+((UPDATE)) || set_shell
+
+reload_session() {
+    log "Reloading the running session"
+    command -v hyprctl >/dev/null && pgrep -x Hyprland >/dev/null \
+        && run hyprctl reload >/dev/null
+    if pgrep -x quickshell >/dev/null; then
+        run pkill -x quickshell
+        run setsid -f "$HOME/.local/bin/shell-autostart" >/dev/null 2>&1
+    elif pgrep -x waybar >/dev/null; then
+        run pkill -x waybar
+        run setsid -f waybar >/dev/null 2>&1
+    fi
+    ok "session reloaded"
+}
+
+((UPDATE)) && reload_session
+
+if ((UPDATE)); then
+cat <<EOF
+
+${GREEN}${BOLD}Updated.${RESET}
+  revision    $(git -C "$SRC_DIR" log -1 --format='%h %s' 2>/dev/null || echo unknown)
+  the bar and Hyprland were reloaded in place; log out only if something looks stale
+EOF
+exit 0
+fi
 
 cat <<EOF
 

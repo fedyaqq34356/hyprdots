@@ -42,3 +42,11 @@ post_hook   = "pkill dunst; setsid -f dunst >/dev/null 2>&1"
 [templates.wlogout]
 input_path  = "~/.config/matugen/templates/wlogout-colors.css"
 output_path = "~/.config/wlogout/colors.css"
+
+[templates.gtk3]
+input_path  = "~/.config/matugen/templates/gtk-colors.css"
+output_path = "~/.config/gtk-3.0/gtk.css"
+
+[templates.gtk4]
+input_path  = "~/.config/matugen/templates/gtk-colors.css"
+output_path = "~/.config/gtk-4.0/colors-matugen.css"
