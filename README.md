@@ -125,6 +125,7 @@ wallpaper ──▶ matugen ──┬──▶ hyprland   window borders
                         ├──▶ rofi       launcher
                         ├──▶ dunst      notifications
                         ├──▶ gtk 3/4    Thunar and every other GTK app
+                        ├──▶ papirus    folder icons tinted to the accent
                         ├──▶ wlogout    power menu on the Waybar stack
                         └──▶ cava       audio visualiser
 ```
@@ -210,6 +211,12 @@ the one thing that stands out. The layout badge (`EN` / `RU` / `UA` …) follows
 `Super`+`Shift`+`M` opens the audio panel: microphone and output volume on separate sliders, a mute
 button on each, and the list of input devices — click one to make it the default microphone.
 `Escape` closes the panel, `↑`/`↓` change the microphone level, `M` mutes it.
+
+Folder icons follow as well. Papirus ships one folder set per colour, and
+`config/hypr/scripts/papirus-tint.py` picks whichever is closest to the current accent in CIE Lab
+and builds a small user icon theme that inherits Papirus-Dark and overrides only the folders — no
+root, no touching `/usr/share`. It runs from a matugen hook, so a new wallpaper repaints the
+folders with everything else.
 
 Clicking the Wi-Fi glyph, or `Super`+`N`, opens the network panel: the current connection with its
 signal level, link rate and live throughput, a radio toggle and the list of access points. Picking a secured network opens a
@@ -402,6 +409,7 @@ cd hyprdots && ./install.sh --update
                    ├──▶ rofi       лаунчер
                    ├──▶ dunst      уведомления
                    ├──▶ gtk 3/4    Thunar и остальные GTK-приложения
+                   ├──▶ papirus    иконки папок в тон акценту
                    ├──▶ wlogout    меню выключения в наборе с Waybar
                    └──▶ cava       визуализатор звука
 ```
@@ -479,6 +487,12 @@ cd hyprdots && ./install.sh --update
 записи и трей; Wi-Fi, микрофон и громкость; раскладка и батарея. Контраст расставлен по частоте
 обращения: батарея и раскладка держат его на себе, значки приглушены до 75% прозрачности, цвет
 берут только проблемные состояния — отвалившийся Wi-Fi или выключенный микрофон.
+
+Иконки папок тоже. Papirus содержит по набору папок на каждый цвет, а
+`config/hypr/scripts/papirus-tint.py` выбирает ближайший к текущему акценту в пространстве CIE Lab
+и собирает маленькую пользовательскую тему иконок: она наследует Papirus-Dark и подменяет только
+папки — без root и без записи в `/usr/share`. Запускается хуком matugen, поэтому новые обои
+перекрашивают папки вместе со всем остальным.
 
 Клик по значку Wi-Fi (или `Super`+`N`) открывает панель сетей: текущее подключение с уровнем
 сигнала, скоростью канала и живым трафиком, переключатель радио, список точек. Клик по защищённой сети открывает поле пароля, клик по

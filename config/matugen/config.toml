@@ -46,6 +46,7 @@ output_path = "~/.config/wlogout/colors.css"
 [templates.gtk3]
 input_path  = "~/.config/matugen/templates/gtk-colors.css"
 output_path = "~/.config/gtk-3.0/gtk.css"
+post_hook   = "python3 $HOME/.config/hypr/scripts/papirus-tint.py"
 
 [templates.gtk4]
 input_path  = "~/.config/matugen/templates/gtk-colors.css"
