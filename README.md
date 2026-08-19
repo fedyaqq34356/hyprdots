@@ -17,20 +17,28 @@ recolour themselves around it.
 
 <table>
 <tr>
+<td><img src="assets/overview.png" alt="Window overview"></td>
 <td><img src="assets/launcher.png" alt="Application launcher"></td>
-<td><img src="assets/audio.png" alt="Audio panel"></td>
 </tr>
 <tr>
+<td align="center"><sub>overview — <code>Super</code> + <code>Tab</code></sub></td>
 <td align="center"><sub>launcher — <code>Super</code> + <code>D</code></sub></td>
-<td align="center"><sub>audio — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
 </tr>
 <tr>
 <td><img src="assets/wifi.png" alt="Wi-Fi panel"></td>
-<td><img src="assets/power.png" alt="Power menu"></td>
+<td><img src="assets/audio.png" alt="Audio panel"></td>
 </tr>
 <tr>
 <td align="center"><sub>Wi-Fi — <code>Super</code> + <code>N</code></sub></td>
+<td align="center"><sub>audio — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/power.png" alt="Power menu"></td>
+<td><img src="assets/thunar.png" alt="Thunar following the wallpaper palette"></td>
+</tr>
+<tr>
 <td align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
+<td align="center"><sub>GTK apps recoloured with everything else</sub></td>
 </tr>
 </table>
 
