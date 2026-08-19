@@ -18,6 +18,8 @@ Scope {
             Network.refresh();
             Network.rescan();
         }
+        // Throughput is only sampled while the panel is actually on screen.
+        Network.sampling = shown;
     }
 
     function bars(strength) {
@@ -111,11 +113,36 @@ Scope {
 
                         Text {
                             visible: Network.connected
-                            text: "сигнал " + Network.strength + "%"
+                            text: {
+                                const parts = ["сигнал " + Network.strength + "%"];
+                                if (Network.linkRate !== "") parts.push(Network.linkRate);
+                                return parts.join("  ·  ");
+                            }
                             color: Colors.fgDim
                             opacity: 0.6
                             font.family: "JetBrainsMono Nerd Font"
                             font.pixelSize: 10
+                        }
+
+                        Row {
+                            visible: Network.connected
+                            spacing: 10
+
+                            Text {
+                                text: "↓ " + Network.human(Network.rxRate)
+                                color: Colors.fgDim
+                                opacity: 0.85
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 10
+                            }
+
+                            Text {
+                                text: "↑ " + Network.human(Network.txRate)
+                                color: Colors.fgDim
+                                opacity: 0.5
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 10
+                            }
                         }
                     }
 

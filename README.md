@@ -22,7 +22,15 @@ recolour themselves around it.
 </tr>
 <tr>
 <td align="center"><sub>launcher — <code>Super</code> + <code>D</code></sub></td>
-<td align="center"><sub>audio panel — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
+<td align="center"><sub>audio — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/wifi.png" alt="Wi-Fi panel"></td>
+<td><img src="assets/power.png" alt="Power menu"></td>
+</tr>
+<tr>
+<td align="center"><sub>Wi-Fi — <code>Super</code> + <code>N</code></sub></td>
+<td align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
 </tr>
 </table>
 
@@ -99,6 +107,17 @@ if the wallpaper has changed since the last run, so the lock screen always shows
 is on the desktop right now — blurred, dimmed, behind a frosted card with the clock, the date, the
 keyboard layout, uptime and battery.
 
+### Idle
+
+`hypridle` locks the session after 50 minutes without input and turns the panels off five minutes
+later. Both actions go through `config/hypr/scripts/idle-guard.sh`, which refuses to fire while a
+window is fullscreen, audio is genuinely playing (uncorked, not merely holding the device open), a
+recording is running, or any process named in `~/.config/hypr/idle-inhibit.list` is alive.
+
+That list is matched against process names with `pgrep -x`, one per line. Only
+`idle-inhibit.list.example` is tracked; copy it and add whatever should keep your own screen awake
+— the working copy is deliberately kept out of the repository.
+
 ### Power menu
 
 `Super`+`P` opens a native Quickshell menu: the clock, uptime and battery over five tiles — lock,
@@ -161,7 +180,7 @@ button on each, and the list of input devices — click one to make it the defau
 `Escape` closes the panel, `↑`/`↓` change the microphone level, `M` mutes it.
 
 Clicking the Wi-Fi glyph, or `Super`+`N`, opens the network panel: the current connection with its
-signal level, a radio toggle and the list of access points. Picking a secured network opens a
+signal level, link rate and live throughput, a radio toggle and the list of access points. Picking a secured network opens a
 password field, clicking the active one disconnects. It drives `nmcli` and refreshes off
 `nmcli monitor` events.
 
@@ -252,6 +271,8 @@ ttf-jetbrains-mono-nerd · zsh
 
 **AUR:** quickshell · matugen-bin · wlogout · wf-recorder · wl-clip-persist
 
+Also `hypridle` for the idle timer.
+
 On Artix, install the service packages for your init system (`-openrc`, `-runit`, `-s6`) instead of
 the systemd variants.
 
@@ -338,6 +359,17 @@ cd hyprdots
 размытые и притемнённые, поверх них матовая карточка с часами, датой, раскладкой клавиатуры,
 аптаймом и зарядом батареи.
 
+### Простой
+
+`hypridle` блокирует сессию после 50 минут без ввода и через пять минут гасит экраны. Оба действия
+идут через `config/hypr/scripts/idle-guard.sh`: он не сработает, пока открыто полноэкранное окно,
+реально играет звук (именно играет, а не просто держит устройство), идёт запись экрана или запущен
+любой процесс из `~/.config/hypr/idle-inhibit.list`.
+
+Список сверяется с именами процессов через `pgrep -x`, по одному в строке. В репозитории лежит
+только `idle-inhibit.list.example` — скопируй его и допиши, что должно держать твой экран
+включённым; рабочая копия намеренно не отслеживается.
+
 ### Меню выключения
 
 `Super`+`P` открывает меню Quickshell: часы, аптайм и заряд батареи над пятью плитками —
@@ -392,7 +424,7 @@ cd hyprdots
 берут только проблемные состояния — отвалившийся Wi-Fi или выключенный микрофон.
 
 Клик по значку Wi-Fi (или `Super`+`N`) открывает панель сетей: текущее подключение с уровнем
-сигнала, переключатель радио, список точек. Клик по защищённой сети открывает поле пароля, клик по
+сигнала, скоростью канала и живым трафиком, переключатель радио, список точек. Клик по защищённой сети открывает поле пароля, клик по
 активной — отключает. Всё через `nmcli`, состояние обновляется по событиям `nmcli monitor`. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
 нему же можно кликнуть, чтобы переключить раскладку.
 
@@ -486,6 +518,8 @@ wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick ·
 ttf-jetbrains-mono-nerd · zsh
 
 **AUR:** quickshell · matugen-bin · wlogout · wf-recorder · wl-clip-persist
+
+Also `hypridle` for the idle timer.
 
 На Artix ставьте пакеты служб под свою систему инициализации (`-openrc`, `-runit`, `-s6`) вместо
 systemd-вариантов.

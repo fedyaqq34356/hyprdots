@@ -55,7 +55,7 @@ command -v pacman >/dev/null || die "this installer targets Arch-based systems (
 [[ $EUID -ne 0 ]] || die "run as a normal user, not as root"
 
 PACMAN_PKGS=(
-    hyprland hyprlock hyprpaper hyprpolkitagent xdg-desktop-portal-hyprland
+    hyprland hyprlock hyprpaper hypridle hyprpolkitagent xdg-desktop-portal-hyprland
     waybar kitty rofi-wayland dunst cava fastfetch yazi
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber

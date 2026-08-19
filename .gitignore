@@ -13,3 +13,4 @@ config/dunst/dunstrc
 *.bak
 *.swp
 config/wlogout/colors.css
+config/hypr/idle-inhibit.list
