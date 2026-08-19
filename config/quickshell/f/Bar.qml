@@ -32,6 +32,14 @@ Scope {
             exclusiveZone: 34
             color: "transparent"
 
+            component Sep: Rectangle {
+                Layout.alignment: Qt.AlignVCenter
+                width: 1
+                height: 12
+                radius: 1
+                color: Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.18)
+            }
+
             component Island: Rectangle {
                 id: island
                 property bool hovered: false
@@ -156,36 +164,10 @@ Scope {
                 RowLayout {
                     id: rightRow
                     anchors.centerIn: parent
-                    spacing: 11
+                    spacing: 8
 
-                    Repeater {
-                        model: SystemTray.items
-
-                        IconImage {
-                            required property var modelData
-                            source: {
-                                const i = modelData.icon;
-                                if (!i) return "";
-                                if (i.startsWith("/") || i.includes("://")
-                                    || i.includes("?")) return i;
-                                return Quickshell.iconPath(i, "application-x-executable");
-                            }
-                            implicitSize: 15
-
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: function (mouse) {
-                                    if (mouse.button === Qt.LeftButton)
-                                        modelData.activate();
-                                    else
-                                        modelData.secondaryActivate();
-                                }
-                            }
-                        }
-                    }
-
+                    // Recording is the loudest thing in the bar on purpose:
+                    // it is the only state you can forget you left running.
                     Row {
                         spacing: 6
                         visible: Recorder.active
@@ -220,74 +202,165 @@ Scope {
                         }
                     }
 
-                    Text {
-                        text: Keyboard.code
-                        color: Colors.accentAlt
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
+                    Sep { visible: Recorder.active && SystemTray.items.values.length > 0 }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -3
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Keyboard.next()
-                        }
+                    Row {
+                        spacing: 9
+                        visible: SystemTray.items.values.length > 0
 
-                        Behavior on color { ColorAnimation { duration: 200 } }
-                    }
+                        Repeater {
+                            model: SystemTray.items
 
-                    Text {
-                        readonly property var src: Pipewire.defaultAudioSource
-                        visible: src && src.audio && src.audio.muted
-                        text: "󰍭"
-                        color: Colors.bad
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 12
-                    }
+                            IconImage {
+                                required property var modelData
+                                source: {
+                                    const i = modelData.icon;
+                                    if (!i) return "";
+                                    if (i.startsWith("/") || i.includes("://")
+                                        || i.includes("?")) return i;
+                                    return Quickshell.iconPath(i, "application-x-executable");
+                                }
+                                implicitSize: 15
+                                anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
-                        readonly property var sink: Pipewire.defaultAudioSink
-                        readonly property real vol: sink && sink.audio ? sink.audio.volume : 0
-                        readonly property bool muted: sink && sink.audio ? sink.audio.muted : false
-
-                        text: muted ? "󰝟" : "󰕾  " + Math.round(vol * 100) + "%"
-                        color: muted ? Colors.fgDim : Colors.fg
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 11
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (parent.sink && parent.sink.audio)
-                                    parent.sink.audio.muted = !parent.sink.audio.muted;
-                            }
-                            onWheel: function (wheel) {
-                                if (!parent.sink || !parent.sink.audio) return;
-                                const step = wheel.angleDelta.y > 0 ? 0.02 : -0.02;
-                                parent.sink.audio.volume =
-                                    Math.max(0, Math.min(1, parent.sink.audio.volume + step));
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: function (mouse) {
+                                        if (mouse.button === Qt.LeftButton)
+                                            modelData.activate();
+                                        else
+                                            modelData.secondaryActivate();
+                                    }
+                                }
                             }
                         }
                     }
 
-                    Text {
-                        readonly property var dev: UPower.displayDevice
-                        readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
-                        readonly property bool charging:
-                            dev && dev.state === UPowerDeviceState.Charging
+                    Sep { visible: SystemTray.items.values.length > 0 }
 
-                        visible: dev && dev.isLaptopBattery
-                        text: (charging ? "󰂄 " : "") + pct + "%"
-                        color: charging ? Colors.good
-                             : pct <= 12 ? Colors.bad
-                             : pct <= 25 ? Colors.warn
-                             : Colors.fgDim
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 11
+                    // Connectivity and sound: glyphs stay quiet, only a
+                    // problem state takes colour.
+                    Row {
+                        spacing: 8
 
-                        Behavior on color { ColorAnimation { duration: 300 } }
+                        Text {
+                            text: Network.glyph
+                            color: Network.connected ? Colors.fgDim : Colors.bad
+                            opacity: Network.connected ? 0.75 : 1.0
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 12
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Behavior on color { ColorAnimation { duration: 250 } }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: wifi.toggle()
+                            }
+                        }
+
+                        Text {
+                            readonly property var src: Pipewire.defaultAudioSource
+                            visible: src && src.audio && src.audio.muted
+                            text: "󰍭"
+                            color: Colors.bad
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Row {
+                            spacing: 4
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            readonly property var sink: Pipewire.defaultAudioSink
+                            readonly property real vol: sink && sink.audio ? sink.audio.volume : 0
+                            readonly property bool muted: sink && sink.audio ? sink.audio.muted : false
+
+                            Text {
+                                text: parent.muted ? "󰝟" : "󰕾"
+                                color: parent.muted ? Colors.bad : Colors.fgDim
+                                opacity: parent.muted ? 1.0 : 0.75
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                visible: !parent.muted
+                                text: Math.round(parent.vol * 100) + "%"
+                                color: Colors.fgDim
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 11
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            TapHandler {
+                                cursorShape: Qt.PointingHandCursor
+                                onTapped: {
+                                    const a = parent.sink && parent.sink.audio;
+                                    if (a) a.muted = !a.muted;
+                                }
+                            }
+
+                            WheelHandler {
+                                onWheel: wheel => {
+                                    const a = parent.sink && parent.sink.audio;
+                                    if (!a) return;
+                                    const step = wheel.angleDelta.y > 0 ? 0.02 : -0.02;
+                                    a.volume = Math.max(0, Math.min(1, a.volume + step));
+                                }
+                            }
+                        }
+                    }
+
+                    Sep {}
+
+                    // Identity of the session: layout and charge. These are
+                    // the two you actually read, so they carry the contrast.
+                    Row {
+                        spacing: 9
+
+                        Text {
+                            text: Keyboard.code
+                            color: Colors.fgDim
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 10
+                            font.letterSpacing: 0.8
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -3
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Keyboard.next()
+                            }
+                        }
+
+                        Text {
+                            readonly property var dev: UPower.displayDevice
+                            readonly property int pct: dev ? Math.round(dev.percentage * 100) : 0
+                            readonly property bool charging:
+                                dev && dev.state === UPowerDeviceState.Charging
+
+                            visible: dev && dev.isLaptopBattery
+                            text: (charging ? "󰂄 " : "") + pct + "%"
+                            color: charging ? Colors.good
+                                 : pct <= 12 ? Colors.bad
+                                 : pct <= 25 ? Colors.warn
+                                 : Colors.fg
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Behavior on color { ColorAnimation { duration: 300 } }
+                        }
                     }
                 }
             }

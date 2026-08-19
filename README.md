@@ -149,13 +149,21 @@ to stop.
 
 ### The bar
 
-Workspaces on the left, clock in the middle, and on the right: the recording indicator, tray,
-keyboard layout, microphone state, output volume and battery. The layout badge (`EN` / `RU` / `UA` …) follows
+Workspaces on the left, clock in the middle, and on the right three groups divided by hairlines:
+the recording indicator and the tray; Wi-Fi, microphone and volume; keyboard layout and battery.
+Contrast follows how often something is read — battery and layout carry it, glyphs stay at 75%
+opacity, and only a problem state takes colour, so a dropped Wi-Fi link or a muted microphone is
+the one thing that stands out. The layout badge (`EN` / `RU` / `UA` …) follows
 `Alt`+`Shift` and can also be clicked to cycle layouts.
 
 `Super`+`Shift`+`M` opens the audio panel: microphone and output volume on separate sliders, a mute
 button on each, and the list of input devices — click one to make it the default microphone.
 `Escape` closes the panel, `↑`/`↓` change the microphone level, `M` mutes it.
+
+Clicking the Wi-Fi glyph, or `Super`+`N`, opens the network panel: the current connection with its
+signal level, a radio toggle and the list of access points. Picking a secured network opens a
+password field, clicking the active one disconnects. It drives `nmcli` and refreshes off
+`nmcli monitor` events.
 
 Volume, microphone and brightness all raise the same OSD card at the bottom of the focused screen.
 Brightness goes through `brightnessctl -c backlight`; on machines that expose no backlight device
@@ -173,6 +181,7 @@ the OSD says so instead of the keys doing nothing at all.
 | `Super` + `D` | application launcher |
 | `Super` + `E` | file manager |
 | `Super` + `W` | wallpaper picker |
+| `Super` + `N` | Wi-Fi networks |
 | `Super` + `V` | clipboard history |
 | `Super` + `Shift` + `V` | wipe the clipboard and its history |
 | `Super` + `P` | power menu |
@@ -377,8 +386,14 @@ cd hyprdots
 
 ### Панель
 
-Слева рабочие столы, по центру часы, справа — индикатор записи, трей, раскладка клавиатуры,
-состояние микрофона, громкость и заряд батареи. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
+Слева рабочие столы, по центру часы, справа три группы, разделённые волосяными линиями: индикатор
+записи и трей; Wi-Fi, микрофон и громкость; раскладка и батарея. Контраст расставлен по частоте
+обращения: батарея и раскладка держат его на себе, значки приглушены до 75% прозрачности, цвет
+берут только проблемные состояния — отвалившийся Wi-Fi или выключенный микрофон.
+
+Клик по значку Wi-Fi (или `Super`+`N`) открывает панель сетей: текущее подключение с уровнем
+сигнала, переключатель радио, список точек. Клик по защищённой сети открывает поле пароля, клик по
+активной — отключает. Всё через `nmcli`, состояние обновляется по событиям `nmcli monitor`. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
 нему же можно кликнуть, чтобы переключить раскладку.
 
 `Super`+`Shift`+`M` открывает панель звука: отдельные ползунки для микрофона и вывода, кнопка
@@ -401,6 +416,7 @@ cd hyprdots
 | `Super` + `D` | лаунчер приложений |
 | `Super` + `E` | файловый менеджер |
 | `Super` + `W` | выбор обоев |
+| `Super` + `N` | сети Wi-Fi |
 | `Super` + `V` | история буфера обмена |
 | `Super` + `Shift` + `V` | стереть буфер обмена и его историю |
 | `Super` + `P` | меню выключения |

@@ -24,6 +24,7 @@ ShellRoot {
     WallpaperPicker { id: wallpapers }
     AudioPanel { id: audioPanel }
     PowerMenu { id: powerMenu }
+    WifiPanel { id: wifi }
 
     GlobalShortcut {
         appid: "quickshell"
@@ -68,6 +69,12 @@ ShellRoot {
             const a = Pipewire.defaultAudioSink?.audio;
             if (a) a.muted = !a.muted;
         }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "wifi"
+        onPressed: wifi.toggle()
     }
 
     GlobalShortcut {
