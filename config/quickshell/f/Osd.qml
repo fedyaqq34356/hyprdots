@@ -56,7 +56,13 @@ Scope {
 
         function onMutedChanged() {
             const m = root.source.audio.muted;
-            root.flash(m ? "󰍭" : "󰍬", 0, false, m ? "mic off" : "mic on");
+            root.flash(m ? "󰍭" : "󰍬", root.source.audio.volume, !m,
+                       m ? "mic off" : Math.round(root.source.audio.volume * 100) + "%");
+        }
+        function onVolumeChanged() {
+            if (root.source.audio.muted) return;
+            root.flash("󰍬", root.source.audio.volume, true,
+                       Math.round(root.source.audio.volume * 100) + "%");
         }
     }
 

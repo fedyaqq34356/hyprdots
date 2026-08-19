@@ -22,6 +22,7 @@ ShellRoot {
     Launcher { id: launcher }
     Clipboard { id: clipboard }
     WallpaperPicker { id: wallpapers }
+    AudioPanel { id: audioPanel }
 
     GlobalShortcut {
         appid: "quickshell"
@@ -65,6 +66,30 @@ ShellRoot {
         onPressed: {
             const a = Pipewire.defaultAudioSink?.audio;
             if (a) a.muted = !a.muted;
+        }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "audioPanel"
+        onPressed: audioPanel.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "micUp"
+        onPressed: {
+            const a = Pipewire.defaultAudioSource?.audio;
+            if (a) { a.muted = false; a.volume = Math.min(1, a.volume + 0.05); }
+        }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "micDown"
+        onPressed: {
+            const a = Pipewire.defaultAudioSource?.audio;
+            if (a) a.volume = Math.max(0, a.volume - 0.05);
         }
     }
 

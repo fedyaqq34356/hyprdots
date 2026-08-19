@@ -11,6 +11,21 @@ recolour themselves around it.
 
 `Hyprland` `Quickshell` `Waybar` `matugen` `hyprlock` `kitty` `zsh`
 
+<br>
+
+<img src="assets/hero.png" alt="The desktop: bar, fastfetch, yazi" width="100%">
+
+<table>
+<tr>
+<td><img src="assets/launcher.png" alt="Application launcher"></td>
+<td><img src="assets/audio.png" alt="Audio panel"></td>
+</tr>
+<tr>
+<td align="center"><sub>launcher — <code>Super</code> + <code>D</code></sub></td>
+<td align="center"><sub>audio panel — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
+</tr>
+</table>
+
 </div>
 
 ---
@@ -84,6 +99,34 @@ if the wallpaper has changed since the last run, so the lock screen always shows
 is on the desktop right now — blurred, dimmed, behind a frosted card with the clock, the date, the
 keyboard layout, uptime and battery.
 
+### Screen capture
+
+`config/hypr/scripts/screenshot.sh` takes one argument and covers every case:
+
+| Mode | What it grabs |
+| --- | --- |
+| `region` | an area drawn with the mouse |
+| `window` | one window, snapped to its real geometry |
+| `output` | the monitor under the cursor |
+| `all` | every connected monitor in one image |
+| `edit` | an area, then [satty](https://github.com/gabm/Satty) for arrows and blur |
+| `color` | the colour under the cursor, hex into the clipboard |
+
+The screen is frozen with `hyprpicker -r -z` while the selection is being drawn, so menus and
+animations stay where they are. Every shot goes to `~/Pictures/Screenshots` **and** to the
+clipboard, and the notification carries the image as its own thumbnail. Set `SCREENSHOT_DIR` to
+save somewhere else.
+
+### The bar
+
+Workspaces on the left, clock in the middle, and on the right: tray, keyboard layout, microphone
+state, output volume and battery. The layout badge (`EN` / `RU` / `UA` …) follows
+`Alt`+`Shift` and can also be clicked to cycle layouts.
+
+`Super`+`Shift`+`M` opens the audio panel: microphone and output volume on separate sliders, a mute
+button on each, and the list of input devices — click one to make it the default microphone.
+`Escape` closes the panel, `↑`/`↓` change the microphone level, `M` mutes it.
+
 ### Keybindings
 
 `Super` is the modifier.
@@ -108,8 +151,18 @@ keyboard layout, uptime and battery.
 | `Super` + `Shift` + `L` | lock screen |
 | `Super` + `Shift` + `R` | reload Hyprland |
 | `Super` + `Shift` + `E` | exit Hyprland |
-| `Print` | screenshot |
-| `Shift` + `Print` | screen recording on/off |
+| `Print` | screenshot of a selected area |
+| `Shift` + `Print` | select an area and open the annotation editor |
+| `Alt` + `Print` | screenshot of a window |
+| `Super` + `Print` | screenshot of the current monitor |
+| `Ctrl` + `Print` | screenshot of every monitor |
+| `Super` + `Shift` + `S` | screenshot of a selected area |
+| `Super` + `Shift` + `C` | colour picker, hex to the clipboard |
+| `Super` + `Alt` + `R` | screen recording on/off |
+| `Super` + `Shift` + `M` | audio panel (microphone and output) |
+| `Super` + `M` | mute the microphone |
+| `Super` + `Shift` + `=` / `-` | microphone volume |
+| `Super` + `=` / `-` | output volume |
 | `Super` + `Shift` + `F3` | cache cleanup |
 | `Super` + `Shift` + `F4` | system update |
 
@@ -145,7 +198,7 @@ Arch or Artix Linux with an AUR helper (the installer builds `yay` if none is pr
 **Repositories:** hyprland · hyprlock · hyprpaper · hyprpolkitagent · xdg-desktop-portal-hyprland ·
 waybar · kitty · rofi-wayland · dunst · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
 bat · ripgrep · lazygit · thunar · brightnessctl · playerctl · pipewire · wireplumber · cliphist ·
-wl-clipboard · grim · slurp · ffmpeg · imagemagick · qt6ct · kvantum · papirus-icon-theme ·
+wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt6ct · kvantum · papirus-icon-theme ·
 ttf-jetbrains-mono-nerd · zsh
 
 **AUR:** quickshell · matugen-bin · wlogout · wf-recorder · wl-clip-persist
@@ -236,6 +289,33 @@ cd hyprdots
 размытые и притемнённые, поверх них матовая карточка с часами, датой, раскладкой клавиатуры,
 аптаймом и зарядом батареи.
 
+### Скриншоты
+
+`config/hypr/scripts/screenshot.sh` принимает один аргумент и закрывает все случаи:
+
+| Режим | Что снимает |
+| --- | --- |
+| `region` | область, выделенную мышью |
+| `window` | одно окно ровно по его границам |
+| `output` | монитор под курсором |
+| `all` | все подключённые мониторы одним снимком |
+| `edit` | область, затем [satty](https://github.com/gabm/Satty) — стрелки, размытие, текст |
+| `color` | цвет под курсором, hex в буфер обмена |
+
+Пока идёт выделение, экран заморожен через `hyprpicker -r -z` — меню и анимации не убегают. Каждый
+снимок попадает в `~/Pictures/Screenshots` **и** в буфер обмена, а уведомление показывает его же
+миниатюрой. Другая папка задаётся переменной `SCREENSHOT_DIR`.
+
+### Панель
+
+Слева рабочие столы, по центру часы, справа — трей, раскладка клавиатуры, состояние микрофона,
+громкость и заряд батареи. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
+нему же можно кликнуть, чтобы переключить раскладку.
+
+`Super`+`Shift`+`M` открывает панель звука: отдельные ползунки для микрофона и вывода, кнопка
+отключения у каждого и список устройств ввода — клик выбирает микрофон по умолчанию. `Escape`
+закрывает панель, `↑`/`↓` меняют уровень микрофона, `M` его выключает.
+
 ### Горячие клавиши
 
 Модификатор — `Super`.
@@ -260,8 +340,18 @@ cd hyprdots
 | `Super` + `Shift` + `L` | блокировка экрана |
 | `Super` + `Shift` + `R` | перезагрузить Hyprland |
 | `Super` + `Shift` + `E` | выйти из Hyprland |
-| `Print` | скриншот |
-| `Shift` + `Print` | запись экрана вкл/выкл |
+| `Print` | скриншот выделенной области |
+| `Shift` + `Print` | выделить область и открыть редактор |
+| `Alt` + `Print` | скриншот окна |
+| `Super` + `Print` | скриншот текущего монитора |
+| `Ctrl` + `Print` | скриншот всех мониторов |
+| `Super` + `Shift` + `S` | скриншот выделенной области |
+| `Super` + `Shift` + `C` | пипетка, hex в буфер обмена |
+| `Super` + `Alt` + `R` | запись экрана вкл/выкл |
+| `Super` + `Shift` + `M` | панель звука (микрофон и вывод) |
+| `Super` + `M` | выключить микрофон |
+| `Super` + `Shift` + `=` / `-` | громкость микрофона |
+| `Super` + `=` / `-` | громкость вывода |
 | `Super` + `Shift` + `F3` | очистка кэша |
 | `Super` + `Shift` + `F4` | обновление системы |
 
@@ -297,7 +387,7 @@ Arch или Artix Linux, помощник AUR (если его нет, уста�
 **Репозитории:** hyprland · hyprlock · hyprpaper · hyprpolkitagent · xdg-desktop-portal-hyprland ·
 waybar · kitty · rofi-wayland · dunst · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
 bat · ripgrep · lazygit · thunar · brightnessctl · playerctl · pipewire · wireplumber · cliphist ·
-wl-clipboard · grim · slurp · ffmpeg · imagemagick · qt6ct · kvantum · papirus-icon-theme ·
+wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt6ct · kvantum · papirus-icon-theme ·
 ttf-jetbrains-mono-nerd · zsh
 
 **AUR:** quickshell · matugen-bin · wlogout · wf-recorder · wl-clip-persist
