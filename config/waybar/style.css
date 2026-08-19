@@ -26,7 +26,10 @@ window#waybar {
 
 #clock,
 #battery,
-#language {
+#language,
+#backlight,
+#pulseaudio,
+#custom-recording {
   padding: 0 8px;
   margin: 3px 0;
 }
@@ -34,6 +37,16 @@ window#waybar {
 #clock    { color: @text; font-weight: 600; }
 #language { color: @subtext; }
 #battery  { color: @subtext; }
+
+#backlight  { color: @subtext; }
+#pulseaudio { color: @subtext; }
+#pulseaudio.muted { color: @surface1; }
+#pulseaudio.source-muted { color: @red; }
+
+#custom-recording {
+  color: @red;
+  font-weight: 700;
+}
 
 #battery.charging                { color: @green; }
 #battery.warning:not(.charging)  { color: @yellow; }

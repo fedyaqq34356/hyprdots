@@ -15,6 +15,31 @@ else
 fi
 
 dir_size() { du -sh "$1" 2>/dev/null | cut -f1; }
+
+# Freedesktop trash: drop everything deleted more than $TRASH_DAYS days ago.
+# The deletion date lives in the .trashinfo file, not in the file's own mtime.
+purge_trash() {
+    local root="$1" cutoff="$2" info name when ts
+    [[ -d "$root/files" ]] || return 0
+
+    shopt -s nullglob
+    for info in "$root"/info/*.trashinfo; do
+        when=$(sed -n 's/^DeletionDate=//p' "$info" | head -1)
+        ts=$(date -d "$when" +%s 2>/dev/null) || ts=$(stat -c %Y "$info")
+        (( ts > cutoff )) && continue
+        name=$(basename "$info" .trashinfo)
+        rm -rf -- "$root/files/$name"
+        rm -f -- "$info"
+    done
+
+    # Entries whose .trashinfo was lost: fall back to the file's own age.
+    for name in "$root"/files/*; do
+        [[ -e "$root/info/$(basename "$name").trashinfo" ]] && continue
+        (( $(stat -c %Y "$name" 2>/dev/null || echo 0) > cutoff )) && continue
+        rm -rf -- "$name"
+    done
+    shopt -u nullglob
+}
 freed()    { echo -e "${GRN}  освобождено: ${1:-0} -> ${2:-0}${RST}"; }
 say()      { echo -e "$@"; }
 
@@ -72,6 +97,19 @@ say "${YLW}> pip кэш...${RST}"
 BEFORE=$(dir_size ~/.cache/pip)
 rm -rf ~/.cache/pip
 freed "$BEFORE" 0
+say ""
+
+TRASH_DAYS=${TRASH_DAYS:-30}
+CUTOFF=$(( $(date +%s) - TRASH_DAYS * 86400 ))
+
+say "${YLW}> корзина (старше ${TRASH_DAYS} дней)...${RST}"
+for TRASH in ~/.local/share/Trash /mnt/*/.Trash-"$(id -u)" /run/media/"$USER"/*/.Trash-"$(id -u)"; do
+    [[ -d "$TRASH/files" ]] || continue
+    BEFORE=$(dir_size "$TRASH")
+    purge_trash "$TRASH" "$CUTOFF"
+    say "   ${TRASH}"
+    freed "$BEFORE" "$(dir_size "$TRASH")"
+done
 say ""
 
 say "${BLD}${GRN}Готово.${RST}"
