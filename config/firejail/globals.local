@@ -1,0 +1,9 @@
+# private-dev hides /dev/nvidia*, which kills GPU acceleration in every
+# Electron app on this machine. Keep the rest of the sandbox, expose the
+# GPU nodes.
+ignore private-dev
+
+# Some profiles ask firejail to also apply its AppArmor profile. AppArmor is
+# not active on this machine yet, and the request makes the launch fail
+# outright. Remove this line once AppArmor is enabled at boot.
+ignore apparmor
