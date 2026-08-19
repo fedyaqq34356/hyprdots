@@ -84,6 +84,28 @@ cd hyprdots
 The installer requires `pacman`, must be run as a normal user (not root), and copies the previous
 configuration to `~/.config/dotfiles-backup-<timestamp>` before writing anything.
 
+### Updating
+
+Already installed? Do not run the installer again — there is an update path that keeps your
+machine as it is and only brings the configuration forward:
+
+```bash
+dots-update
+```
+
+It pulls the newest revision, prints the commits you are about to get, replaces the configuration
+files (backing up whatever it overwrites), installs only packages that are genuinely missing —
+never a full system upgrade — regenerates the palette from your current wallpaper and reloads
+Hyprland and the bar in place. No logout needed.
+
+From a clone, the same thing:
+
+```bash
+cd hyprdots && ./install.sh --update
+```
+
+`--dry-run` works here too and prints every step without touching anything.
+
 ### Theming
 
 ```
@@ -94,6 +116,8 @@ wallpaper ──▶ matugen ──┬──▶ hyprland   window borders
                         ├──▶ kitty      terminal palette
                         ├──▶ rofi       launcher
                         ├──▶ dunst      notifications
+                        ├──▶ gtk 3/4    Thunar and every other GTK app
+                        ├──▶ wlogout    power menu on the Waybar stack
                         └──▶ cava       audio visualiser
 ```
 
@@ -198,6 +222,7 @@ the OSD says so instead of the keys doing nothing at all.
 | `Super` + `Return` | terminal (kitty) |
 | `Super` + `T` | scratchpad terminal |
 | `Super` + `D` | application launcher |
+| `Super` + `Tab` | window overview with live thumbnails |
 | `Super` + `E` | file manager |
 | `Super` + `W` | wallpaper picker |
 | `Super` + `N` | Wi-Fi networks |
@@ -251,7 +276,7 @@ config/
   gtk-3.0, gtk-4.0, qt6ct
   starship.toml  shell prompt
 home/            .zshrc, .zshenv, .bashrc
-bin/             shell-autostart, shell-switch, shell-watchdog
+bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
 install.sh       automatic installer
 ```
 
@@ -336,6 +361,28 @@ cd hyprdots
 Установщику нужен `pacman`, запускать нужно от обычного пользователя (не от root). Предыдущая
 конфигурация сохраняется в `~/.config/dotfiles-backup-<время>`.
 
+### Обновление
+
+Если конфигурация уже стоит, установщик заново гонять не нужно — есть отдельный режим обновления,
+который не трогает систему и подтягивает только конфиги:
+
+```bash
+dots-update
+```
+
+Он забирает свежую ревизию, показывает список коммитов, которые приедут, раскладывает файлы (всё
+заменяемое сначала уходит в резервную копию), доставляет только реально отсутствующие пакеты —
+полного обновления системы не делает, — пересобирает палитру по текущим обоям и перезапускает
+Hyprland с панелью на месте. Перелогиниваться не надо.
+
+Из клона то же самое:
+
+```bash
+cd hyprdots && ./install.sh --update
+```
+
+`--dry-run` работает и здесь: покажет каждый шаг, ничего не меняя.
+
 ### Оформление
 
 ```
@@ -346,6 +393,8 @@ cd hyprdots
                    ├──▶ kitty      палитра терминала
                    ├──▶ rofi       лаунчер
                    ├──▶ dunst      уведомления
+                   ├──▶ gtk 3/4    Thunar и остальные GTK-приложения
+                   ├──▶ wlogout    меню выключения в наборе с Waybar
                    └──▶ cava       визуализатор звука
 ```
 
@@ -446,6 +495,7 @@ cd hyprdots
 | `Super` + `Return` | терминал (kitty) |
 | `Super` + `T` | выпадающий терминал |
 | `Super` + `D` | лаунчер приложений |
+| `Super` + `Tab` | обзор окон с живыми миниатюрами |
 | `Super` + `E` | файловый менеджер |
 | `Super` + `W` | выбор обоев |
 | `Super` + `N` | сети Wi-Fi |
@@ -499,7 +549,7 @@ config/
   gtk-3.0, gtk-4.0, qt6ct
   starship.toml  приглашение оболочки
 home/            .zshrc, .zshenv, .bashrc
-bin/             shell-autostart, shell-switch, shell-watchdog
+bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
 install.sh       автоматический установщик
 ```
 
