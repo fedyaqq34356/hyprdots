@@ -45,7 +45,7 @@ Two shell stacks ship side by side and can be swapped at runtime:
 | Stack | Contents | Switch |
 | --- | --- | --- |
 | **Quickshell** (default) | custom bar, launcher, clipboard, notifications, volume/brightness OSD, wallpaper picker | `shell-switch qs` |
-| **Waybar** | Waybar + dunst + rofi | `shell-switch waybar` |
+| **Waybar** | Waybar + dunst + rofi, with the same indicators: recording, brightness, volume, layout, battery | `shell-switch waybar` |
 
 A watchdog supervises the active stack: if Quickshell dies, Waybar is brought up automatically, so
 the desktop is never left without a bar.
@@ -261,7 +261,7 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE).
 | Набор | Состав | Переключение |
 | --- | --- | --- |
 | **Quickshell** (по умолчанию) | своя панель, лаунчер, буфер обмена, уведомления, индикаторы громкости и яркости, выбор обоев | `shell-switch qs` |
-| **Waybar** | Waybar + dunst + rofi | `shell-switch waybar` |
+| **Waybar** | Waybar + dunst + rofi, те же индикаторы: запись, яркость, громкость, раскладка, батарея | `shell-switch waybar` |
 
 За активным набором следит watchdog: если Quickshell падает, автоматически поднимается Waybar —
 рабочий стол не остаётся без панели.
