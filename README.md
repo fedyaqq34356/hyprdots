@@ -117,15 +117,39 @@ animations stay where they are. Every shot goes to `~/Pictures/Screenshots` **an
 clipboard, and the notification carries the image as its own thumbnail. Set `SCREENSHOT_DIR` to
 save somewhere else.
 
+### Screen recording
+
+`config/hypr/scripts/record-toggle.sh` toggles: the first call starts, the second stops, whatever
+mode started it.
+
+| Argument | Effect |
+| --- | --- |
+| `screen` | the monitor under the cursor (default) |
+| `region` | an area drawn with the mouse |
+| `--mic` | record the microphone instead of the system output |
+| `--no-audio` | video only |
+
+By default the system output is recorded through the monitor source of the default sink, so a
+recording carries the sound you actually heard. Files go to `~/Videos` (`RECORD_DIR` overrides it),
+and the path of the finished file lands in the clipboard.
+
+While something is being recorded the bar shows a pulsing red dot and the elapsed time — click it
+to stop.
+
 ### The bar
 
-Workspaces on the left, clock in the middle, and on the right: tray, keyboard layout, microphone
-state, output volume and battery. The layout badge (`EN` / `RU` / `UA` …) follows
+Workspaces on the left, clock in the middle, and on the right: the recording indicator, tray,
+keyboard layout, microphone state, output volume and battery. The layout badge (`EN` / `RU` / `UA` …) follows
 `Alt`+`Shift` and can also be clicked to cycle layouts.
 
 `Super`+`Shift`+`M` opens the audio panel: microphone and output volume on separate sliders, a mute
 button on each, and the list of input devices — click one to make it the default microphone.
 `Escape` closes the panel, `↑`/`↓` change the microphone level, `M` mutes it.
+
+Volume, microphone and brightness all raise the same OSD card at the bottom of the focused screen.
+Brightness goes through `brightnessctl -c backlight`; on machines that expose no backlight device
+the OSD says so instead of the keys doing nothing at all.
+
 
 ### Keybindings
 
@@ -158,11 +182,13 @@ button on each, and the list of input devices — click one to make it the defau
 | `Ctrl` + `Print` | screenshot of every monitor |
 | `Super` + `Shift` + `S` | screenshot of a selected area |
 | `Super` + `Shift` + `C` | colour picker, hex to the clipboard |
-| `Super` + `Alt` + `R` | screen recording on/off |
+| `Super` + `Alt` + `R` | record the monitor, with system audio |
+| `Super` + `Alt` + `Shift` + `R` | record a selected area |
 | `Super` + `Shift` + `M` | audio panel (microphone and output) |
 | `Super` + `M` | mute the microphone |
 | `Super` + `Shift` + `=` / `-` | microphone volume |
 | `Super` + `=` / `-` | output volume |
+| brightness keys | screen brightness, with an OSD |
 | `Super` + `Shift` + `F3` | cache cleanup |
 | `Super` + `Shift` + `F4` | system update |
 
@@ -216,7 +242,7 @@ the systemd variants.
 
 ### License
 
-MIT — see [LICENSE](LICENSE).
+GNU General Public License v3.0 — see [LICENSE](LICENSE).
 
 ---
 
@@ -306,15 +332,38 @@ cd hyprdots
 снимок попадает в `~/Pictures/Screenshots` **и** в буфер обмена, а уведомление показывает его же
 миниатюрой. Другая папка задаётся переменной `SCREENSHOT_DIR`.
 
+### Запись экрана
+
+`config/hypr/scripts/record-toggle.sh` работает переключателем: первый вызов запускает, второй
+останавливает — в каком бы режиме запись ни началась.
+
+| Аргумент | Что делает |
+| --- | --- |
+| `screen` | монитор под курсором (по умолчанию) |
+| `region` | область, выделенная мышью |
+| `--mic` | писать микрофон вместо звука системы |
+| `--no-audio` | только видео |
+
+По умолчанию пишется звук системы — через monitor-источник текущего вывода, то есть в записи будет
+то, что было слышно. Файлы уходят в `~/Videos` (меняется переменной `RECORD_DIR`), путь готового
+файла попадает в буфер обмена.
+
+Пока идёт запись, в панели мигает красная точка с таймером — клик по ней останавливает запись.
+
 ### Панель
 
-Слева рабочие столы, по центру часы, справа — трей, раскладка клавиатуры, состояние микрофона,
-громкость и заряд батареи. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
+Слева рабочие столы, по центру часы, справа — индикатор записи, трей, раскладка клавиатуры,
+состояние микрофона, громкость и заряд батареи. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
 нему же можно кликнуть, чтобы переключить раскладку.
 
 `Super`+`Shift`+`M` открывает панель звука: отдельные ползунки для микрофона и вывода, кнопка
 отключения у каждого и список устройств ввода — клик выбирает микрофон по умолчанию. `Escape`
 закрывает панель, `↑`/`↓` меняют уровень микрофона, `M` его выключает.
+
+Громкость, микрофон и яркость показывают одну и ту же карточку внизу активного экрана. Яркость идёт
+через `brightnessctl -c backlight`; если устройства подсветки в системе нет, индикатор так и
+скажет, вместо того чтобы клавиши молча ничего не делали.
+
 
 ### Горячие клавиши
 
@@ -347,11 +396,13 @@ cd hyprdots
 | `Ctrl` + `Print` | скриншот всех мониторов |
 | `Super` + `Shift` + `S` | скриншот выделенной области |
 | `Super` + `Shift` + `C` | пипетка, hex в буфер обмена |
-| `Super` + `Alt` + `R` | запись экрана вкл/выкл |
+| `Super` + `Alt` + `R` | запись монитора со звуком системы |
+| `Super` + `Alt` + `Shift` + `R` | запись выделенной области |
 | `Super` + `Shift` + `M` | панель звука (микрофон и вывод) |
 | `Super` + `M` | выключить микрофон |
 | `Super` + `Shift` + `=` / `-` | громкость микрофона |
 | `Super` + `=` / `-` | громкость вывода |
+| клавиши яркости | яркость экрана, с индикатором |
 | `Super` + `Shift` + `F3` | очистка кэша |
 | `Super` + `Shift` + `F4` | обновление системы |
 
@@ -405,4 +456,4 @@ systemd-вариантов.
 
 ### Лицензия
 
-MIT — см. [LICENSE](LICENSE).
+GNU General Public License v3.0 — см. [LICENSE](LICENSE).

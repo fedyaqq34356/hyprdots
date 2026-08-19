@@ -15,7 +15,7 @@ ShellRoot {
     }
 
     Bar {}
-    Osd {}
+    Osd { id: osd }
     Notifications {}
     FullscreenFlash {}
 
@@ -66,6 +66,24 @@ ShellRoot {
         onPressed: {
             const a = Pipewire.defaultAudioSink?.audio;
             if (a) a.muted = !a.muted;
+        }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "brightnessUp"
+        onPressed: {
+            if (Brightness.available) Brightness.change(0.05);
+            else osd.flash("󰃞", 0, false, "нет подсветки");
+        }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "brightnessDown"
+        onPressed: {
+            if (Brightness.available) Brightness.change(-0.05);
+            else osd.flash("󰃞", 0, false, "нет подсветки");
         }
     }
 
