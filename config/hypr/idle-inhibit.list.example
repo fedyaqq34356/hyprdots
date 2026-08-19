@@ -1,0 +1,7 @@
+# Processes that keep the screen awake while they run.
+# One process name per line, matched exactly (pgrep -x).
+# Copy to idle-inhibit.list and edit; that copy is personal and untracked.
+
+mpv
+vlc
+wf-recorder
