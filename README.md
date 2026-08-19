@@ -99,6 +99,17 @@ if the wallpaper has changed since the last run, so the lock screen always shows
 is on the desktop right now — blurred, dimmed, behind a frosted card with the clock, the date, the
 keyboard layout, uptime and battery.
 
+### Power menu
+
+`Super`+`P` opens a native Quickshell menu: the clock, uptime and battery over five tiles — lock,
+sleep, log out, reboot, shut down. Each tile carries its own letter, so `l`, `s`, `e`, `r` and `p`
+fire straight away; arrows move the selection, `Enter` confirms, `Escape` or a click outside
+closes. Reboot and shutdown glow red instead of the theme accent, so the two irreversible entries
+never look like the others.
+
+It takes its colours from the wallpaper like everything else. Under the Waybar stack the same
+binding falls back to wlogout, which now reads the matugen palette as well.
+
 ### Screen capture
 
 `config/hypr/scripts/screenshot.sh` takes one argument and covers every case:
@@ -317,6 +328,17 @@ cd hyprdots
 если обои сменились с прошлого раза, — на локскрине всегда те обои, что стоят на рабочем столе:
 размытые и притемнённые, поверх них матовая карточка с часами, датой, раскладкой клавиатуры,
 аптаймом и зарядом батареи.
+
+### Меню выключения
+
+`Super`+`P` открывает меню Quickshell: часы, аптайм и заряд батареи над пятью плитками —
+заблокировать, сон, выйти, перезагрузка, выключение. У каждой плитки своя буква, так что `l`, `s`,
+`e`, `r` и `p` срабатывают сразу; стрелки двигают выбор, `Enter` подтверждает, `Escape` или клик
+мимо закрывают. Перезагрузка и выключение подсвечиваются красным вместо цвета темы — два
+необратимых пункта не выглядят как остальные.
+
+Цвета берутся из обоев, как и везде. В наборе с Waybar та же клавиша открывает wlogout, который
+теперь тоже читает палитру matugen.
 
 ### Скриншоты
 

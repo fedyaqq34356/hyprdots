@@ -12,3 +12,4 @@ config/dunst/dunstrc
 *.log
 *.bak
 *.swp
+config/wlogout/colors.css

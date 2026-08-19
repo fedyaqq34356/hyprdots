@@ -17,12 +17,6 @@
     "keybind" : "e"
 }
 {
-    "label" : "hibernate",
-    "action" : "loginctl hibernate",
-    "text" : "Hibernate",
-    "keybind" : "h"
-}
-{
     "label" : "reboot",
     "action" : "loginctl reboot",
     "text" : "Reboot",
