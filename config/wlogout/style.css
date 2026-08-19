@@ -1,3 +1,5 @@
+@import "colors.css";
+
 * {
     background: none;
     border: none;
@@ -6,56 +8,46 @@
 }
 
 window {
-    background-color: rgba(10, 12, 16, 0.7);
+    background-color: rgba(0, 0, 0, 0.62);
 }
 
 box {
-    margin: 200px 400px;
+    margin: 200px 480px;
 }
 
 button {
-    background-color: rgba(22, 27, 34, 0.85);
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    color: rgba(200, 210, 220, 0.85);
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    margin: 10px;
-    padding: 20px;
-    min-width: 140px;
-    min-height: 140px;
+    background-color: alpha(@base, 0.85);
+    border-radius: 20px;
+    border: 1px solid alpha(@outline, 0.25);
+    color: @subtext;
+    font-size: 11px;
+    margin: 7px;
+    min-width: 132px;
+    min-height: 132px;
     background-repeat: no-repeat;
-    background-position: center 35%;
-    background-size: 52px;
-    padding-top: 90px;
-    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    background-position: center 32%;
+    background-size: 34px;
+    padding-top: 62px;
+    transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
+button:focus,
 button:hover {
-    background-color: rgba(50, 80, 130, 0.55);
-    border-color: rgba(100, 150, 220, 0.45);
-    color: #ffffff;
+    background-color: alpha(@accent, 0.16);
+    border-color: alpha(@accent, 0.65);
+    color: @text;
 }
 
-button:active {
-    background-color: rgba(70, 110, 180, 0.75);
+#reboot:focus,
+#reboot:hover,
+#shutdown:focus,
+#shutdown:hover {
+    background-color: rgba(243, 139, 168, 0.16);
+    border-color: rgba(243, 139, 168, 0.65);
 }
 
-#lock {
-    background-image: image(url("/usr/share/wlogout/icons/lock.png"));
-}
-#logout {
-    background-image: image(url("/usr/share/wlogout/icons/logout.png"));
-}
-#suspend {
-    background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
-}
-#hibernate {
-    background-image: image(url("/usr/share/wlogout/icons/hibernate.png"));
-}
-#shutdown {
-    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"));
-}
-#reboot {
-    background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
-}
+#lock      { background-image: image(url("/usr/share/wlogout/icons/lock.png")); }
+#logout    { background-image: image(url("/usr/share/wlogout/icons/logout.png")); }
+#suspend   { background-image: image(url("/usr/share/wlogout/icons/suspend.png")); }
+#shutdown  { background-image: image(url("/usr/share/wlogout/icons/shutdown.png")); }
+#reboot    { background-image: image(url("/usr/share/wlogout/icons/reboot.png")); }

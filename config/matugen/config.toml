@@ -38,3 +38,7 @@ output_path = "~/.config/quickshell/f/Colors.qml"
 input_path  = "~/.config/matugen/templates/dunstrc"
 output_path = "~/.config/dunst/dunstrc"
 post_hook   = "pkill dunst; setsid -f dunst >/dev/null 2>&1"
+
+[templates.wlogout]
+input_path  = "~/.config/matugen/templates/wlogout-colors.css"
+output_path = "~/.config/wlogout/colors.css"
