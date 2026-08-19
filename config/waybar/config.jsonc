@@ -9,7 +9,7 @@
 
   "modules-left":   ["hyprland/workspaces"],
   "modules-center": ["clock"],
-  "modules-right":  ["tray", "hyprland/language", "battery"],
+  "modules-right":  ["custom/recording", "tray", "backlight", "pulseaudio", "hyprland/language", "battery"],
 
   "clock": {
     "format": "{:%H:%M}",
@@ -23,6 +23,35 @@
         "today": "<b><u>{}</u></b>"
       }
     }
+  },
+
+  "custom/recording": {
+    "exec": "echo",
+    "exec-if": "test -f $XDG_RUNTIME_DIR/recording.state",
+    "interval": 2,
+    "format": "\uf111 REC",
+    "on-click": "~/.config/hypr/scripts/record-toggle.sh",
+    "tooltip": false
+  },
+
+  "backlight": {
+    "format": "\udb80\udcde {percent}%",
+    "tooltip": false,
+    "on-scroll-up": "brightnessctl -c backlight set 5%+",
+    "on-scroll-down": "brightnessctl -c backlight set 5%-"
+  },
+
+  "pulseaudio": {
+    "format": "{icon} {volume}% {format_source}",
+    "format-muted": "\udb81\udd9f",
+    "format-source": "",
+    "format-source-muted": "\udb80\udd6d ",
+    "format-icons": { "default": ["\udb81\udd7f", "\udb81\udd80", "\udb81\udd7e"] },
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+    "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-",
+    "tooltip": false
   },
 
   "battery": {
