@@ -140,6 +140,37 @@ if the wallpaper has changed since the last run, so the lock screen always shows
 is on the desktop right now — blurred, dimmed, behind a frosted card with the clock, the date, the
 keyboard layout, uptime and battery.
 
+### Hardware video decoding
+
+The session already exports `LIBVA_DRIVER_NAME=nvidia` and `NVD_BACKEND=direct`, which is only
+half the story: NVIDIA needs `libva-nvidia-driver` to map VA-API onto NVDEC, and each browser has
+to be told to use it.
+
+Chromium wants the flags on its command line — the packaged binary is not a wrapper script, so
+there is no `chromium-flags.conf` to edit; copy the desktop entry to
+`~/.local/share/applications/` and add:
+
+```
+--ozone-platform-hint=auto --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks,AcceleratedVideoDecodeLinuxGL --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy --use-gl=angle --use-angle=gl
+```
+
+Firefox and LibreWolf want a `user.js` in the active profile:
+
+```js
+user_pref("media.ffmpeg.vaapi.enabled", true);
+user_pref("media.hardware-video-decoding.force-enabled", true);
+user_pref("widget.dmabuf.force-enabled", true);
+user_pref("gfx.webrender.all", true);
+user_pref("media.av1.enabled", false);
+```
+
+plus `MOZ_DISABLE_RDD_SANDBOX=1` in the environment, otherwise the decoder process cannot reach
+the driver. Turning AV1 off is deliberate on older cards: Pascal and earlier have no AV1 decoder,
+so accepting those streams quietly moves the work back to the CPU.
+
+Check the result in `chrome://gpu` and `about:support`, or watch `nvidia-smi dmon` while a video
+plays — the `dec` column stays at zero when decoding is still on the CPU.
+
 ### Idle
 
 `hypridle` locks the session after 50 minutes without input and turns the panels off five minutes
@@ -423,6 +454,36 @@ cd hyprdots && ./install.sh --update
 если обои сменились с прошлого раза, — на локскрине всегда те обои, что стоят на рабочем столе:
 размытые и притемнённые, поверх них матовая карточка с часами, датой, раскладкой клавиатуры,
 аптаймом и зарядом батареи.
+
+### Аппаратное декодирование видео
+
+Сессия уже экспортирует `LIBVA_DRIVER_NAME=nvidia` и `NVD_BACKEND=direct`, но этого мало: нужен
+`libva-nvidia-driver`, который связывает VA-API с NVDEC, и каждому браузеру надо отдельно сказать
+им пользоваться.
+
+Chromium принимает флаги только в командной строке — бинарник не обёртка, редактировать
+`chromium-flags.conf` нечего; скопируй ярлык в `~/.local/share/applications/` и допиши:
+
+```
+--ozone-platform-hint=auto --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks,AcceleratedVideoDecodeLinuxGL --ignore-gpu-blocklist --enable-gpu-rasterization --enable-zero-copy --use-gl=angle --use-angle=gl
+```
+
+Firefox и LibreWolf читают `user.js` в активном профиле:
+
+```js
+user_pref("media.ffmpeg.vaapi.enabled", true);
+user_pref("media.hardware-video-decoding.force-enabled", true);
+user_pref("widget.dmabuf.force-enabled", true);
+user_pref("gfx.webrender.all", true);
+user_pref("media.av1.enabled", false);
+```
+
+и переменную `MOZ_DISABLE_RDD_SANDBOX=1`, иначе процесс декодера не достучится до драйвера. AV1
+выключен намеренно: у Pascal и более старых карт аппаратного декодера AV1 нет, и такие потоки
+тихо уезжают обратно на процессор.
+
+Проверять в `chrome://gpu` и `about:support` или через `nvidia-smi dmon` во время
+воспроизведения — колонка `dec` остаётся нулевой, пока декодирование идёт на процессоре.
 
 ### Простой
 
