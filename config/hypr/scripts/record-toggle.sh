@@ -1,14 +1,85 @@
 #!/usr/bin/env bash
-OUTDIR="$HOME/Videos"
-NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
-mkdir -p "$OUTDIR"
+# record-toggle.sh [screen|region] [--mic|--no-audio]
+#
+# Records system output by default, --mic records the microphone instead.
+#
+# Second call stops whatever is running, whichever mode started it.
+# State for the bar indicator lives in $XDG_RUNTIME_DIR/recording.state:
+#   <start epoch> <output file>
 
-if pgrep -x wf-recorder > /dev/null; then
-    pkill -INT wf-recorder
-    bash "$NOTIFY" "Запись" "Остановлена, сохранено в ~/Videos" -t 3000
-else
-    MONITOR=$(hyprctl monitors -j | python3 -c "import sys,json; m=[x for x in json.load(sys.stdin) if x['focused']]; print(m[0]['name'] if m else 'eDP-1')")
-    OUTFILE="$OUTDIR/recording-$(date +%Y%m%d-%H%M%S).mp4"
-    wf-recorder -o "$MONITOR" -f "$OUTFILE" &
-    bash "$NOTIFY" "Запись" "Началась → $(basename "$OUTFILE")" -t 3000
+set -uo pipefail
+
+OUTDIR="${RECORD_DIR:-$HOME/Videos}"
+NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
+STATE="${XDG_RUNTIME_DIR:-/tmp}/recording.state"
+
+notify() { bash "$NOTIFY" "$@" >/dev/null 2>&1; }
+
+if pgrep -x wf-recorder >/dev/null; then
+    FILE=$(cut -d' ' -f2- < "$STATE" 2>/dev/null)
+    pkill -INT -x wf-recorder
+    rm -f "$STATE"
+    # wf-recorder needs a moment to flush the container
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        pgrep -x wf-recorder >/dev/null || break
+        sleep 0.2
+    done
+    if [ -n "${FILE:-}" ] && [ -s "$FILE" ]; then
+        printf '%s' "$FILE" | wl-copy
+        SIZE=$(du -h "$FILE" | cut -f1)
+        notify "Запись" "$(basename "$FILE") · $SIZE" -t 4000 -a record -r 9993
+    else
+        notify "Запись" "Остановлена" -t 3000 -a record -r 9993
+    fi
+    exit 0
 fi
+
+MODE="screen"
+AUDIO=1
+for arg in "$@"; do
+    case "$arg" in
+        region)     MODE="region" ;;
+        screen)     MODE="screen" ;;
+        --mic)      AUDIO=2 ;;
+        --no-audio) AUDIO=0 ;;
+    esac
+done
+
+mkdir -p "$OUTDIR"
+FILE="$OUTDIR/recording-$(date +%Y-%m-%d_%H-%M-%S).mp4"
+
+ARGS=(-f "$FILE" -c libx264 -p preset=veryfast -p crf=22 --pixel-format yuv420p)
+
+if [ "$MODE" = region ]; then
+    GEOM=$(slurp -d -b 00000055 -c efbd90ff -s efbd9022 -w 2) || exit 1
+    [ -z "$GEOM" ] && exit 1
+    # H.264 needs even dimensions; wf-recorder rounds the geometry itself.
+    ARGS+=(-g "$GEOM")
+else
+    MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
+    ARGS+=(-o "${MONITOR:-eDP-1}")
+fi
+
+case "$AUDIO" in
+    1) SINK=$(pactl get-default-sink 2>/dev/null)
+       [ -n "$SINK" ] && ARGS+=(--audio="$SINK.monitor") || AUDIO=0 ;;
+    2) SOURCE=$(pactl get-default-source 2>/dev/null)
+       [ -n "$SOURCE" ] && ARGS+=(--audio="$SOURCE") || AUDIO=0 ;;
+esac
+
+wf-recorder "${ARGS[@]}" >/dev/null 2>&1 &
+sleep 0.6
+
+if ! pgrep -x wf-recorder >/dev/null; then
+    notify "Запись" "Не удалось запустить wf-recorder" -u critical -t 4000 -a record
+    exit 1
+fi
+
+printf '%s %s\n' "$(date +%s)" "$FILE" > "$STATE"
+case "$AUDIO" in
+    1) SOUND=" + звук" ;;
+    2) SOUND=" + микрофон" ;;
+    *) SOUND="" ;;
+esac
+notify "Запись" "$([ "$MODE" = region ] && echo "Область" || echo "Экран")$SOUND" \
+       -t 2000 -a record -r 9993

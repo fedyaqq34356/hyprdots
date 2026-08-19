@@ -186,6 +186,40 @@ Scope {
                         }
                     }
 
+                    Row {
+                        spacing: 6
+                        visible: Recorder.active
+
+                        Rectangle {
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: Colors.bad
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            SequentialAnimation on opacity {
+                                running: Recorder.active
+                                loops: Animation.Infinite
+                                NumberAnimation { to: 0.25; duration: 700; easing.type: Easing.InOutQuad }
+                                NumberAnimation { to: 1.0;  duration: 700; easing.type: Easing.InOutQuad }
+                            }
+                        }
+
+                        Text {
+                            text: Recorder.clock
+                            color: Colors.bad
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        TapHandler {
+                            cursorShape: Qt.PointingHandCursor
+                            onTapped: Recorder.stop()
+                        }
+                    }
+
                     Text {
                         text: Keyboard.code
                         color: Colors.accentAlt

@@ -66,6 +66,16 @@ Scope {
         }
     }
 
+    Connections {
+        target: Brightness
+        enabled: root.ready
+
+        function onValueChanged() {
+            root.flash("󰃞", Brightness.value, true,
+                       Math.round(Brightness.value * 100) + "%");
+        }
+    }
+
     PanelWindow {
         id: win
         screen: Focus.screen

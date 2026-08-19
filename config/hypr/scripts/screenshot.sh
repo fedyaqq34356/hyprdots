@@ -103,10 +103,22 @@ case "$MODE" in
         finish
         ;;
     color)
-        have hyprpicker || { notify "Пипетка" "Установите hyprpicker" -t 3000; exit 1; }
-        HEX=$(hyprpicker -a -f hex) || exit 1
+        if have hyprpicker; then
+            HEX=$(hyprpicker -a -f hex)
+        else
+            # No hyprpicker: pick a single point and read the pixel out of grim.
+            POINT=$(slurp -p -b 00000000) || exit 1
+            [ -z "$POINT" ] && exit 1
+            HEX=$(grim -g "$POINT" -t ppm - \
+                  | magick - -format '#%[hex:p{0,0}]' info:)
+            HEX=${HEX:0:7}
+            [ -n "$HEX" ] && printf '%s' "$HEX" | wl-copy
+        fi
         [ -z "$HEX" ] && exit 1
-        notify "Цвет" "$HEX скопирован" -t 2500 -a screenshot
+        SWATCH=$(mktemp -t swatch-XXXX.png)
+        magick -size 96x96 "xc:$HEX" "$SWATCH" 2>/dev/null
+        notify "Цвет" "$HEX скопирован" -i "$SWATCH" -t 3000 -a screenshot
+        (sleep 6; rm -f "$SWATCH") >/dev/null 2>&1 &
         ;;
     *)
         echo "usage: screenshot.sh [region|window|output|all|edit|color]" >&2
