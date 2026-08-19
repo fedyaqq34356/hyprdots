@@ -15,6 +15,21 @@ Singleton {
     property bool busy: false
     property string error: ""
 
+    // Link rate as negotiated with the access point, e.g. "72 Mbit/s".
+    property string linkRate: ""
+
+    // Live throughput, sampled only while something is watching.
+    property string iface: ""
+    property bool sampling: false
+    property real rxRate: 0
+    property real txRate: 0
+
+    function human(bytes) {
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + " МБ/с";
+        if (bytes >= 1024)    return Math.round(bytes / 1024) + " КБ/с";
+        return Math.round(bytes) + " Б/с";
+    }
+
     readonly property string glyph: {
         if (!radio) return "󰤮";
         if (!connected) return "󰤯";
@@ -40,7 +55,7 @@ Singleton {
 
     Process {
         id: scan
-        command: ["nmcli", "-t", "-f", "ACTIVE,SSID,SIGNAL,SECURITY", "device", "wifi"]
+        command: ["nmcli", "-t", "-f", "ACTIVE,SSID,SIGNAL,SECURITY,RATE", "device", "wifi"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const seen = {};
@@ -58,7 +73,10 @@ Singleton {
                         secured: f[3].trim() !== ""
                     };
                     if (entry.ssid === "") continue;
-                    if (entry.active) active = entry;
+                    if (entry.active) {
+                        active = entry;
+                        root.linkRate = f.length > 4 ? f[4].trim() : "";
+                    }
                     // Same SSID can appear once per band or access point:
                     // keep the strongest reading, but never lose the fact
                     // that one of them is the connection we are on.
@@ -79,6 +97,7 @@ Singleton {
                 root.connected = active !== null;
                 root.ssid = active ? active.ssid : "";
                 root.strength = active ? active.strength : 0;
+                if (!root.connected) root.linkRate = "";
             }
         }
     }
@@ -94,6 +113,67 @@ Singleton {
     function refresh() {
         radioState.running = true;
         scan.running = true;
+        ifaceProc.running = true;
+    }
+
+    Process {
+        id: ifaceProc
+        command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device", "status"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                for (const line of text.trim().split("\n")) {
+                    const f = root.fields(line);
+                    if (f.length >= 3 && f[1] === "wifi" && f[2] === "connected") {
+                        root.iface = f[0];
+                        return;
+                    }
+                }
+                root.iface = "";
+            }
+        }
+    }
+
+    // Counters come straight from sysfs; one read per second is cheaper than
+    // any monitoring daemon, and it only runs while the panel is open.
+    property real lastRx: -1
+    property real lastTx: -1
+
+    Process {
+        id: traffic
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const n = text.trim().split("\n").map(v => parseFloat(v));
+                if (n.length < 2 || isNaN(n[0])) return;
+                if (root.lastRx >= 0) {
+                    root.rxRate = Math.max(0, n[0] - root.lastRx);
+                    root.txRate = Math.max(0, n[1] - root.lastTx);
+                }
+                root.lastRx = n[0];
+                root.lastTx = n[1];
+            }
+        }
+    }
+
+    Timer {
+        running: root.sampling && root.iface !== ""
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            traffic.command = ["cat",
+                "/sys/class/net/" + root.iface + "/statistics/rx_bytes",
+                "/sys/class/net/" + root.iface + "/statistics/tx_bytes"];
+            traffic.running = true;
+        }
+    }
+
+    onSamplingChanged: {
+        if (!sampling) {
+            lastRx = -1;
+            lastTx = -1;
+            rxRate = 0;
+            txRate = 0;
+        }
     }
 
     Component.onCompleted: refresh()
