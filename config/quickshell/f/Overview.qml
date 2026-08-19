@@ -19,6 +19,15 @@ Scope {
                             || (t.appId || "").toLowerCase().includes(q));
     }
 
+    function plural(n) {
+        const tens = n % 100;
+        if (tens >= 11 && tens <= 14) return "окон";
+        const ones = n % 10;
+        if (ones === 1) return "окно";
+        if (ones >= 2 && ones <= 4) return "окна";
+        return "окон";
+    }
+
     function toggle() { root.shown = !root.shown; }
     function close()  { root.shown = false; }
 
@@ -62,7 +71,7 @@ Scope {
         Rectangle {
             anchors.fill: parent
             color: "#000000"
-            opacity: root.shown ? 0.55 : 0
+            opacity: root.shown ? 0.62 : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
 
             MouseArea {
@@ -105,7 +114,7 @@ Scope {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.filter === ""
-                        ? root.windows.length + (root.windows.length === 1 ? " окно" : " окон")
+                        ? root.windows.length + " " + root.plural(root.windows.length)
                         : "󰍉  " + root.filter
                     color: Colors.fgDim
                     opacity: 0.7
@@ -116,7 +125,7 @@ Scope {
                 Grid {
                     id: grid
                     anchors.horizontalCenter: parent.horizontalCenter
-                    columns: Math.min(4, Math.max(1, root.windows.length))
+                    columns: Math.min(3, Math.max(1, root.windows.length))
                     spacing: 16
 
                     Repeater {
@@ -129,8 +138,8 @@ Scope {
 
                             readonly property bool current: root.selected === index
 
-                            width: 320
-                            height: 214
+                            width: 380
+                            height: 252
                             radius: 16
                             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
                             border.width: 1
