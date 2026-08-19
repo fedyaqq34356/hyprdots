@@ -59,7 +59,7 @@ PACMAN_PKGS=(
     waybar kitty rofi-wayland dunst cava fastfetch yazi
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber
-    cliphist wl-clipboard grim slurp ffmpeg imagemagick jq python
+    cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
     qt6ct kvantum papirus-icon-theme xdg-user-dirs polkit
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     zsh zsh-autosuggestions zsh-syntax-highlighting

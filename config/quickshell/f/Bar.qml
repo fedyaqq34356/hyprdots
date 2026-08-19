@@ -187,6 +187,23 @@ Scope {
                     }
 
                     Text {
+                        text: Keyboard.code
+                        color: Colors.accentAlt
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 11
+                        font.weight: Font.DemiBold
+
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -3
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Keyboard.next()
+                        }
+
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                    }
+
+                    Text {
                         readonly property var src: Pipewire.defaultAudioSource
                         visible: src && src.audio && src.audio.muted
                         text: "󰍭"
