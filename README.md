@@ -163,6 +163,7 @@ the OSD says so instead of the keys doing nothing at all.
 | `Super` + `E` | file manager |
 | `Super` + `W` | wallpaper picker |
 | `Super` + `V` | clipboard history |
+| `Super` + `Shift` + `V` | wipe the clipboard and its history |
 | `Super` + `P` | power menu |
 | `Super` + `Q` | close window |
 | `Super` + `F` | fullscreen |
@@ -200,6 +201,8 @@ config/
   quickshell/f/  the Quickshell stack (bar, launcher, clipboard, OSD, notifications)
   waybar/        the fallback bar
   matugen/       colour-scheme templates for every application
+  firejail/      sandbox overrides shared by every profile
+  cliphist/      clipboard history limits
   kitty/         terminal
   rofi/          launcher used by the Waybar stack
   cava/          audio visualiser themes and shaders
@@ -377,6 +380,7 @@ cd hyprdots
 | `Super` + `E` | файловый менеджер |
 | `Super` + `W` | выбор обоев |
 | `Super` + `V` | история буфера обмена |
+| `Super` + `Shift` + `V` | стереть буфер обмена и его историю |
 | `Super` + `P` | меню выключения |
 | `Super` + `Q` | закрыть окно |
 | `Super` + `F` | полный экран |
@@ -414,6 +418,8 @@ config/
   quickshell/f/  набор Quickshell (панель, лаунчер, буфер, индикаторы, уведомления)
   waybar/        запасная панель
   matugen/       шаблоны цветовой схемы для всех приложений
+  firejail/      общие правила песочницы для всех профилей
+  cliphist/      ограничения истории буфера обмена
   kitty/         терминал
   rofi/          лаунчер для набора с Waybar
   cava/          темы и шейдеры визуализатора звука
