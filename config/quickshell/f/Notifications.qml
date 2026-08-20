@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import Quickshell.Widgets
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -21,6 +22,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-notifications"
         id: win
         screen: Focus.screen
 
@@ -33,7 +35,8 @@ Scope {
 
         exclusiveZone: 0
         color: "transparent"
-        visible: true
+
+        visible: !GameMode.active
 
         mask: Region { item: col }
 

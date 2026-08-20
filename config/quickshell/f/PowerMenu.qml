@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.UPower
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -93,6 +94,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-power"
         id: win
         screen: Focus.screen
         visible: root.shown
@@ -121,8 +123,6 @@ Scope {
             height: column.implicitHeight + 56
             focus: true
 
-            // A backdrop so the menu reads as one object instead of a few
-            // tiles floating over whatever is on the desktop.
             Rectangle {
                 anchors.fill: parent
                 radius: 30

@@ -205,6 +205,7 @@ binding falls back to wlogout, which now reads the matugen palette as well.
 | `all` | every connected monitor in one image |
 | `edit` | an area, then [satty](https://github.com/gabm/Satty) for arrows and blur |
 | `color` | the colour under the cursor, hex into the clipboard |
+| `ocr` | an area, its text recognised and copied — no image is kept |
 
 The screen is frozen with `hyprpicker -r -z` while the selection is being drawn, so menus and
 animations stay where they are. Every shot goes to `~/Pictures/Screenshots` **and** to the
@@ -254,6 +255,19 @@ signal level, link rate and live throughput, a radio toggle and the list of acce
 password field, clicking the active one disconnects. It drives `nmcli` and refreshes off
 `nmcli monitor` events.
 
+Next to the workspaces sits the player: album art and a spectrum drawn by a second `cava` instance
+reading raw levels off pipewire. The track name lives in the tooltip and in the panel instead of
+scrolling in the bar. Clicking the art pauses, the island opens the player panel, the wheel changes
+track. `cava` only runs while something is playing.
+
+Hovering any bar element raises a tooltip under the strip — the bar window is taller than the strip
+itself, and its input region is masked to the strip so the empty space passes clicks through to the
+windows below. Clicking the clock opens a calendar.
+
+Peripherals with their own battery — mouse, keyboard, headset — appear only once they drop below
+40%, since a permanent "mouse charged" glyph is noise. While the launcher is open, the workspace
+dots of the highlighted application light up, so a second copy never gets started by accident.
+
 Volume, microphone and brightness all raise the same OSD card at the bottom of the focused screen.
 Brightness goes through `brightnessctl -c backlight`; on machines that expose no backlight device
 the OSD says so instead of the keys doing nothing at all.
@@ -268,7 +282,7 @@ the OSD says so instead of the keys doing nothing at all.
 | `Super` + `Return` | terminal (kitty) |
 | `Super` + `T` | scratchpad terminal |
 | `Super` + `D` | application launcher |
-| `Super` + `Tab` | window overview with live thumbnails |
+| `Super` + `Tab` | window overview with thumbnails |
 | `Super` + `E` | file manager |
 | `Super` + `W` | wallpaper picker |
 | `Super` + `N` | Wi-Fi networks |
@@ -293,8 +307,13 @@ the OSD says so instead of the keys doing nothing at all.
 | `Ctrl` + `Print` | screenshot of every monitor |
 | `Super` + `Shift` + `S` | screenshot of a selected area |
 | `Super` + `Shift` + `C` | colour picker, hex to the clipboard |
+| `Super` + `Shift` + `T` | recognise text in a selected area, copy it |
 | `Super` + `Alt` + `R` | record the monitor, with system audio |
 | `Super` + `Alt` + `Shift` + `R` | record a selected area |
+| `Super` + `A` | media player panel |
+| `Super` + `Shift` + `D` | calendar |
+| `Super` + `G` | game mode |
+| media keys | play / pause, next, previous track |
 | `Super` + `Shift` + `M` | audio panel (microphone and output) |
 | `Super` + `M` | mute the microphone |
 | `Super` + `Shift` + `=` / `-` | microphone volume |
@@ -519,6 +538,7 @@ user_pref("media.av1.enabled", false);
 | `all` | все подключённые мониторы одним снимком |
 | `edit` | область, затем [satty](https://github.com/gabm/Satty) — стрелки, размытие, текст |
 | `color` | цвет под курсором, hex в буфер обмена |
+| `ocr` | область, её текст распознаётся и уходит в буфер — картинка не сохраняется |
 
 Пока идёт выделение, экран заморожен через `hyprpicker -r -z` — меню и анимации не убегают. Каждый
 снимок попадает в `~/Pictures/Screenshots` **и** в буфер обмена, а уведомление показывает его же
@@ -554,6 +574,19 @@ user_pref("media.av1.enabled", false);
 и собирает маленькую пользовательскую тему иконок: она наследует Papirus-Dark и подменяет только
 папки — без root и без записи в `/usr/share`. Запускается хуком matugen, поэтому новые обои
 перекрашивают папки вместе со всем остальным.
+
+Рядом с рабочими столами живёт плеер: обложка и спектр, который рисует второй экземпляр `cava`,
+читающий сырые уровни с pipewire. Название трека вынесено в подсказку и в панель, а не бежит
+строкой по бару. Клик по обложке ставит паузу, клик по островку открывает панель плеера, колесо
+переключает треки. `cava` запускается только пока что-то играет.
+
+Наведение на любой элемент бара поднимает подсказку под полосой: окно бара выше самой полосы, а
+область ввода обрезана по ней, поэтому пустое место пропускает клики к окнам под баром. Клик по
+часам открывает календарь.
+
+Периферия со своей батареей — мышь, клавиатура, гарнитура — показывается только когда заряд падает
+ниже 40%: постоянный значок «мышь заряжена» это шум. Пока открыт лаунчер, точки рабочих столов, где
+уже запущено подсвеченное приложение, загораются — вторая копия не заводится по недосмотру.
 
 Клик по значку Wi-Fi (или `Super`+`N`) открывает панель сетей: текущее подключение с уровнем
 сигнала, скоростью канала и живым трафиком, переключатель радио, список точек. Клик по защищённой сети открывает поле пароля, клик по
@@ -603,8 +636,13 @@ user_pref("media.av1.enabled", false);
 | `Ctrl` + `Print` | скриншот всех мониторов |
 | `Super` + `Shift` + `S` | скриншот выделенной области |
 | `Super` + `Shift` + `C` | пипетка, hex в буфер обмена |
+| `Super` + `Shift` + `T` | распознать текст в выделенной области, скопировать |
 | `Super` + `Alt` + `R` | запись монитора со звуком системы |
 | `Super` + `Alt` + `Shift` + `R` | запись выделенной области |
+| `Super` + `A` | панель плеера |
+| `Super` + `Shift` + `D` | календарь |
+| `Super` + `G` | игровой режим |
+| мультимедийные клавиши | пауза, следующий и предыдущий трек |
 | `Super` + `Shift` + `M` | панель звука (микрофон и вывод) |
 | `Super` + `M` | выключить микрофон |
 | `Super` + `Shift` + `=` / `-` | громкость микрофона |

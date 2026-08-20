@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# screenshot.sh [region|window|output|all|edit|color] [--no-edit]
-#
-#   region  select an area with the mouse            (default)
-#   window  pick one window, snapped to its geometry
-#   output  the monitor under the cursor
-#   all     every connected monitor at once
-#   edit    region, then open the annotation editor
-#   color   pick a colour under the cursor, copy the hex
-#
-# Every shot lands in ~/Pictures/Screenshots and in the clipboard.
 
 set -uo pipefail
 
@@ -23,7 +13,6 @@ notify() { bash "$NOTIFY" "$@" >/dev/null 2>&1; }
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
-# Freeze the screen so animations and menus stay put while selecting.
 FREEZE_PID=""
 freeze() {
     have hyprpicker || return 0
@@ -106,7 +95,6 @@ case "$MODE" in
         if have hyprpicker; then
             HEX=$(hyprpicker -a -f hex)
         else
-            # No hyprpicker: pick a single point and read the pixel out of grim.
             POINT=$(slurp -p -b 00000000) || exit 1
             [ -z "$POINT" ] && exit 1
             HEX=$(grim -g "$POINT" -t ppm - \
@@ -120,8 +108,47 @@ case "$MODE" in
         notify "Цвет" "$HEX скопирован" -i "$SWATCH" -t 3000 -a screenshot
         (sleep 6; rm -f "$SWATCH") >/dev/null 2>&1 &
         ;;
+    ocr)
+        have tesseract || {
+            notify "OCR" "Не установлен: pacman -S tesseract tesseract-data-rus" -t 4000
+            exit 1
+        }
+
+        SLURP_STYLE=(-d -b 000000aa -c efbd90ff -s efbd9033 -w 3)
+
+        GEOM=$(pick_region) || {
+            notify "OCR" "Область не выбрана" -t 2000 -a screenshot -r 9993
+            exit 1
+        }
+        if [ -z "$GEOM" ]; then
+            notify "OCR" "Область не выбрана" -t 2000 -a screenshot -r 9993
+            exit 1
+        fi
+        unfreeze
+
+        SHOT=$(mktemp -t ocr-XXXXXX.png)
+        trap 'unfreeze; rm -f "$SHOT"' EXIT
+
+        grim -g "$GEOM" "$SHOT" || exit 1
+
+        if have magick; then
+            magick "$SHOT" -colorspace Gray -resize 300% -sharpen 0x1 "$SHOT" 2>/dev/null
+        fi
+
+        TEXT=$(tesseract "$SHOT" - -l "${OCR_LANG:-rus+eng}" 2>/dev/null)
+        TEXT=$(printf '%s' "$TEXT" | sed -e 's/[[:space:]]*$//' -e '/./,$!d')
+
+        if [ -z "$TEXT" ]; then
+            notify "OCR" "Текст не распознан" -t 2500 -a screenshot -r 9993
+            exit 1
+        fi
+
+        printf '%s' "$TEXT" | wl-copy
+        PREVIEW=$(printf '%s' "$TEXT" | head -c 160)
+        notify "OCR" "$PREVIEW" -t 4000 -a screenshot -r 9993
+        ;;
     *)
-        echo "usage: screenshot.sh [region|window|output|all|edit|color]" >&2
+        echo "usage: screenshot.sh [region|window|output|all|edit|color|ocr]" >&2
         exit 2
         ;;
 esac

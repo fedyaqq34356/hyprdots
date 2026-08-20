@@ -69,7 +69,6 @@ if ((UPDATE)) && ((!PULLED)) && [[ -d "$SRC_DIR/.git" ]]; then
         git -C "$SRC_DIR" log --oneline "$before..$after"
         printf '\n'
     fi
-    # the script may have changed underneath us, so start the new one
     args=(--update --pulled)
     ((DRY_RUN)) && args+=(--dry-run)
     ((SKIP_PACKAGES)) && args+=(--no-packages)
@@ -117,8 +116,6 @@ bootstrap_aur_helper() {
 
 install_packages() {
     log "Installing packages from the official repositories"
-    # An update of the configuration should not drag the whole system with
-    # it: only pull in packages that are actually missing.
     if ((UPDATE)); then
         run sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
     else

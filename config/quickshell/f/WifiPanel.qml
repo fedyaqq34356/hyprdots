@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -18,7 +19,6 @@ Scope {
             Network.refresh();
             Network.rescan();
         }
-        // Throughput is only sampled while the panel is actually on screen.
         Network.sampling = shown;
     }
 
@@ -36,6 +36,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-wifi"
         id: win
         screen: Focus.screen
         visible: root.shown
@@ -259,7 +260,6 @@ Scope {
                     }
                 }
 
-                // Password prompt, shown only after picking a secured network.
                 Rectangle {
                     width: parent.width
                     height: 38
