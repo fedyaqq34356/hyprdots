@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# record-toggle.sh [screen|region] [--mic|--no-audio]
-#
-# Records system output by default, --mic records the microphone instead.
-#
-# Second call stops whatever is running, whichever mode started it.
-# State for the bar indicator lives in $XDG_RUNTIME_DIR/recording.state:
-#   <start epoch> <output file>
 
 set -uo pipefail
 
@@ -19,7 +12,6 @@ if pgrep -x wf-recorder >/dev/null; then
     FILE=$(cut -d' ' -f2- < "$STATE" 2>/dev/null)
     pkill -INT -x wf-recorder
     rm -f "$STATE"
-    # wf-recorder needs a moment to flush the container
     for _ in 1 2 3 4 5 6 7 8 9 10; do
         pgrep -x wf-recorder >/dev/null || break
         sleep 0.2
@@ -53,7 +45,6 @@ ARGS=(-f "$FILE" -c libx264 -p preset=veryfast -p crf=22 --pixel-format yuv420p)
 if [ "$MODE" = region ]; then
     GEOM=$(slurp -d -b 00000055 -c efbd90ff -s efbd9022 -w 2) || exit 1
     [ -z "$GEOM" ] && exit 1
-    # H.264 needs even dimensions; wf-recorder rounds the geometry itself.
     ARGS+=(-g "$GEOM")
 else
     MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')

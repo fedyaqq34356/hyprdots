@@ -16,3 +16,5 @@ config/wlogout/colors.css
 config/hypr/idle-inhibit.list
 config/gtk-3.0/gtk.css
 config/gtk-4.0/colors-matugen.css
+__pycache__/
+*.pyc

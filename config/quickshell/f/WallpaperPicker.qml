@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -104,6 +105,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-wallpapers"
         id: win
         screen: Focus.screen
         visible: root.shown

@@ -15,10 +15,8 @@ Singleton {
     property bool busy: false
     property string error: ""
 
-    // Link rate as negotiated with the access point, e.g. "72 Mbit/s".
     property string linkRate: ""
 
-    // Live throughput, sampled only while something is watching.
     property string iface: ""
     property bool sampling: false
     property real rxRate: 0
@@ -39,8 +37,6 @@ Singleton {
         return "󰤟";
     }
 
-    // nmcli -t escapes field separators as "\:", so a plain split would cut
-    // SSIDs containing a colon in half.
     function fields(line) {
         const out = [];
         let cur = "";
@@ -77,9 +73,6 @@ Singleton {
                         active = entry;
                         root.linkRate = f.length > 4 ? f[4].trim() : "";
                     }
-                    // Same SSID can appear once per band or access point:
-                    // keep the strongest reading, but never lose the fact
-                    // that one of them is the connection we are on.
                     if (seen[entry.ssid] !== undefined) {
                         const prev = list[seen[entry.ssid]];
                         const wasActive = prev.active || entry.active;
@@ -133,8 +126,6 @@ Singleton {
         }
     }
 
-    // Counters come straight from sysfs; one read per second is cheaper than
-    // any monitoring daemon, and it only runs while the panel is open.
     property real lastRx: -1
     property real lastTx: -1
 
@@ -185,8 +176,6 @@ Singleton {
         onTriggered: root.refresh()
     }
 
-    // NetworkManager reports every state change here, so the bar reacts to a
-    // dropped link immediately instead of at the next poll.
     Process {
         id: monitor
         command: ["nmcli", "monitor"]

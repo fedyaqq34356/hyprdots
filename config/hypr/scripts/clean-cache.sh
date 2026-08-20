@@ -16,8 +16,6 @@ fi
 
 dir_size() { du -sh "$1" 2>/dev/null | cut -f1; }
 
-# Freedesktop trash: drop everything deleted more than $TRASH_DAYS days ago.
-# The deletion date lives in the .trashinfo file, not in the file's own mtime.
 purge_trash() {
     local root="$1" cutoff="$2" info name when ts
     [[ -d "$root/files" ]] || return 0
@@ -32,7 +30,6 @@ purge_trash() {
         rm -f -- "$info"
     done
 
-    # Entries whose .trashinfo was lost: fall back to the file's own age.
     for name in "$root"/files/*; do
         [[ -e "$root/info/$(basename "$name").trashinfo" ]] && continue
         (( $(stat -c %Y "$name" 2>/dev/null || echo 0) > cutoff )) && continue

@@ -8,10 +8,8 @@ import QtQuick
 Singleton {
     id: root
 
-    // Full keymap name reported by Hyprland, e.g. "English (US)".
     property string layout: ""
 
-    // Two-letter badge for the bar.
     readonly property string code: {
         const l = layout.toLowerCase();
         if (l.startsWith("english"))   return "EN";
@@ -23,8 +21,6 @@ Singleton {
         return layout === "" ? "--" : layout.slice(0, 2).toUpperCase();
     }
 
-    // Hyprland only reports a layout change through an event, so the current
-    // one has to be read once at startup.
     Process {
         id: query
         command: ["hyprctl", "-j", "devices"]
@@ -46,7 +42,6 @@ Singleton {
 
         function onRawEvent(event) {
             if (event.name !== "activelayout") return;
-            // data is "<keyboard name>,<layout name>"
             const comma = event.data.indexOf(",");
             if (comma !== -1) root.layout = event.data.slice(comma + 1);
         }

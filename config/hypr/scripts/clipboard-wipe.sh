@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Drop the clipboard history and whatever is currently in the clipboard.
 NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
 
 COUNT=$(cliphist list 2>/dev/null | wc -l)

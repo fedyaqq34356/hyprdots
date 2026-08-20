@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -77,6 +78,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-osd"
         id: win
         screen: Focus.screen
         visible: root.shown

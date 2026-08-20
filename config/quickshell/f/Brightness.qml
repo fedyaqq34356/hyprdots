@@ -7,12 +7,10 @@ import QtQuick
 Singleton {
     id: root
 
-    // false when the machine exposes no backlight device at all
     property bool available: false
     property real value: 0
     property string device: ""
 
-    // brightnessctl -m prints "<name>,<class>,<current>,<percent>%,<max>"
     function parse(line) {
         const f = line.trim().split(",");
         if (f.length < 5) return;

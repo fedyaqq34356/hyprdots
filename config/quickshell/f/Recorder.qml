@@ -21,7 +21,6 @@ Singleton {
         return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
     }
 
-    // record-toggle.sh writes "<start epoch> <file>" and deletes the file on stop.
     FileView {
         id: state
         path: root.statePath

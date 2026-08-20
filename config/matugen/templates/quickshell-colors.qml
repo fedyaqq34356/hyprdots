@@ -14,10 +14,6 @@ Singleton {
     readonly property color accentAlt: "{{colors.tertiary.default.hex}}";
     readonly property color accentText:  "{{colors.on_primary.default.hex}}";
 
-    // Status colours keep their meaning through hue - red, amber, green - but
-    // borrow saturation and lightness from the scheme's own error colour, so
-    // they sit in the same tonal range as everything else instead of looking
-    // pasted in from another palette.
     readonly property color bad: "{{colors.error.default.hex}}"
 
     readonly property real statusSat:

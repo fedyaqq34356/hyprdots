@@ -59,6 +59,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-overview"
         id: win
         screen: Focus.screen
         visible: root.shown
@@ -163,12 +164,11 @@ Scope {
                                     id: preview
                                     anchors.fill: parent
                                     captureSource: card.modelData
+
                                     live: false
                                     constraintSize: Qt.size(parent.width, parent.height)
                                 }
 
-                                // A window that has never been mapped on this
-                                // output gives no frame; fall back to the icon.
                                 IconImage {
                                     anchors.centerIn: parent
                                     visible: !preview.hasContent

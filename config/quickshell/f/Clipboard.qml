@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Widgets
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -127,6 +128,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-clipboard"
         id: win
         screen: Focus.screen
         visible: root.shown

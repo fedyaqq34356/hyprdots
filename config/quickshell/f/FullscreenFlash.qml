@@ -20,6 +20,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-flash"
         id: win
         screen: Focus.screen
         visible: true
