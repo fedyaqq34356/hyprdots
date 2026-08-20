@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -14,7 +15,6 @@ Scope {
     readonly property var sink:   Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource
 
-    // Every input device, so the panel can switch the default microphone.
     readonly property var sources: Pipewire.nodes.values.filter(
         n => n && !n.isSink && !n.isStream && n.audio)
 
@@ -169,6 +169,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-audio"
         id: win
         screen: Focus.screen
         visible: root.shown

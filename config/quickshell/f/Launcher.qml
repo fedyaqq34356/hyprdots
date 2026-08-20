@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Widgets
 import QtQuick
+import Quickshell.Wayland
 
 Scope {
     id: root
@@ -22,8 +23,19 @@ Scope {
             search.text = "";
             list.currentIndex = 0;
             search.forceActiveFocus();
+        } else {
+            Running.query = null;
         }
     }
+
+    readonly property var highlighted: {
+        if (!root.shown) return null;
+        const i = list.currentIndex;
+        if (i < 0) return null;
+        return root.results[i] || null;
+    }
+
+    onHighlightedChanged: Running.query = root.highlighted
 
     FileView {
         id: usageFile
@@ -96,6 +108,7 @@ Scope {
     }
 
     PanelWindow {
+        WlrLayershell.namespace: "qs-launcher"
         id: win
         screen: Focus.screen
         visible: root.shown

@@ -23,11 +23,7 @@ GTK_CSS = HOME / ".config/gtk-3.0/gtk.css"
 
 IGNORE = {"#ffffff", "#e4e4e4", "#000000"}
 
-# Variants that imitate another icon set rather than being a plain hue: they
-# draw a different folder silhouette and look out of place next to the rest of
-# Papirus.
 SKIP = {"adwaita", "breeze", "nordic", "yaru"}
-
 
 def accent() -> str:
     """The accent matugen generated for GTK, or a sane default."""
@@ -38,11 +34,9 @@ def accent() -> str:
     m = re.search(r"@define-color\s+accent_color\s+(#[0-9a-fA-F]{6})", text)
     return m.group(1).lower() if m else "#5294e2"
 
-
 def rgb(hex_colour: str):
     h = hex_colour.lstrip("#")
     return tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
-
 
 def lab(hex_colour: str):
     def linear(c):
@@ -59,14 +53,10 @@ def lab(hex_colour: str):
     fx, fy, fz = f(x), f(y), f(z)
     return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
 
-
 def distance(a: str, b: str) -> float:
     la, aa, ba = lab(a)
     lb, ab, bb = lab(b)
-    # Lightness counts for less: the hue is what makes a folder read as green
-    # or blue, and Papirus only ships one shade per hue anyway.
     return (0.4 * (la - lb)) ** 2 + (aa - ab) ** 2 + (ba - bb) ** 2
-
 
 def palette():
     """Representative colour of every folder variant Papirus provides."""
@@ -76,17 +66,13 @@ def palette():
         name = svg.stem[len("folder-"):]
         if "-" in name or name in SKIP:
             continue
-        # A colour variant always comes with a full set of sub-icons; a plain
-        # folder-android.svg does not, and must not be mistaken for one.
         if not (places / f"folder-{name}-download.svg").exists():
             continue
         found = [c.lower() for c in re.findall(r"fill:(#[0-9a-fA-F]{6})", svg.read_text())]
         found = [c for c in found if c not in IGNORE]
         if found:
-            # the last fill is the front face of the folder
             out[name] = found[-1]
     return out
-
 
 def build(colour: str) -> int:
     if TARGET.exists():
@@ -118,7 +104,6 @@ def build(colour: str) -> int:
             linked += 1
     return linked
 
-
 def use_theme():
     for ini in (HOME / ".config/gtk-3.0/settings.ini",
                 HOME / ".config/gtk-4.0/settings.ini"):
@@ -129,12 +114,10 @@ def use_theme():
         if new != text:
             ini.write_text(new, encoding="utf-8")
 
-    # GTK reads the theme name from gsettings too when it is available
     subprocess.run(
         ["gsettings", "set", "org.gnome.desktop.interface", "icon-theme", THEME_NAME],
         stderr=subprocess.DEVNULL, check=False,
     )
-
 
 def main():
     want = accent()
@@ -148,7 +131,6 @@ def main():
     use_theme()
     print(f"accent {want} -> folder-{pick} ({colours[pick]}), {count} icons linked")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
