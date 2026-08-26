@@ -11,6 +11,7 @@ Scope {
     property string icon: ""
     property real value: 0
     property bool showBar: true
+    property bool flat: false
     property string label: ""
 
     readonly property var sink: Pipewire.defaultAudioSink
@@ -26,10 +27,11 @@ Scope {
         onTriggered: root.shown = false
     }
 
-    function flash(ic, val, withBar, lbl) {
+    function flash(ic, val, withBar, lbl, isFlat) {
         root.icon = ic;
         root.value = val;
         root.showBar = withBar;
+        root.flat = isFlat === true;
         root.label = lbl;
         root.shown = true;
         hideTimer.restart();
@@ -46,8 +48,8 @@ Scope {
         }
         function onMutedChanged() {
             const m = root.sink.audio.muted;
-            root.flash(m ? "󰝟" : "󰕾", root.sink.audio.volume, !m,
-                       m ? "muted" : Math.round(root.sink.audio.volume * 100) + "%");
+            root.flash(m ? "󰝟" : "󰕾", root.sink.audio.volume, true,
+                       m ? "muted" : Math.round(root.sink.audio.volume * 100) + "%", m);
         }
     }
 
@@ -57,8 +59,8 @@ Scope {
 
         function onMutedChanged() {
             const m = root.source.audio.muted;
-            root.flash(m ? "󰍭" : "󰍬", root.source.audio.volume, !m,
-                       m ? "mic off" : Math.round(root.source.audio.volume * 100) + "%");
+            root.flash(m ? "󰍭" : "󰍬", root.source.audio.volume, true,
+                       m ? "mic off" : Math.round(root.source.audio.volume * 100) + "%", m);
         }
         function onVolumeChanged() {
             if (root.source.audio.muted) return;
@@ -95,7 +97,7 @@ Scope {
             id: card
             anchors.centerIn: parent
             width: 220
-            height: root.showBar ? 92 : 76
+            height: root.showBar ? 108 : 76
             radius: 20
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
             border.width: 1
@@ -141,22 +143,23 @@ Scope {
                     }
                 }
 
-                Rectangle {
+                WaveMeter {
                     visible: root.showBar
                     width: parent.width
-                    height: 5
-                    radius: 3
-                    color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.22)
+                    height: 26
 
-                    Rectangle {
-                        width: parent.width * Math.max(0, Math.min(1, root.value))
-                        height: parent.height
-                        radius: 3
-                        color: Colors.accent
-                        Behavior on width {
-                            NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
-                        }
-                    }
+                    value: root.value
+                    flat: root.flat
+                    // While something is playing, the wave takes its shape from
+                    // the actual spectrum instead of a decorative sine. Cava is
+                    // already running for the bar, so this costs nothing extra.
+                    spectrum: Cava.active ? Cava.levels : []
+                    // Only run the animation while the OSD is actually on screen.
+                    animating: root.shown
+
+                    fillColor: Colors.accent
+                    trackColor: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                        Colors.fgDim.b, 0.22)
                 }
             }
         }

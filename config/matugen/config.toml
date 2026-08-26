@@ -51,3 +51,13 @@ post_hook   = "python3 $HOME/.config/hypr/scripts/papirus-tint.py"
 [templates.gtk4]
 input_path  = "~/.config/matugen/templates/gtk-colors.css"
 output_path = "~/.config/gtk-4.0/colors-matugen.css"
+
+[templates.librewolf]
+input_path  = "~/.config/matugen/templates/librewolf-userchrome.css"
+output_path = "~/.config/matugen/out/librewolf-userchrome.css"
+post_hook   = "python3 $HOME/.config/hypr/scripts/apply-browser-theme.py"
+
+[templates.cursor]
+input_path  = "~/.config/matugen/templates/cursor-trigger.txt"
+output_path = "~/.config/matugen/out/cursor-trigger.txt"
+post_hook   = "python3 $HOME/.config/hypr/scripts/gen-cursor-theme.py --reload"

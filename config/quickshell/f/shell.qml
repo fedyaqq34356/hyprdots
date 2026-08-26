@@ -15,6 +15,9 @@ ShellRoot {
         }
     }
 
+
+    // mic-lock.sh удерживает громкость микрофона против автоподстройки WebRTC.
+    // Ручные изменения должны переставлять его цель, иначе сторож их откатит.
     Process {
         id: micTarget
         command: ["sh", "-c", ""]
@@ -43,6 +46,7 @@ ShellRoot {
     Overview { id: overview }
     MediaPanel { id: media }
     Calendar { id: calendar }
+    SysRings { id: sysRings }
 
     GlobalShortcut {
         appid: "quickshell"
@@ -109,8 +113,8 @@ ShellRoot {
 
     GlobalShortcut {
         appid: "quickshell"
-        name: "gameMode"
-        onPressed: GameMode.toggle()
+        name: "sysRings"
+        onPressed: sysRings.toggle()
     }
 
     GlobalShortcut {
