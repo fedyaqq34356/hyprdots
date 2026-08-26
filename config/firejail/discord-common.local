@@ -1,0 +1,21 @@
+# Демонстрация экрана в Wayland идёт через xdg-desktop-portal: Discord просит
+# у портала ScreenCast-сессию по D-Bus, получает в ответ файловый дескриптор
+# PipeWire и уже по нему забирает картинку.
+#
+# Профиль discord-common ставит `dbus-user filter` и открывает только
+# org.freedesktop.Notifications, поэтому вызов портала молча отклоняется, и в
+# окне выбора экрана нет ни одного источника. Сокет PipeWire при этом уже
+# доступен: whitelist-runuser-common.inc пропускает ${RUNUSER}/pipewire-*.
+# Не хватает ровно разрешения на разговор с порталом.
+
+dbus-user.talk org.freedesktop.portal.Desktop
+dbus-user.talk org.freedesktop.portal.Documents
+
+# Портал открывает окно выбора источника через реализацию для рабочего стола.
+# На Hyprland это xdg-desktop-portal-hyprland, на диалоги файлов — gtk.
+dbus-user.talk org.freedesktop.impl.portal.desktop.hyprland
+dbus-user.talk org.freedesktop.impl.portal.desktop.gtk
+
+# Пока идёт демонстрация, Discord просит не гасить экран.
+dbus-user.talk org.freedesktop.ScreenSaver
+dbus-user.talk org.freedesktop.PowerManagement.Inhibit
