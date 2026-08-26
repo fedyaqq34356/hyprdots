@@ -327,33 +327,6 @@ Scope {
                         anchors.centerIn: parent
                         spacing: 8
 
-                        Row {
-                            id: gameRow
-                            spacing: 5
-                            visible: GameMode.active
-                            Layout.alignment: Qt.AlignVCenter
-
-                            Tip {
-                                text: GameMode.manual
-                                    ? "Игровой режим включён вручную\nSuper+G — выключить"
-                                    : "Игровой режим: окно в полный экран\nэффекты выключены, экран не гаснет"
-                            }
-
-                            Text {
-                                text: "󰊴"
-                                color: Colors.accentAlt
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 12
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            TapHandler {
-                                cursorShape: Qt.PointingHandCursor
-                                onTapped: GameMode.toggle()
-                            }
-                        }
-
-                        Sep { visible: GameMode.active }
 
                         Row {
                             id: recRow
@@ -625,7 +598,14 @@ Scope {
 
             IdleInhibitor {
                 window: win
-                enabled: GameMode.active
+                enabled: {
+                    const list = ToplevelManager.toplevels
+                        ? ToplevelManager.toplevels.values : [];
+                    for (const t of list) {
+                        if (t && t.fullscreen) return true;
+                    }
+                    return false;
+                }
             }
 
             Item {
