@@ -17,6 +17,11 @@ FAIL_WINDOW=120
 
 fails=0
 last_fail=0
+# Set when quickshell has failed too many times in a row. Deliberately NOT
+# written to the choice file: persisting the fallback meant one bad afternoon
+# of restarts silently changed which shell starts at every future login, and
+# the user found waybar after a reboot with no idea why.
+fell_back=0
 # A restart the user performed by hand looks identical to a crash. Requiring
 # two consecutive misses means a quick manual restart is not counted.
 misses=0
@@ -45,6 +50,10 @@ while true; do
 
     choice=$(cat "$CHOICE_FILE" 2>/dev/null || echo waybar)
 
+    # The user editing the choice file clears an earlier fallback.
+    [[ "$choice" == "qs" ]] || fell_back=0
+    (( fell_back )) && choice=waybar
+
     if [[ "$choice" != "qs" ]]; then
         # waybar is the chosen shell: quickshell must not also be up.
         pgrep -x quickshell >/dev/null && pkill -x quickshell 2>/dev/null
@@ -72,12 +81,12 @@ while true; do
     fails=$((fails + 1))
 
     if (( fails >= FAIL_LIMIT )); then
-        echo waybar > "$CHOICE_FILE"
+        fell_back=1
         pkill -x quickshell 2>/dev/null
         start_waybar
         sleep 2
         notify -u critical "Shell" \
-            "quickshell упал $fails раза подряд, откатился на waybar"
+            "quickshell упал $fails раза подряд, временно waybar. Вернуть: echo qs > ~/.config/hypr/shell-choice"
         fails=0
         continue
     fi
