@@ -5,7 +5,6 @@ config/hypr/hyprpaper.conf
 config/hypr/shell-choice
 config/waybar/colors.css
 config/kitty/colors.conf
-config/quickshell/f/Colors.qml
 config/rofi/colors/matugen.rasi
 config/cava/config
 config/dunst/dunstrc

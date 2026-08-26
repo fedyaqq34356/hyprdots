@@ -17,6 +17,13 @@ Scope {
         precision: SystemClock.Minutes
     }
 
+    // Отдельные часы под секундную дугу. Основные тикают раз в минуту, и
+    // будить их каждую секунду ради надписи "HH:mm" незачем.
+    SystemClock {
+        id: secondsClock
+        precision: SystemClock.Seconds
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -141,6 +148,70 @@ Scope {
 
                     Tip { text: "Рабочие столы  ·  клик — переход" }
 
+                    // След перехода. Активная точка переезжает мгновенно, и
+                    // взгляд каждый раз ищет её заново; полоска, стягивающаяся
+                    // от старой позиции к новой, показывает направление.
+                    property real trailFrom: 0
+                    property real trailTo: 0
+                    property real lastActiveX: -1
+
+                    function markActive(centerX) {
+                        if (wsIsland.lastActiveX >= 0
+                            && Math.abs(centerX - wsIsland.lastActiveX) > 1) {
+                            wsIsland.trailFrom = wsIsland.lastActiveX;
+                            wsIsland.trailTo = centerX;
+                            trailAnim.restart();
+                        }
+                        wsIsland.lastActiveX = centerX;
+                    }
+
+                    Rectangle {
+                        id: trail
+                        z: -1
+                        height: 3
+                        radius: 1.5
+                        anchors.verticalCenter: parent.verticalCenter
+                        opacity: 0
+                        color: Colors.accent
+
+                        // Начинает во всю длину перехода и втягивается в точку
+                        // назначения, оставляя ощущение движения, а не вспышки.
+                        property real head: wsIsland.trailTo
+                        property real tail: wsIsland.trailFrom
+
+                        x: Math.min(head, tail)
+                        width: Math.abs(head - tail)
+
+                        SequentialAnimation {
+                            id: trailAnim
+
+                            ScriptAction {
+                                script: {
+                                    trail.tail = wsIsland.trailFrom;
+                                    trail.head = wsIsland.trailTo;
+                                    trail.opacity = 0.75;
+                                }
+                            }
+
+                            ParallelAnimation {
+                                NumberAnimation {
+                                    target: trail; property: "tail"
+                                    to: wsIsland.trailTo
+                                    duration: 380
+                                    easing.type: Easing.OutCubic
+                                }
+                                SequentialAnimation {
+                                    PauseAnimation { duration: 140 }
+                                    NumberAnimation {
+                                        target: trail; property: "opacity"; to: 0
+                                        duration: 240
+                                        easing.type: Easing.InCubic
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Row {
                         id: wsRow
                         anchors.centerIn: parent
@@ -202,7 +273,20 @@ Scope {
                                     }
                                 }
 
-                                onIsActiveChanged: if (isActive) pulseAnim.restart()
+                                onIsActiveChanged: {
+                                    if (!isActive) return;
+                                    pulseAnim.restart();
+
+                                    // Позицию берём отложенно: точка в этот
+                                    // момент ещё меняет ширину, и её центр
+                                    // успеет уехать.
+                                    Qt.callLater(function () {
+                                        if (!wsDot.isActive) return;
+                                        const c = wsDot.mapToItem(
+                                            wsIsland, wsDot.width / 2, 0);
+                                        wsIsland.markActive(c.x);
+                                    });
+                                }
 
                                 MouseArea {
                                     anchors.fill: parent
@@ -376,6 +460,35 @@ Scope {
 
                     Tip {
                         text: calendar.longDate + "\nклик — календарь"
+                    }
+
+                    // Секунды — дугой по контуру островка, а не цифрами:
+                    // движение видно, а мельтешения в баре нет.
+                    RectRing {
+                        id: secondsArc
+                        anchors.fill: parent
+                        radius: parent.radius
+                        thickness: 2
+                        inset: 1
+                        color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                       Colors.accent.b, 0.85)
+
+                        readonly property int seconds:
+                            secondsClock.date.getSeconds()
+
+                        value: seconds / 60
+
+                        // Пересчёт раз в секунду выглядел бы дёрганым, поэтому
+                        // дуга доезжает до следующей отметки за ту же секунду.
+                        // Переход через 0 идёт без анимации, иначе она откатила
+                        // бы дугу назад через весь островок.
+                        Behavior on value {
+                            enabled: secondsArc.seconds !== 0
+                            NumberAnimation {
+                                duration: 1000
+                                easing.type: Easing.Linear
+                            }
+                        }
                     }
 
                     RollText {
