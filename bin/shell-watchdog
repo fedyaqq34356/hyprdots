@@ -56,14 +56,14 @@ while true; do
 
     if [[ "$choice" != "qs" ]]; then
         # waybar is the chosen shell: quickshell must not also be up.
-        pgrep -x quickshell >/dev/null && pkill -x quickshell 2>/dev/null
+        pgrep -x 'quickshell|qs' >/dev/null && pkill -x 'quickshell|qs' 2>/dev/null
         start_waybar
         fails=0
         misses=0
         continue
     fi
 
-    if pgrep -x quickshell >/dev/null; then
+    if pgrep -x 'quickshell|qs' >/dev/null; then
         # quickshell owns the bar, so nothing else may draw one.
         pgrep -x waybar >/dev/null && stop_waybar
         fails=0
@@ -82,7 +82,7 @@ while true; do
 
     if (( fails >= FAIL_LIMIT )); then
         fell_back=1
-        pkill -x quickshell 2>/dev/null
+        pkill -x 'quickshell|qs' 2>/dev/null
         start_waybar
         sleep 2
         notify -u critical "Shell" \
