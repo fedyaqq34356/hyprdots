@@ -11,6 +11,11 @@ FAIL_WINDOW=120
 fails=0
 last_fail=0
 
+notify() {
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send -a "shell" "$@" 2>/dev/null
+}
+
 start_qs() {
     QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
 }
@@ -34,6 +39,10 @@ while true; do
     (( now - last_fail > FAIL_WINDOW )) && fails=0
     last_fail=$now
     fails=$((fails + 1))
+
+    # Tell the user something happened. A bar that silently blinks out and
+    # comes back looks like a graphics glitch; a crash should be visible.
+    notify "Shell" "quickshell упал, перезапускаю (попытка $fails)"
 
     if (( fails >= FAIL_LIMIT )); then
         echo waybar > "$CHOICE_FILE"

@@ -609,6 +609,62 @@ Scope {
                         Row {
                             spacing: 8
 
+                            // Туннель. Появляется только когда он поднят —
+                            // постоянная серая точка «VPN выключен» сообщала бы
+                            // то, что и так верно почти всегда.
+                            Item {
+                                id: vpnDot
+                                width: Vpn.up ? 12 : 0
+                                height: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: width > 0
+                                opacity: Vpn.up ? 1 : 0
+
+                                Behavior on width {
+                                    NumberAnimation { duration: 260; easing.type: Easing.OutBack }
+                                }
+                                Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                                Tip { text: "VPN  ·  " + Vpn.label + "\nклик — обновить адрес" }
+
+                                // Ореол дышит, пока адрес выясняется, и замирает,
+                                // когда ответ получен.
+                                Rectangle {
+                                    id: halo
+                                    anchors.centerIn: parent
+                                    width: 12
+                                    height: 12
+                                    radius: 6
+                                    color: "transparent"
+                                    border.width: 1.5
+                                    border.color: Colors.good
+                                    opacity: 0
+
+                                    SequentialAnimation on opacity {
+                                        running: Vpn.up && Vpn.checking
+                                        loops: Animation.Infinite
+                                        NumberAnimation { to: 0.55; duration: 700; easing.type: Easing.OutCubic }
+                                        NumberAnimation { to: 0.05; duration: 700; easing.type: Easing.InCubic }
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 7
+                                    height: 7
+                                    radius: 3.5
+                                    color: Vpn.exitIp === "" ? Colors.warn : Colors.good
+                                    Behavior on color { ColorAnimation { duration: 300 } }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Vpn.refresh()
+                                }
+                            }
+
                             Text {
                                 id: netGlyph
                                 text: Network.glyph

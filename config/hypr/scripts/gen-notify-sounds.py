@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Synthesize the notification sounds used by the Quickshell notification popup.
 
-Writes two WAVs to ~/.local/share/sounds/f/:
+Writes three WAVs to ~/.local/share/sounds/f/:
 
   notify.wav    soft two-note marimba-ish blip for normal notifications
   critical.wav  lower, slower, slightly dissonant pair for critical ones
+  limit.wav     dry knock for hitting the top or bottom of the volume range
 
 Everything is generated here rather than shipped as a binary, so the sounds can
 be retuned by editing the note tables below and re-running this script.
@@ -123,10 +124,27 @@ def build_critical() -> list[float]:
     return buf
 
 
+def build_limit() -> list[float]:
+    """A short, dry knock for hitting the end of the volume range.
+
+    Deliberately not musical: it should read as a physical stop, not as a
+    notification. Low, very fast decay, no reverb tail.
+    """
+    length = int(0.22 * RATE)
+    buf = [0.0] * length
+
+    tone(note("A2"), 0.18, 0.60, 0.000, buf, decay=42.0)
+    tone(note("E3"), 0.18, 0.28, 0.000, buf, decay=55.0)
+
+    normalize(buf, 0.55)
+    return buf
+
+
 def main() -> None:
     write_wav(OUT_DIR / "notify.wav", build_normal())
     write_wav(OUT_DIR / "critical.wav", build_critical())
-    print(f"wrote {OUT_DIR}/notify.wav and critical.wav")
+    write_wav(OUT_DIR / "limit.wav", build_limit())
+    print(f"wrote {OUT_DIR}/notify.wav, critical.wav and limit.wav")
 
 
 if __name__ == "__main__":
