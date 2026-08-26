@@ -13,7 +13,7 @@ if [[ "$CHOICE" == "qs" ]] && command -v quickshell >/dev/null; then
     pkill -x dunst 2>/dev/null
     QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
     sleep 2
-    if pgrep -x quickshell >/dev/null; then
+    if pgrep -x 'quickshell|qs' >/dev/null; then
         start_watchdog
         exit 0
     fi
