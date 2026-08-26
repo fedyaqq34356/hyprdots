@@ -7,7 +7,7 @@ ensure_dunst() {
 }
 
 start_waybar() {
-    pkill -x quickshell 2>/dev/null
+    pkill -x 'quickshell|qs' 2>/dev/null
     sleep 0.4
     pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
     ensure_dunst
@@ -22,11 +22,11 @@ start_qs() {
     fi
     pkill -x waybar     2>/dev/null
     pkill -x dunst      2>/dev/null
-    pkill -x quickshell 2>/dev/null
+    pkill -x 'quickshell|qs' 2>/dev/null
     sleep 0.6
     QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
     sleep 2
-    if pgrep -x quickshell >/dev/null; then
+    if pgrep -x 'quickshell|qs' >/dev/null; then
         echo "qs" > "$CHOICE_FILE"
         echo "-> quickshell"
     else
@@ -43,7 +43,7 @@ case "${1:-status}" in
         echo "saved choice: $(cat "$CHOICE_FILE" 2>/dev/null || echo 'none (waybar)')"
         pgrep -x waybar     >/dev/null && echo "  waybar     running"
         pgrep -x dunst      >/dev/null && echo "  dunst      running"
-        pgrep -x quickshell >/dev/null && echo "  quickshell running"
+        pgrep -x 'quickshell|qs' >/dev/null && echo "  quickshell running"
         true
         ;;
     *) echo "usage: shell-switch [qs|waybar|status]" >&2; exit 1 ;;
