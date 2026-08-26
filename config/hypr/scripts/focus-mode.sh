@@ -1,13 +1,4 @@
 #!/bin/sh
-# Dim everything except the focused window.
-#
-# Hyprland already dims inactive windows slightly (dim_strength 0.08 in
-# hyprland.conf). Focus mode pushes that far enough to actually remove the
-# surroundings from view, and turns off the decoration that draws the eye:
-# blur on inactive surfaces and the animated border gradient.
-#
-# State lives in a file rather than in a variable, because the toggle is a
-# fresh process each time it is pressed.
 
 STATE="${XDG_RUNTIME_DIR:-/tmp}/focus-mode"
 
@@ -32,8 +23,6 @@ enable() {
 }
 
 disable() {
-    # Values mirror hyprland.conf; a plain `hyprctl reload` would also undo any
-    # unsaved experiments the user is in the middle of.
     hyprctl --batch "\
         keyword decoration:dim_inactive true;\
         keyword decoration:dim_strength 0.08;\

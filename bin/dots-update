@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Pull the latest revision of this configuration and apply it in place.
 set -euo pipefail
 
 for dir in "$HOME/hyprdots" "${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots"; do

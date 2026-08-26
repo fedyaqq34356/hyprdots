@@ -17,8 +17,6 @@ Scope {
         precision: SystemClock.Minutes
     }
 
-    // Отдельные часы под секундную дугу. Основные тикают раз в минуту, и
-    // будить их каждую секунду ради надписи "HH:mm" незачем.
     SystemClock {
         id: secondsClock
         precision: SystemClock.Seconds
@@ -39,16 +37,11 @@ Scope {
                 right: true
             }
 
-            // Окно выше самой полосы: в запасе снизу рисуются подсказки.
-            // Ввод при этом ограничен полосой, иначе прозрачная зона
-            // перехватывала бы клики по окнам под баром.
             implicitHeight: 96
             exclusiveZone: 34
             color: "transparent"
             mask: Region { item: strip }
 
-            // Подсказка вешается на элемент как дочерний обработчик наведения:
-            // HoverHandler не Item, поэтому в раскладке места не занимает.
             component Tip: HoverHandler {
                 property string text: ""
                 onHoveredChanged: hovered ? tips.show(parent, text) : tips.hide(parent)
@@ -66,8 +59,6 @@ Scope {
                 id: island
                 property bool hovered: false
 
-                // Каждый островок выезжает сверху со своей задержкой, так что
-                // бар собирается слева направо, а не возникает целиком.
                 property int introDelay: 0
 
                 radius: 12
@@ -80,8 +71,6 @@ Scope {
 
                 scale: hovered ? 1.04 : 1.0
 
-                // Островки лежат на обоях, а не на плоскости: без тени
-                // граница читается только за счёт рамки.
                 layer.enabled: true
                 layer.effect: MultiEffect {
                     shadowEnabled: true
@@ -100,8 +89,6 @@ Scope {
                     onHoveredChanged: island.hovered = hovered
                 }
 
-                // Свой transform, а не y: островки выровнены по anchors, и
-                // трогать y напрямую нельзя.
                 opacity: 0
                 transform: Translate { id: intro; y: -42 }
 
@@ -128,8 +115,6 @@ Scope {
                 }
             }
 
-            // Полоса бара. Всё видимое содержимое живёт здесь, чтобы маска
-            // ввода совпадала ровно с ним.
             Item {
                 id: strip
                 anchors.top: parent.top
@@ -148,9 +133,6 @@ Scope {
 
                     Tip { text: "Рабочие столы  ·  клик — переход" }
 
-                    // След перехода. Активная точка переезжает мгновенно, и
-                    // взгляд каждый раз ищет её заново; полоска, стягивающаяся
-                    // от старой позиции к новой, показывает направление.
                     property real trailFrom: 0
                     property real trailTo: 0
                     property real lastActiveX: -1
@@ -174,8 +156,6 @@ Scope {
                         opacity: 0
                         color: Colors.accent
 
-                        // Начинает во всю длину перехода и втягивается в точку
-                        // назначения, оставляя ощущение движения, а не вспышки.
                         property real head: wsIsland.trailTo
                         property real tail: wsIsland.trailFrom
 
@@ -227,8 +207,6 @@ Scope {
                                     Hyprland.focusedWorkspace
                                     && Hyprland.focusedWorkspace.id === modelData.id
 
-                                // Пока в лаунчере подсвечено приложение,
-                                // столы с его окнами загораются отдельно.
                                 readonly property bool hasApp:
                                     Running.onWorkspace(modelData.id)
 
@@ -277,9 +255,6 @@ Scope {
                                     if (!isActive) return;
                                     pulseAnim.restart();
 
-                                    // Позицию берём отложенно: точка в этот
-                                    // момент ещё меняет ширину, и её центр
-                                    // успеет уехать.
                                     Qt.callLater(function () {
                                         if (!wsDot.isActive) return;
                                         const c = wsDot.mapToItem(
@@ -299,8 +274,6 @@ Scope {
                     }
                 }
 
-                // Плеер. Появляется только когда есть что показывать, иначе
-                // бар держал бы пустое место под редкий случай.
                 Island {
                     id: mediaIsland
                     introDelay: 110
@@ -327,8 +300,6 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 7
 
-                        // Обложка в кольце прогресса: позиция в треке видна,
-                        // не занимая места под отдельную полосу или цифры.
                         Item {
                             width: 22
                             height: 22
@@ -361,8 +332,6 @@ Scope {
                                     visible: Media.art !== "" && status === Image.Ready
                                 }
 
-                                // Пока обложка не загрузилась — состояние
-                                // воспроизведения всё равно видно.
                                 Text {
                                     anchors.centerIn: parent
                                     visible: !barCover.visible
@@ -380,9 +349,6 @@ Scope {
                             }
                         }
 
-                        // Вместо названия — спектр. Название целиком
-                        // читается в подсказке и в панели плеера, а в баре
-                        // полосы говорят то же самое без прокрутки.
                         Row {
                             id: spectrum
                             width: parent.width - 36
@@ -390,8 +356,6 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 2
 
-                            // Полосы делят доступную ширину поровну, иначе
-                            // спектр не дотягивался бы до края островка.
                             readonly property real barWidth:
                                 (width - spacing * (Cava.bars - 1)) / Cava.bars
 
@@ -401,10 +365,6 @@ Scope {
                                 Rectangle {
                                     required property int index
 
-                                    // cava редко упирается в потолок своей
-                                    // шкалы, поэтому добавляем запас усиления
-                                    // и подрезаем — иначе спектр выглядит
-                                    // придавленным даже на громкой музыке.
                                     readonly property real level: {
                                         const v = Cava.levels[index];
                                         if (v === undefined) return 0;
@@ -415,8 +375,6 @@ Scope {
                                     radius: width / 2
                                     anchors.verticalCenter: parent.verticalCenter
 
-                                    // Минимум оставляет ровную линию точек
-                                    // в тишине вместо пустого места.
                                     height: Math.max(width, level * spectrum.height)
 
                                     color: Media.playing ? Colors.accent : Colors.fgDim
@@ -462,8 +420,6 @@ Scope {
                         text: calendar.longDate + "\nклик — календарь"
                     }
 
-                    // Секунды — дугой по контуру островка, а не цифрами:
-                    // движение видно, а мельтешения в баре нет.
                     RectRing {
                         id: secondsArc
                         anchors.fill: parent
@@ -478,10 +434,6 @@ Scope {
 
                         value: seconds / 60
 
-                        // Пересчёт раз в секунду выглядел бы дёрганым, поэтому
-                        // дуга доезжает до следующей отметки за ту же секунду.
-                        // Переход через 0 идёт без анимации, иначе она откатила
-                        // бы дугу назад через весь островок.
                         Behavior on value {
                             enabled: secondsArc.seconds !== 0
                             NumberAnimation {
@@ -519,9 +471,6 @@ Scope {
                         anchors.centerIn: parent
                         spacing: 8
 
-
-                        // Recording is the loudest thing in the bar on purpose:
-                        // it is the only state you can forget you left running.
                         Row {
                             id: recRow
                             spacing: 6
@@ -604,14 +553,9 @@ Scope {
 
                         Sep { visible: SystemTray.items.values.length > 0 }
 
-                        // Connectivity and sound: glyphs stay quiet, only a
-                        // problem state takes colour.
                         Row {
                             spacing: 8
 
-                            // Туннель. Появляется только когда он поднят —
-                            // постоянная серая точка «VPN выключен» сообщала бы
-                            // то, что и так верно почти всегда.
                             Item {
                                 id: vpnDot
                                 width: Vpn.up ? 12 : 0
@@ -627,8 +571,6 @@ Scope {
 
                                 Tip { text: "VPN  ·  " + Vpn.label + "\nклик — обновить адрес" }
 
-                                // Ореол дышит, пока адрес выясняется, и замирает,
-                                // когда ответ получен.
                                 Rectangle {
                                     id: halo
                                     anchors.centerIn: parent
@@ -758,13 +700,9 @@ Scope {
 
                         Sep {}
 
-                        // Identity of the session: layout and charge. These are
-                        // the two you actually read, so they carry the contrast.
                         Row {
                             spacing: 9
 
-                            // Периферия подаёт голос, только когда садится:
-                            // постоянный значок «мышь заряжена» — шум.
                             Row {
                                 id: periphRow
                                 spacing: 4
@@ -852,8 +790,6 @@ Scope {
                 }
             }
 
-            // Пока любое окно в полный экран, сессия не должна засыпать:
-            // геймпад и мышь в игре не всегда считаются активностью ввода.
             IdleInhibitor {
                 window: win
                 enabled: {
@@ -866,8 +802,6 @@ Scope {
                 }
             }
 
-            // Подсказки рисуются под полосой, в немаскированной зоне окна.
-            // Один экземпляр на бар: одновременно наведён всегда один элемент.
             Item {
                 id: tips
                 anchors.fill: parent
@@ -899,7 +833,6 @@ Scope {
                     opacity: tips.current ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 140 } }
 
-                    // Не даём подсказке уехать за край экрана.
                     x: Math.max(6, Math.min(tips.width - width - 6,
                                             tips.at.x - width / 2))
                     y: 42

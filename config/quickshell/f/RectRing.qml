@@ -1,11 +1,5 @@
 import QtQuick
 
-// A stroke that runs part-way around a rounded rectangle.
-//
-// `value` is the fraction of the perimeter to draw, walked clockwise from the
-// top centre. Used for the notification lifetime countdown and for the seconds
-// hand around the clock island: in both cases the progress is the outline of
-// the thing itself rather than a separate bar competing for space.
 Item {
     id: ring
 
@@ -15,7 +9,6 @@ Item {
     property color color: "#ffffff"
     property color trackColor: "transparent"
 
-    // Distance from the item's edge to the centre of the stroke.
     property real inset: 0
 
     Canvas {
@@ -38,7 +31,6 @@ Item {
             const straightV = Math.max(0, h - 2 * r);
             const arc = (Math.PI / 2) * r;
 
-            // Track: the full outline, drawn underneath.
             if (ring.trackColor.a > 0) {
                 ctx.beginPath();
                 ctx.moveTo(r, 0);
@@ -65,8 +57,6 @@ Item {
             ctx.beginPath();
             ctx.moveTo(w / 2, 0);
 
-            // Each leg spends from the budget and stops part-way through when
-            // it runs out, which is what lets the stroke end mid-edge.
             function line(x1, y1, x2, y2, len) {
                 if (budget <= 0) return false;
                 const t = len > 0 ? Math.min(1, budget / len) : 1;

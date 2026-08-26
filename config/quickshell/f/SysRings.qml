@@ -3,13 +3,6 @@ import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 
-// System monitor panel: six load gauges, opened on a keybind.
-//
-// Everything lives inside a Loader that is inactive by default. While the panel
-// is closed there is no window, no Canvas, no timer and no sysmon.py process;
-// toggling it on creates them, toggling it off destroys them. That keeps a
-// widget that is only glanced at a few times a day from polling nvidia-smi
-// around the clock.
 Scope {
     id: root
 
@@ -24,7 +17,6 @@ Scope {
     }
 
     Loader {
-        // Kept alive briefly past `shown` so the close animation can play.
         active: root.shown || closeDelay.running
 
         sourceComponent: Component {
@@ -43,7 +35,6 @@ Scope {
                 exclusiveZone: 0
                 color: "transparent"
 
-                // Click anywhere outside the card to dismiss.
                 MouseArea {
                     anchors.fill: parent
                     onClicked: root.close()
@@ -64,7 +55,6 @@ Scope {
                     border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                           Colors.accent.b, 0.28)
 
-                    // Swallow clicks so they do not reach the dismiss handler.
                     MouseArea { anchors.fill: parent }
 
                     opacity: root.shown ? 1 : 0
@@ -133,7 +123,6 @@ Scope {
                         }
                     }
 
-                    // Rings appear one after another rather than all at once.
                     SequentialAnimation {
                         running: root.shown
                         PauseAnimation { duration: 60 }
@@ -148,7 +137,6 @@ Scope {
                     }
                 }
 
-                // The data source. Dies with the Loader.
                 Process {
                     id: monitor
                     running: true
@@ -182,7 +170,6 @@ Scope {
         }
     }
 
-    // Holds the Loader open just long enough for the fade-out.
     Timer {
         id: closeDelay
         interval: 360
