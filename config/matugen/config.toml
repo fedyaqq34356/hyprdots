@@ -30,9 +30,13 @@ post_hook   = "hyprctl reload"
 input_path  = "~/.config/matugen/templates/hyprlock-colors.conf"
 output_path = "~/.config/hypr/config/lock-colors.conf"
 
+# Палитра для quickshell уходит в JSON вне каталога конфига, а не в
+# Colors.qml. Запись QML-файла заставляла quickshell перезагрузить весь
+# конфиг: все объекты пересоздавались, и цвета менялись скачком. Теперь
+# Colors.qml читает этот JSON в рантайме и перетекает в новые цвета.
 [templates.quickshell]
-input_path  = "~/.config/matugen/templates/quickshell-colors.qml"
-output_path = "~/.config/quickshell/f/Colors.qml"
+input_path  = "~/.config/matugen/templates/quickshell-colors.json"
+output_path = "~/.cache/matugen/colors.json"
 
 [templates.dunst]
 input_path  = "~/.config/matugen/templates/dunstrc"
