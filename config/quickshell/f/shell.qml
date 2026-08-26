@@ -47,7 +47,6 @@ ShellRoot {
     MediaPanel { id: media }
     Calendar { id: calendar }
     SysRings { id: sysRings }
-    Vault { id: vault }
     Lock {}
 
     GlobalShortcut {
@@ -130,12 +129,6 @@ ShellRoot {
         appid: "quickshell"
         name: "sysRings"
         onPressed: sysRings.toggle()
-    }
-
-    GlobalShortcut {
-        appid: "quickshell"
-        name: "vault"
-        onPressed: vault.toggle()
     }
 
     GlobalShortcut {
