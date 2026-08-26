@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Keep exactly one bar running for the session.
+#
+# Two jobs:
+#   - restart quickshell if it dies, and fall back to waybar if it keeps dying;
+#   - make sure the two never run at the same time. A fallback that leaves the
+#     old shell running gives you two stacked bars, which is what happened
+#     before this check existed.
 
 exec 9>"$HOME/.cache/shell-watchdog.lock"
 flock -n 9 || exit 0
@@ -10,6 +17,9 @@ FAIL_WINDOW=120
 
 fails=0
 last_fail=0
+# A restart the user performed by hand looks identical to a crash. Requiring
+# two consecutive misses means a quick manual restart is not counted.
+misses=0
 
 notify() {
     command -v notify-send >/dev/null 2>&1 || return 0
@@ -20,40 +30,58 @@ start_qs() {
     QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
 }
 
+stop_waybar() {
+    pkill -x waybar 2>/dev/null
+    pkill -x dunst  2>/dev/null
+}
+
+start_waybar() {
+    pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
+    pgrep -x dunst  >/dev/null || setsid -f dunst  >/dev/null 2>&1
+}
+
 while true; do
     sleep "$CHECK_INTERVAL"
 
     choice=$(cat "$CHOICE_FILE" 2>/dev/null || echo waybar)
 
     if [[ "$choice" != "qs" ]]; then
+        # waybar is the chosen shell: quickshell must not also be up.
+        pgrep -x quickshell >/dev/null && pkill -x quickshell 2>/dev/null
+        start_waybar
         fails=0
+        misses=0
         continue
     fi
 
     if pgrep -x quickshell >/dev/null; then
+        # quickshell owns the bar, so nothing else may draw one.
+        pgrep -x waybar >/dev/null && stop_waybar
         fails=0
+        misses=0
         continue
     fi
+
+    misses=$((misses + 1))
+    (( misses < 2 )) && continue
+    misses=0
 
     now=$SECONDS
     (( now - last_fail > FAIL_WINDOW )) && fails=0
     last_fail=$now
     fails=$((fails + 1))
 
-    # Tell the user something happened. A bar that silently blinks out and
-    # comes back looks like a graphics glitch; a crash should be visible.
-    notify "Shell" "quickshell упал, перезапускаю (попытка $fails)"
-
     if (( fails >= FAIL_LIMIT )); then
         echo waybar > "$CHOICE_FILE"
-        pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
-        pgrep -x dunst  >/dev/null || setsid -f dunst  >/dev/null 2>&1
+        pkill -x quickshell 2>/dev/null
+        start_waybar
         sleep 2
-        notify-send -u critical "Shell" \
-            "quickshell crashed $fails times, fell back to waybar" 2>/dev/null
+        notify -u critical "Shell" \
+            "quickshell упал $fails раза подряд, откатился на waybar"
         fails=0
         continue
     fi
 
+    notify "Shell" "quickshell упал, перезапускаю (попытка $fails)"
     start_qs
 done
