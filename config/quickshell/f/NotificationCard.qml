@@ -3,18 +3,11 @@ import Quickshell.Widgets
 import Quickshell.Services.Notifications
 import QtQuick
 
-// One notification popup.
-//
-// Enters by sliding in from off the right edge, leaves the same way. The
-// remaining lifetime is drawn as a stroke that retreats around the card's own
-// rounded border, so the countdown is part of the shape instead of a separate
-// progress bar.
 Rectangle {
     id: card
 
     required property var modelData
 
-    // Emitted once the leave animation has played; the parent does the dismiss.
     signal closed()
 
     readonly property bool critical:
@@ -24,7 +17,6 @@ Rectangle {
     readonly property int lifetime:
         modelData.expireTimeout > 0 ? modelData.expireTimeout : 5000
 
-    // 1 at spawn, 0 when the card is due to go away.
     property real remaining: 1
     property bool leaving: false
 
@@ -38,8 +30,6 @@ Rectangle {
 
     opacity: 0
     transform: Translate { id: slide; x: 340 }
-
-    // --- lifecycle -------------------------------------------------------
 
     Component.onCompleted: {
         enter.start();
@@ -59,7 +49,6 @@ Rectangle {
             duration: 260; easing.type: Easing.OutCubic
         }
         SequentialAnimation {
-            // Lands with a small settle rather than a bounce.
             NumberAnimation {
                 target: card; property: "scale"; from: 0.92; to: 1.03
                 duration: 380; easing.type: Easing.OutCubic
@@ -97,7 +86,6 @@ Rectangle {
         leave.start();
     }
 
-    // Drives both the border countdown and the dismissal.
     NumberAnimation {
         id: countdown
         target: card
@@ -108,14 +96,11 @@ Rectangle {
         onFinished: card.close()
     }
 
-    // --- countdown border ------------------------------------------------
-
     Canvas {
         id: ring
         anchors.fill: parent
         anchors.margins: 1
         renderStrategy: Canvas.Cooperative
-        // Critical notifications stay until clicked, so no countdown is drawn.
         visible: !card.critical
 
         onPaint: {
@@ -129,7 +114,6 @@ Rectangle {
             if (frac <= 0)
                 return;
 
-            // Perimeter of the rounded rect, walked clockwise from top-centre.
             const straightH = w - 2 * r;
             const straightV = h - 2 * r;
             const arc = (Math.PI / 2) * r;
@@ -139,8 +123,6 @@ Rectangle {
             ctx.beginPath();
             ctx.moveTo(w / 2, 0);
 
-            // Each leg consumes from the budget and stops mid-way when it runs
-            // out, which is what makes the stroke retreat smoothly.
             function line(x1, y1, x2, y2, len) {
                 if (budget <= 0) return false;
                 const t = Math.min(1, budget / len);
@@ -177,7 +159,6 @@ Rectangle {
     onRemainingChanged: ring.requestPaint()
     onEdgeChanged: ring.requestPaint()
 
-    // Critical notifications get a static border instead of a countdown.
     Rectangle {
         visible: card.critical
         anchors.fill: parent
@@ -186,8 +167,6 @@ Rectangle {
         border.width: 2
         border.color: card.edge
     }
-
-    // --- content ---------------------------------------------------------
 
     Row {
         anchors.left: parent.left
@@ -251,7 +230,6 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
 
-        // Hovering pauses the countdown so a notification can be read.
         onEntered: {
             if (!card.leaving && countdown.running)
                 countdown.pause();

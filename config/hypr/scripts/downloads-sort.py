@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""Sort ~/Downloads into per-type subfolders as files land.
-
-Polls rather than using inotify so it has no dependencies beyond the standard
-library. A file is only moved once its size has stopped changing between two
-consecutive passes, which keeps in-progress downloads where they are.
-"""
-
 import os
 import shutil
 import subprocess
@@ -16,7 +9,6 @@ from pathlib import Path
 DOWNLOADS = Path.home() / "Downloads"
 INTERVAL = 5
 
-# Extension -> subfolder. Anything unlisted goes to Other/.
 CATEGORIES = {
     "Images": {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg",
                ".avif", ".heic", ".ico", ".tiff"},
@@ -39,16 +31,11 @@ CATEGORIES = {
 
 EXT_MAP = {ext: folder for folder, exts in CATEGORIES.items() for ext in exts}
 
-# Never touch these - they mean a download is still running.
 PARTIAL_SUFFIXES = (".part", ".crdownload", ".download", ".tmp", ".partial",
                     ".!qb", ".aria2")
 
-# Subfolders this script owns; it must not recurse into them.
 OWNED = set(CATEGORIES) | {"Other"}
 
-
-# Fallback when the extension is unknown or missing: ask the kernel's magic
-# database what the file actually is. Maps a MIME type onto the same folders.
 MIME_PREFIXES = {
     "image/": "Images",
     "video/": "Video",
@@ -97,9 +84,7 @@ MIME_EXACT = {
     "application/x-sqlite3": "Documents",
 }
 
-
 def category_by_mime(path: Path) -> str | None:
-    """Ask `file` what this is. Returns None if it cannot tell or is missing."""
     if not shutil.which("file"):
         return None
     try:
@@ -120,9 +105,7 @@ def category_by_mime(path: Path) -> str | None:
             return folder
     return None
 
-
 def category_for(path: Path) -> str:
-    # .tar.gz and friends: the meaningful part is the outer extension.
     if path.name.lower().endswith((".tar.gz", ".tar.xz", ".tar.bz2",
                                    ".tar.zst")):
         return "Archives"
@@ -131,13 +114,9 @@ def category_for(path: Path) -> str:
     if known:
         return known
 
-    # No extension, or one nothing recognises: fall back to content sniffing
-    # before giving up and calling it Other.
     return category_by_mime(path) or "Other"
 
-
 def unique_target(target: Path) -> Path:
-    """Return a path that does not exist yet, suffixing " (2)", " (3)", ..."""
     if not target.exists():
         return target
     stem, suffix = target.stem, target.suffix
@@ -147,7 +126,6 @@ def unique_target(target: Path) -> Path:
         if not candidate.exists():
             return candidate
         n += 1
-
 
 def candidates() -> list[Path]:
     out = []
@@ -161,7 +139,6 @@ def candidates() -> list[Path]:
         out.append(entry)
     return out
 
-
 def notify(count: int) -> None:
     if not shutil.which("notify-send"):
         return
@@ -169,13 +146,11 @@ def notify(count: int) -> None:
     os.system(f'notify-send -a downloads-sort -i folder-download '
               f'"Downloads sorted" "{count} {word} filed away"')
 
-
 def main() -> int:
     if not DOWNLOADS.is_dir():
         print(f"{DOWNLOADS} does not exist", file=sys.stderr)
         return 1
 
-    # size seen on the previous pass, keyed by path
     last_size: dict[Path, int] = {}
 
     while True:
@@ -189,7 +164,6 @@ def main() -> int:
                 continue
             seen[path] = size
 
-            # Only move once the size has held steady for a full interval.
             if last_size.get(path) != size:
                 continue
 
@@ -206,7 +180,6 @@ def main() -> int:
         if moved:
             notify(moved)
         time.sleep(INTERVAL)
-
 
 if __name__ == "__main__":
     try:

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 CHOICE=$(cat "$HOME/.config/hypr/shell-choice" 2>/dev/null || echo waybar)
 
-# The watchdog supervises quickshell for the whole session, so it has to run
-# whether or not the first launch succeeds. Starting it only on failure meant
-# a crash an hour into the session left the bar gone until the next login.
 start_watchdog() {
     pgrep -f "$HOME/.local/bin/shell-watchdog" >/dev/null && return 0
     setsid -f "$HOME/.local/bin/shell-watchdog" >/dev/null 2>&1

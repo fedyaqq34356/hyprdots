@@ -35,16 +35,6 @@ if [[ ! -f "$COLORS" ]]; then
 EOF
 fi
 
-# Which lock to use. The Quickshell lock draws the handwritten clock, the wave
-# password field and the now-playing card; hyprlock cannot. It is opt-in
-# because a lock screen is the one component where a bug locks you out: if
-# quickshell dies while the session is locked, the compositor keeps the screen
-# locked with nothing drawn on it, and the way back is a TTY.
-#
-#   echo qs       > ~/.config/hypr/lock-choice   use the Quickshell lock
-#   echo hyprlock > ~/.config/hypr/lock-choice   use hyprlock (default)
-#
-# `lock.sh qs` and `lock.sh hyprlock` override the file for one run.
 CHOICE_FILE="$CONFIG_DIR/lock-choice"
 choice=$(cat "$CHOICE_FILE" 2>/dev/null || echo hyprlock)
 
@@ -53,16 +43,12 @@ case "${1:-}" in
 esac
 
 if [[ "$choice" == "qs" ]]; then
-    # Backdrop for the Quickshell lock: the desktop as it is, blurred. Has to
-    # be taken before anything covers the screen.
     "$CONFIG_DIR/scripts/lock-prepare.sh" 2>/dev/null
 
     if command -v qs >/dev/null 2>&1 && qs -c f ipc call lock lock >/dev/null 2>&1; then
         exit 0
     fi
 
-    # Shell not running, or the lock refused: fall through to hyprlock rather
-    # than leaving the session unlocked.
     notify-send -u critical "Экран блокировки" \
         "Quickshell не ответил, блокирую через hyprlock" 2>/dev/null
 fi

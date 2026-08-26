@@ -4,12 +4,6 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// VPN state for the bar.
-//
-// Detection is local and cheap: a WireGuard, OpenVPN or Tailscale interface
-// that is up means a tunnel exists. The exit address is a separate, much more
-// expensive question, so it is only asked when the tunnel state actually
-// changes rather than on every poll.
 Singleton {
     id: root
 
@@ -20,7 +14,6 @@ Singleton {
     property string exitCountry: ""
     property bool checking: false
 
-    // Interface name prefixes that mean "tunnel".
     readonly property var prefixes: ["wg", "tun", "tailscale", "proton", "nordlynx"]
 
     readonly property string label: {
@@ -31,8 +24,6 @@ Singleton {
         return out + "\n" + root.exitIp
              + (root.exitCountry === "" ? "" : "  ·  " + root.exitCountry);
     }
-
-    // --- local detection --------------------------------------------------
 
     Process {
         id: probe
@@ -80,11 +71,6 @@ Singleton {
         triggeredOnStart: true
         onTriggered: probe.running = true
     }
-
-    // --- exit address -----------------------------------------------------
-    //
-    // This is the only part that leaves the machine, so it runs when the
-    // tunnel comes up and when the user asks, never on a timer.
 
     Process {
         id: lookupProc

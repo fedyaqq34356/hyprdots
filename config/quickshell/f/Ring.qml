@@ -1,14 +1,8 @@
 import QtQuick
 
-// A single load gauge: a thin arc that fills clockwise from the top.
-//
-// The stroke colour is a function of the value, walking accent -> warn -> bad,
-// so a hot GPU is red without needing a separate threshold indicator. A faint
-// full ring stays behind it as the track.
 Item {
     id: gauge
 
-    // 0..1, or -1 when the metric is unavailable on this machine.
     property real value: 0
     property string label: ""
     property string caption: ""
@@ -21,7 +15,6 @@ Item {
     implicitWidth: 96
     implicitHeight: 96
 
-    // The drawn value trails the real one so the arc sweeps instead of jumping.
     property real shown: 0
     onValueChanged: shown = available ? value : 0
 
@@ -32,7 +25,6 @@ Item {
         }
     }
 
-    // accent below half, warn at three quarters, bad at the top of the range.
     readonly property color arcColor: {
         const v = gauge.shown;
         if (v < 0.5)
@@ -61,7 +53,6 @@ Item {
             const r = Math.min(cx, cy) - gauge.thickness;
             const start = -Math.PI / 2;
 
-            // Track.
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.strokeStyle = Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
@@ -72,7 +63,6 @@ Item {
             if (!gauge.available || gauge.shown <= 0.001)
                 return;
 
-            // Value arc.
             ctx.beginPath();
             ctx.arc(cx, cy, r, start, start + Math.PI * 2 * gauge.shown);
             ctx.strokeStyle = gauge.arcColor;
@@ -80,7 +70,6 @@ Item {
             ctx.lineCap = "round";
             ctx.stroke();
 
-            // A dot at the head of the arc, to catch the eye as it moves.
             const angle = start + Math.PI * 2 * gauge.shown;
             ctx.beginPath();
             ctx.arc(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r,
