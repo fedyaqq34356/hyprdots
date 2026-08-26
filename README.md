@@ -13,28 +13,62 @@ recolour themselves around it.
 
 <br>
 
-<img src="assets/hero.png" alt="The desktop: bar, fastfetch, yazi" width="100%">
+<img src="assets/hero.jpg" alt="The desktop" width="100%">
+
+<img src="assets/bar.png" alt="The bar" width="100%">
 
 <table>
 <tr>
-<td><img src="assets/overview.png" alt="Window overview"></td>
-<td><img src="assets/launcher.png" alt="Application launcher"></td>
+<td><img src="assets/overview.jpg" alt="Window overview"></td>
+<td><img src="assets/launcher.jpg" alt="Application launcher"></td>
 </tr>
 <tr>
 <td align="center"><sub>overview — <code>Super</code> + <code>Tab</code></sub></td>
 <td align="center"><sub>launcher — <code>Super</code> + <code>D</code></sub></td>
 </tr>
 <tr>
-<td><img src="assets/wifi.png" alt="Wi-Fi panel"></td>
-<td><img src="assets/audio.png" alt="Audio panel"></td>
+<td><img src="assets/osd.png" alt="Volume OSD drawn as a wave"></td>
+<td><img src="assets/notifications.png" alt="Notification cards"></td>
+</tr>
+<tr>
+<td align="center"><sub>volume — the wave takes its shape from the spectrum</sub></td>
+<td align="center"><sub>notifications — the border counts the time down</sub></td>
+</tr>
+<tr>
+<td><img src="assets/sysrings.png" alt="System monitor rings"></td>
+<td><img src="assets/calendar.png" alt="Calendar with a commit heatmap"></td>
+</tr>
+<tr>
+<td align="center"><sub>system — <code>Super</code> + <code>F1</code></sub></td>
+<td align="center"><sub>calendar — days shaded by commit count</sub></td>
+</tr>
+<tr>
+<td><img src="assets/wifi.jpg" alt="Wi-Fi panel"></td>
+<td><img src="assets/audio.jpg" alt="Audio panel"></td>
 </tr>
 <tr>
 <td align="center"><sub>Wi-Fi — <code>Super</code> + <code>N</code></sub></td>
 <td align="center"><sub>audio — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
 </tr>
 <tr>
-<td><img src="assets/power.png" alt="Power menu"></td>
-<td><img src="assets/thunar.png" alt="Thunar following the wallpaper palette"></td>
+<td><img src="assets/media.jpg" alt="Media panel"></td>
+<td><img src="assets/clipboard.jpg" alt="Clipboard history"></td>
+</tr>
+<tr>
+<td align="center"><sub>player — <code>Super</code> + <code>M</code></sub></td>
+<td align="center"><sub>clipboard — <code>Super</code> + <code>V</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/wallpapers.jpg" alt="Wallpaper picker"></td>
+<td><img src="assets/focus.jpg" alt="Focus mode"></td>
+</tr>
+<tr>
+<td align="center"><sub>wallpapers — <code>Super</code> + <code>W</code></sub></td>
+<td align="center"><sub>focus mode — <code>Super</code> + <code>Ctrl</code> + <code>F</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/power.jpg" alt="Power menu"></td>
+<td><img src="assets/thunar.jpg" alt="Thunar following the wallpaper palette"></td>
 </tr>
 <tr>
 <td align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
@@ -269,8 +303,65 @@ Peripherals with their own battery — mouse, keyboard, headset — appear only 
 dots of the highlighted application light up, so a second copy never gets started by accident.
 
 Volume, microphone and brightness all raise the same OSD card at the bottom of the focused screen.
+The level is drawn as a travelling wave rather than a bar. While something is playing, the spectrum
+from `cava` modulates the wave's local amplitude, so it swells with the music; a player that reports
+"playing" while its stream is corked sends nothing but zeros, and the wave fades back to a plain sine
+instead of collapsing into a straight line. Muting flattens the wave rather than hiding it.
 Brightness goes through `brightnessctl -c backlight`; on machines that expose no backlight device
 the OSD says so instead of the keys doing nothing at all.
+
+The clock island has no seconds digits — they are too busy at this size. Instead a stroke walks the
+island's own rounded border once a minute, so the movement is there without the mess. Switching
+workspaces leaves a short streak between the old and new dot which retracts toward the destination,
+so the eye follows the move rather than hunting for the active dot again. The album art sits inside
+a thin arc showing the track position, which spends no width on a progress bar or a timestamp. A VPN
+dot appears next to the network glyph only while a tunnel is up: detection is local and cheap, and
+the exit address is fetched when the tunnel state changes or the dot is clicked, never on a timer.
+At session start the islands drop in from above with a stagger, left to right, so the bar assembles
+instead of appearing all at once.
+
+
+### Widgets
+
+**System rings** — `Super` + `F1` opens six thin arcs: CPU, RAM, temperature, GPU, VRAM and GPU
+temperature. Each arc walks from accent to red as its load rises, and a dot rides the head. The whole
+panel lives inside an inactive loader: while it is closed there is no window, no canvas, no timer and
+no polling process, which keeps a widget that is glanced at a few times a day from querying
+`nvidia-smi` around the clock. Hardware the machine does not have shows `n/a` rather than a
+fabricated zero.
+
+**Calendar heatmap** — day cells are shaded by how many commits were made that day, across every git
+repository under `$HOME`. `git-activity.py` counts them into a JSON cache once an hour; the calendar
+only reads it, so the panel never blocks on a filesystem walk. The scale is a square root rather than
+linear: one commit should be visible, and the difference between twenty and thirty should not be.
+
+**Notifications** — cards slide in from the right and leave the same way. The remaining lifetime is
+drawn as a stroke retreating around the card's own rounded border, so the countdown is part of the
+shape instead of a separate progress bar. Hovering pauses it. Critical notifications keep a static
+border and wait for a click. Each card plays a generated sound: `gen-notify-sounds.py` synthesises a
+soft struck-bar blip for normal ones, a lower falling pair for critical ones, and a dry knock for
+hitting either end of the volume range. Nothing is shipped as a binary — retune the note tables and
+re-run the script.
+
+**Focus mode** — `Super` + `Ctrl` + `F` pushes everything except the active window into shadow:
+inactive windows dim hard, blur drops a pass, and the animated border gradient stops. Toggling back
+restores the values by name rather than reloading the whole config, so unsaved experiments survive.
+
+
+### Theming, at runtime
+
+matugen used to generate `Colors.qml` directly. Writing a QML file made Quickshell reload the entire
+configuration on every wallpaper change: every object was rebuilt, so the colours could only ever
+snap over. The palette now lands in `~/.cache/matugen/colors.json`, outside the config directory, and
+`Colors.qml` is a hand-written singleton that watches that file and eases each colour into its new
+value over about two thirds of a second. The accents lag the surfaces slightly, which reads as the
+scheme rebuilding itself rather than as a filter dropped over everything at once.
+
+The pointer follows the wallpaper too. `gen-cursor-theme.py` reads the palette, draws twelve cursor
+shapes as SVG, and builds them into a hyprcursor theme with `hyprcursor-util`. Every shape is a thick
+outline in the background colour under a fill in the accent, so it stays readable on a white page and
+in a dark terminal alike. X11 aliases are declared, so GTK and Qt applications pick it up. XWayland
+still needs an Xcursor build of the same theme, which `hyprcursor-util` cannot produce.
 
 
 ### Keybindings
@@ -319,6 +410,12 @@ the OSD says so instead of the keys doing nothing at all.
 | `Super` + `Shift` + `=` / `-` | microphone volume |
 | `Super` + `=` / `-` | output volume |
 | brightness keys | screen brightness, with an OSD |
+| `Super` + `F1` | system monitor rings |
+| `Super` + `Ctrl` + `F` | focus mode |
+| `Super` + `Shift` + `F5` | force a modeset on the internal panel |
+| `Super` + `Shift` + `N` | test notification |
+| `Super` + `Shift` + `Alt` + `N` | test critical notification |
+| `Super` + `Ctrl` + `Shift` + `N` | four notifications in a row |
 | `Super` + `Shift` + `F3` | cache cleanup |
 | `Super` + `Shift` + `F4` | system update |
 
@@ -343,11 +440,14 @@ config/
 home/            .zshrc, .zshenv, .bashrc
 bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
 install.sh       automatic installer
+extras/          pacman hook and helper that snapshot /etc before a transaction
+IDEAS.md         a running list of what could be built next
 ```
 
-Files generated at runtime — `colors.conf`, `lock-colors.conf`, `colors.css`, `Colors.qml`,
+Files generated at runtime — `colors.conf`, `lock-colors.conf`, `colors.css`,
 `current-wallpaper`, `hyprpaper.conf` — are deliberately not tracked; matugen writes them on the
-first run.
+first run. `Colors.qml` is tracked: it is now source rather than a build product, and reads the
+palette from `~/.cache/matugen/colors.json` at runtime.
 
 ### Requirements
 
@@ -597,9 +697,63 @@ user_pref("media.av1.enabled", false);
 отключения у каждого и список устройств ввода — клик выбирает микрофон по умолчанию. `Escape`
 закрывает панель, `↑`/`↓` меняют уровень микрофона, `M` его выключает.
 
-Громкость, микрофон и яркость показывают одну и ту же карточку внизу активного экрана. Яркость идёт
+Громкость, микрофон и яркость показывают одну и ту же карточку внизу активного экрана. Уровень
+нарисован бегущей волной, а не полоской. Пока что-то играет, спектр из `cava` управляет местной
+амплитудой волны — она вздувается там, где громче. Плеер иногда рапортует «играет», когда поток
+на самом деле остановлен: тогда во всех полосах нули, и волна плавно возвращается к обычной
+синусоиде, а не схлопывается в прямую. Мьют не прячет индикатор, а распрямляет его. Яркость идёт
 через `brightnessctl -c backlight`; если устройства подсветки в системе нет, индикатор так и
 скажет, вместо того чтобы клавиши молча ничего не делали.
+
+У часов нет цифр секунд — на таком размере они суетливы. Вместо них обводка обходит контур самого
+островка за минуту: движение есть, мельтешения нет. При переключении рабочего стола между старой и
+новой точкой протягивается полоска, которая втягивается в точку назначения, поэтому взгляд следует
+за переходом, а не ищет активную точку заново. Обложка трека сидит внутри тонкой дуги прогресса —
+позиция читается, не отнимая ширины под полосу или цифры. Рядом со значком сети появляется точка
+VPN, но только пока туннель поднят: определение локальное и дешёвое, а внешний адрес запрашивается
+при смене состояния туннеля или по клику, не по таймеру. При старте сессии островки падают сверху
+со сдвигом слева направо — бар собирается, а не возникает целиком.
+
+
+### Виджеты
+
+**Кольца системы** — `Super`+`F1` открывает шесть тонких дуг: CPU, RAM, температура, GPU, VRAM и
+температура GPU. Цвет дуги идёт от акцента к красному по мере нагрузки, по её концу едет точка. Вся
+панель живёт внутри неактивного загрузчика: пока она закрыта, нет ни окна, ни канвы, ни таймера, ни
+процесса опроса. Виджет, на который смотрят пару раз в день, не дёргает `nvidia-smi` круглые сутки.
+Железо, которого в машине нет, показывает `n/a`, а не выдуманный ноль.
+
+**Тепловая карта в календаре** — ячейки дней залиты по числу коммитов за этот день во всех git-репозиториях
+внутри `$HOME`. `git-activity.py` считает их в JSON-кэш раз в час, календарь только читает его и
+никогда не ждёт обхода файловой системы. Шкала корневая, а не линейная: один коммит должен быть
+заметен, а разница между двадцатью и тридцатью — нет.
+
+**Уведомления** — карточки выезжают справа и уходят туда же. Остаток времени рисуется обводкой,
+которая отступает по контуру самой карточки, поэтому отсчёт стал частью формы, а не отдельной
+полосой. Наведение ставит его на паузу. Критические держат статичную рамку и ждут клика. Каждая
+карточка играет сгенерированный звук: `gen-notify-sounds.py` синтезирует мягкий удар по бруску для
+обычных, ниже и с падением для критических, и сухой стук на упор громкости. Ничего не лежит готовым
+бинарником — правь таблицы нот и перезапускай скрипт.
+
+**Фокус-режим** — `Super`+`Ctrl`+`F` уводит в тень всё, кроме активного окна: неактивные сильно
+затемняются, блюр теряет проход, градиент рамки замирает. Обратное переключение возвращает значения
+поимённо, а не перечитывает весь конфиг, поэтому несохранённые эксперименты переживают его.
+
+
+### Палитра в рантайме
+
+Раньше matugen генерировал `Colors.qml` напрямую. Запись QML-файла заставляла Quickshell перечитать
+весь конфиг при каждой смене обоев: все объекты пересоздавались, и цвета могли меняться только
+скачком. Теперь палитра ложится в `~/.cache/matugen/colors.json`, вне каталога конфига, а
+`Colors.qml` — написанный руками синглтон, который следит за этим файлом и переливает каждый цвет в
+новый примерно за две трети секунды. Акценты немного отстают от поверхностей, и это читается как
+пересборка схемы, а не как наложенный поверх всего фильтр.
+
+Курсор тоже следует за обоями. `gen-cursor-theme.py` читает палитру, рисует двенадцать фигур в SVG и
+собирает их в тему hyprcursor через `hyprcursor-util`. У каждой фигуры жирная обводка цветом фона под
+заливкой акцентом, поэтому она читается и на белой странице, и в тёмном терминале. Прописаны X11-алиасы,
+так что GTK- и Qt-приложения её подхватывают. Для XWayland нужна та же тема в формате Xcursor,
+которую `hyprcursor-util` собирать не умеет.
 
 
 ### Горячие клавиши
@@ -648,6 +802,12 @@ user_pref("media.av1.enabled", false);
 | `Super` + `Shift` + `=` / `-` | громкость микрофона |
 | `Super` + `=` / `-` | громкость вывода |
 | клавиши яркости | яркость экрана, с индикатором |
+| `Super` + `F1` | кольца системного монитора |
+| `Super` + `Ctrl` + `F` | фокус-режим |
+| `Super` + `Shift` + `F5` | принудительный modeset внутренней панели |
+| `Super` + `Shift` + `N` | тестовое уведомление |
+| `Super` + `Shift` + `Alt` + `N` | тестовое критическое |
+| `Super` + `Ctrl` + `Shift` + `N` | четыре уведомления подряд |
 | `Super` + `Shift` + `F3` | очистка кэша |
 | `Super` + `Shift` + `F4` | обновление системы |
 
@@ -672,11 +832,14 @@ config/
 home/            .zshrc, .zshenv, .bashrc
 bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
 install.sh       автоматический установщик
+extras/          хук pacman и скрипт, снимающий /etc перед транзакцией
+IDEAS.md         список того, что можно сделать дальше
 ```
 
 Файлы, которые создаются во время работы — `colors.conf`, `lock-colors.conf`, `colors.css`,
-`Colors.qml`, `current-wallpaper`, `hyprpaper.conf` — намеренно не хранятся в репозитории: matugen
-пишет их при первом запуске.
+`current-wallpaper`, `hyprpaper.conf` — намеренно не хранятся в репозитории: matugen пишет их при
+первом запуске. `Colors.qml` теперь хранится: это исходник, а не продукт сборки, и палитру он читает
+из `~/.cache/matugen/colors.json` в рантайме.
 
 ### Требования
 

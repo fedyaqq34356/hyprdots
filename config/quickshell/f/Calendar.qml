@@ -9,8 +9,6 @@ Scope {
 
     property bool shown: false
 
-    // Смещение в месяцах относительно текущего. Сбрасывается при закрытии,
-    // чтобы календарь всегда открывался на сегодняшнем месяце.
     property int offset: 0
 
     function toggle() { root.shown = !root.shown; }
@@ -35,11 +33,8 @@ Scope {
         "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"
     ]
 
-    // Неделя с понедельника.
     readonly property var weekdays: ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
 
-    // Локаль системы — en_US, поэтому Qt.formatDateTime дал бы английские
-    // названия рядом с русской шапкой. Склонения держим сами.
     readonly property var monthsGen: [
         "января", "февраля", "марта", "апреля", "мая", "июня",
         "июля", "августа", "сентября", "октября", "ноября", "декабря"
@@ -50,14 +45,12 @@ Scope {
         "четверг", "пятница", "суббота"
     ]
 
-    // Читается и здесь в подвале, и в подсказке часов в баре.
     readonly property string longDate: {
         const d = clock.date;
         return weekdaysFull[d.getDay()] + ", " + d.getDate() + " "
              + monthsGen[d.getMonth()] + " " + d.getFullYear();
     }
 
-    // 42 ячейки — шесть недель, сетка не скачет по высоте между месяцами.
     readonly property var days: {
         const first = new Date(shownMonth);
         const shift = (first.getDay() + 6) % 7;
@@ -72,12 +65,6 @@ Scope {
         }
         return out;
     }
-
-    // --- активность в git ------------------------------------------------
-    //
-    // git-activity.py считает коммиты по дням и кладёт JSON в кэш. Календарь
-    // только читает его: сканировать репозитории в момент открытия панели
-    // означало бы держать её пустой первые полсекунды.
 
     property var activity: ({})
     property int activityMax: 1
@@ -106,8 +93,6 @@ Scope {
         }
     }
 
-    // Пересбор раз в час. Скрипт отрабатывает за доли секунды, но ходит по
-    // всему домашнему каталогу, так что чаще незачем.
     Process { id: activityScan }
 
     Timer {
@@ -233,7 +218,6 @@ Scope {
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
 
-                        // Клик по названию возвращает на текущий месяц.
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: root.offset !== 0
@@ -307,9 +291,6 @@ Scope {
                             readonly property int commits:
                                 root.commitsOn(modelData)
 
-                            // Заливка по числу коммитов. Корень вместо линейной
-                            // шкалы: один коммит в день должен быть заметен, а
-                            // разница между двадцатью и тридцатью — нет.
                             readonly property real heat: {
                                 if (cell.commits <= 0) return 0;
                                 const ratio = cell.commits / root.activityMax;

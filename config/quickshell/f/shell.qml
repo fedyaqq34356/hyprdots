@@ -15,9 +15,6 @@ ShellRoot {
         }
     }
 
-
-    // mic-lock.sh удерживает громкость микрофона против автоподстройки WebRTC.
-    // Ручные изменения должны переставлять его цель, иначе сторож их откатит.
     Process {
         id: micTarget
         command: ["sh", "-c", ""]
@@ -75,8 +72,6 @@ ShellRoot {
             if (!a) return;
             a.muted = false;
             if (a.volume >= 0.999) {
-                // Already at the ceiling: a knock says the key was received
-                // and the level is not going to move.
                 Sfx.limit();
                 return;
             }

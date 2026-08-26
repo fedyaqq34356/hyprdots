@@ -1,14 +1,5 @@
 import QtQuick
 
-// A clock whose digits are drawn stroke by stroke, the way a hand would write
-// them, rather than appearing all at once.
-//
-// Each glyph is a list of strokes, each stroke a list of points on a 100x160
-// grid. The points are joined with a Catmull-Rom spline so the result curves
-// instead of showing the corners of the polyline, and the whole line is
-// revealed by walking a fraction of its total arc length. Changing the time
-// restarts that walk for the digits that actually changed, so ticking over
-// from 09 to 10 redraws two digits and leaves the rest alone.
 Item {
     id: clock
 
@@ -19,13 +10,11 @@ Item {
     property real glyphHeight: 100
     property real spacing: 10
 
-    // How long one glyph takes to be written.
     property int writeDuration: 900
 
     implicitWidth: row.implicitWidth
     implicitHeight: glyphHeight
 
-    // Glyph outlines. Coordinates are 0..100 across, 0..160 down.
     readonly property var glyphs: ({
         "0": [[[72,38],[68,18],[46,10],[26,22],[18,55],[18,105],[28,140],[50,150],
                [70,140],[80,105],[80,60],[72,38]]],
@@ -66,13 +55,10 @@ Item {
                 height: clock.glyphHeight
                 anchors.verticalCenter: parent.verticalCenter
 
-                // 0 to 1 as the glyph is written.
                 property real progress: 0
 
-                // Redraw only when this position's character actually changes.
                 onGlyphChanged: write.restart()
                 Component.onCompleted: {
-                    // Stagger the initial write left to right.
                     write.delay = index * 130;
                     write.restart();
                 }
@@ -112,9 +98,6 @@ Item {
                         const sx = width / 100;
                         const sy = height / 160;
 
-                        // Densify each stroke through a Catmull-Rom spline so
-                        // the drawn line is smooth and its length can be walked
-                        // one small step at a time.
                         function smooth(points) {
                             if (points.length < 3) return points.slice();
                             const out = [];
@@ -143,8 +126,6 @@ Item {
 
                         const curves = strokes.map(smooth);
 
-                        // Total arc length, so the pen moves at a steady speed
-                        // across strokes of different lengths.
                         let total = 0;
                         const lengths = [];
                         for (const c of curves) {
@@ -183,8 +164,6 @@ Item {
                                     ctx.lineTo(x2, y2);
                                     budget -= seg;
                                 } else {
-                                    // Stop part-way along this segment; this is
-                                    // what makes the pen appear mid-stroke.
                                     const t = seg > 0 ? budget / seg : 0;
                                     ctx.lineTo(x1 + (x2 - x1) * t,
                                                y1 + (y2 - y1) * t);

@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""Point the folder icons at whichever Papirus colour is closest to the
-current accent.
-
-Papirus ships one folder set per colour and makes `folder*.svg` a symlink to
-the chosen one. Doing that in /usr/share needs root, so this builds a small
-user theme that inherits Papirus-Dark and overrides only the folder icons.
-"""
-
 import os
 import re
 import shutil
@@ -26,7 +18,6 @@ IGNORE = {"#ffffff", "#e4e4e4", "#000000"}
 SKIP = {"adwaita", "breeze", "nordic", "yaru"}
 
 def accent() -> str:
-    """The accent matugen generated for GTK, or a sane default."""
     try:
         text = GTK_CSS.read_text(encoding="utf-8")
     except OSError:
@@ -59,7 +50,6 @@ def distance(a: str, b: str) -> float:
     return (0.4 * (la - lb)) ** 2 + (aa - ab) ** 2 + (ba - bb) ** 2
 
 def palette():
-    """Representative colour of every folder variant Papirus provides."""
     places = SYSTEM / "Papirus" / "64x64" / "places"
     out = {}
     for svg in sorted(places.glob("folder-*.svg")):

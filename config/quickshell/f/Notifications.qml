@@ -19,13 +19,9 @@ Scope {
         onNotification: function (n) {
             n.tracked = true;
 
-            // Apps that push transient progress updates (volume, download
-            // percentages) would otherwise chirp on every step.
             if (n.transient)
                 return;
 
-            // Sfx rate-limits, so a burst of notifications does not turn
-            // into a burst of overlapping blips.
             if (n.urgency === NotificationUrgency.Critical)
                 Sfx.critical();
             else
@@ -58,7 +54,6 @@ Scope {
             anchors.rightMargin: 12
             spacing: 8
 
-            // Cards below a dismissed one slide up rather than jumping.
             move: Transition {
                 NumberAnimation {
                     properties: "y"
@@ -71,10 +66,7 @@ Scope {
             Repeater {
                 model: server.trackedNotifications
 
-                // NotificationCard declares `required property var modelData`,
-                // so the Repeater injects the model row into it directly.
                 NotificationCard {
-                    // The card plays its leave animation first, then asks to go.
                     onClosed: modelData.dismiss()
                 }
             }

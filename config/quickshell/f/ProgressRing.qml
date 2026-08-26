@@ -1,11 +1,5 @@
 import QtQuick
 
-// A thin arc drawn around whatever it is placed over. Used in the bar to show
-// track position around the album cover, so the position reads without giving
-// up space for a number or a separate bar.
-//
-// Deliberately minimal compared to Ring.qml: no label, no colour ramp, no
-// head dot. At 22 pixels across, anything more turns into noise.
 Item {
     id: ring
 
@@ -14,12 +8,10 @@ Item {
     property color trackColor: "transparent"
     property real thickness: 1.6
 
-    // Gap left between the arc and the edge of the item.
     property real inset: 1
 
     property int animationDuration: 400
 
-    // The drawn value trails the real one, so a seek sweeps rather than jumps.
     property real shown: 0
     onValueChanged: shown = Math.max(0, Math.min(1, value))
 

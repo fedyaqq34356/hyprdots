@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""Emit one line of JSON with system load figures, once per interval.
-
-Written for the Quickshell SysRings panel, which starts this process when the
-panel opens and kills it when the panel closes. It therefore does no work at
-all while the panel is hidden, which is the whole point.
-
-Every field is a fraction in 0..1 except the *_label fields, which carry the
-human-readable value the ring prints in its middle. Missing hardware yields
-null rather than a fabricated zero, so the panel can grey the ring out.
-"""
-
 import json
 import shutil
 import subprocess
@@ -19,9 +8,7 @@ from pathlib import Path
 
 INTERVAL = 1.0
 
-
 def read_cpu_times() -> tuple[int, int] | None:
-    """Return (idle, total) jiffies from the aggregate cpu line."""
     try:
         line = Path("/proc/stat").read_text().split("\n", 1)[0]
     except OSError:
@@ -32,7 +19,6 @@ def read_cpu_times() -> tuple[int, int] | None:
     values = [int(v) for v in parts[1:]]
     idle = values[3] + (values[4] if len(values) > 4 else 0)
     return idle, sum(values)
-
 
 def memory() -> tuple[float, str] | None:
     try:
@@ -53,9 +39,7 @@ def memory() -> tuple[float, str] | None:
     used = total - available
     return used / total, f"{used / 1024 / 1024:.1f}G"
 
-
 def cpu_temperature() -> tuple[float, str] | None:
-    """Prefer a package sensor; fall back to any thermal zone."""
     candidates: list[Path] = []
     hwmon = Path("/sys/class/hwmon")
     if hwmon.is_dir():
@@ -77,14 +61,11 @@ def cpu_temperature() -> tuple[float, str] | None:
             continue
         celsius = millidegrees / 1000
         if 0 < celsius < 150:
-            # 30 C is idle, 95 C is the throttle point on this class of chip.
             fraction = (celsius - 30) / (95 - 30)
             return max(0.0, min(1.0, fraction)), f"{celsius:.0f}°"
     return None
 
-
 def gpu() -> dict:
-    """Utilisation, temperature and VRAM from nvidia-smi, if it is present."""
     blank = {"gpu": None, "gpu_label": "", "vram": None, "vram_label": "",
              "gputemp": None, "gputemp_label": ""}
     if not shutil.which("nvidia-smi"):
@@ -114,16 +95,12 @@ def gpu() -> dict:
         "gpu_label": f"{util:.0f}%",
         "vram": used / total if total else None,
         "vram_label": f"{used / 1024:.1f}G",
-        # Same scale as the CPU: 30 C idle, 90 C is where this card throttles.
         "gputemp": max(0.0, min(1.0, (temp - 30) / 60)),
         "gputemp_label": f"{temp:.0f}°",
     }
 
-
 def main() -> int:
     previous = read_cpu_times()
-    # nvidia-smi takes a few hundred ms; polling it every tick would make the
-    # whole sample slow, so it runs every other tick and the value is held.
     gpu_cache = gpu()
     tick = 0
 
@@ -156,7 +133,6 @@ def main() -> int:
         sample.update(gpu_cache)
 
         print(json.dumps(sample), flush=True)
-
 
 if __name__ == "__main__":
     try:

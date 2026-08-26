@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""Generate a hyprcursor theme coloured from the current matugen palette.
-
-Reads the accent/background colours matugen already wrote into the Hyprland
-colour file, draws the cursor shapes as SVG, and builds them into a hyprcursor
-theme installed at ~/.local/share/icons/<NAME>.
-
-Called from matugen's post_hook, so the pointer re-colours with the wallpaper.
-Run it by hand to rebuild:  gen-cursor-theme.py [--reload]
-"""
-
 import argparse
 import re
 import shutil
@@ -21,16 +11,10 @@ COLORS_CONF = Path.home() / ".config/hypr/config/colors.conf"
 BUILD_DIR = Path.home() / ".cache/cursor-build"
 INSTALL_DIR = Path.home() / ".local/share/icons"
 
-# Fallbacks if the palette file is missing or unparseable.
 DEFAULT_FILL = "#feb879"
 DEFAULT_EDGE = "#18120e"
 
-
 def read_palette() -> tuple[str, str]:
-    """Pull the accent and background hex out of the matugen Hyprland colours.
-
-    Hyprland colour vars look like `$accent = rgb(feb879)` or `rgba(feb879ff)`.
-    """
     if not COLORS_CONF.is_file():
         return DEFAULT_FILL, DEFAULT_EDGE
 
@@ -55,26 +39,16 @@ def read_palette() -> tuple[str, str]:
                 DEFAULT_EDGE)
     return fill, edge
 
-
-# --- shape drawing -------------------------------------------------------
-#
-# Every shape is drawn on a 24x24 grid, then scaled by hyprcursor. Each has a
-# thick edge stroke under a fill, which is what keeps the pointer readable on
-# both a white document and a dark terminal.
-
 HEAD = ('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" '
         'viewBox="0 0 24 24">')
 
-
 def stroked(path: str, fill: str, edge: str, width: float = 1.6) -> str:
-    """A path drawn twice: fat edge underneath, fill on top."""
     return (
         f'<path d="{path}" fill="none" stroke="{edge}" stroke-width="{width * 2}" '
         f'stroke-linejoin="round" stroke-linecap="round"/>'
         f'<path d="{path}" fill="{fill}" stroke="{edge}" stroke-width="{width * 0.4}" '
         f'stroke-linejoin="round" stroke-linecap="round"/>'
     )
-
 
 ARROW = "M3 2 L3 18.2 L7.1 14.4 L9.7 20.4 L12.6 19.1 L10 13.3 L15.6 13.1 Z"
 HAND = ("M9 13 L9 4.6 A1.5 1.5 0 0 1 12 4.6 L12 10.5 L12 8.8 "
@@ -92,9 +66,7 @@ MOVE = ("M12 1 L15 5 L13 5 L13 11 L19 11 L19 9 L23 12 L19 15 L19 13 L13 13 "
         "L13 19 L15 19 L12 23 L9 19 L11 19 L11 13 L5 13 L5 15 L1 12 L5 9 "
         "L5 11 L11 11 L11 5 L9 5 Z")
 
-
 def ring(fill: str, edge: str, dash: bool = False) -> str:
-    """Busy indicator: a ring with a bright arc riding on it."""
     dashes = ' stroke-dasharray="9 5"' if dash else ""
     return (
         f'<circle cx="12" cy="12" r="8" fill="none" stroke="{edge}" stroke-width="5"/>'
@@ -103,7 +75,6 @@ def ring(fill: str, edge: str, dash: bool = False) -> str:
         f'<path d="M12 4 A8 8 0 0 1 20 12" fill="none" stroke="{fill}" '
         f'stroke-width="3.4" stroke-linecap="round"{dashes}/>'
     )
-
 
 def no_drop(fill: str, edge: str) -> str:
     return (
@@ -115,7 +86,6 @@ def no_drop(fill: str, edge: str) -> str:
         f'stroke-linecap="round"/>'
     )
 
-
 def line_shape(path: str, fill: str, edge: str) -> str:
     return (
         f'<path d="{path}" fill="none" stroke="{edge}" stroke-width="5.2" '
@@ -124,9 +94,7 @@ def line_shape(path: str, fill: str, edge: str) -> str:
         f'stroke-linecap="round"/>'
     )
 
-
 def build_shapes(fill: str, edge: str) -> dict:
-    """shape name -> (svg source, hotspot_x, hotspot_y, [x11 aliases])."""
     arrow = HEAD + stroked(ARROW, fill, edge) + "</svg>"
 
     return {
@@ -195,9 +163,6 @@ def build_shapes(fill: str, edge: str) -> dict:
         ),
     }
 
-
-# --- theme assembly ------------------------------------------------------
-
 def write_theme(shapes: dict) -> Path:
     src = BUILD_DIR / "src"
     if src.exists():
@@ -228,7 +193,6 @@ def write_theme(shapes: dict) -> Path:
         )
     return src
 
-
 def compile_theme(src: Path) -> Path:
     out = BUILD_DIR / "out"
     if out.exists():
@@ -240,12 +204,10 @@ def compile_theme(src: Path) -> Path:
         check=True, capture_output=True, text=True,
     )
 
-    # hyprcursor-util writes theme_<name>/ inside the output directory.
     built = [p for p in out.iterdir() if p.is_dir()]
     if not built:
         raise RuntimeError(f"hyprcursor-util produced nothing in {out}")
     return built[0]
-
 
 def install(built: Path) -> Path:
     dest = INSTALL_DIR / THEME_NAME
@@ -255,14 +217,11 @@ def install(built: Path) -> Path:
     shutil.copytree(built, dest)
     return dest
 
-
 def reload_hyprland() -> None:
     if not shutil.which("hyprctl"):
         return
-    # setcursor makes running clients pick the theme up without a restart.
     subprocess.run(["hyprctl", "setcursor", THEME_NAME, "24"],
                    capture_output=True)
-
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -287,7 +246,6 @@ def main() -> int:
         reload_hyprland()
         print(f"applied: {THEME_NAME}")
     return 0
-
 
 if __name__ == "__main__":
     try:

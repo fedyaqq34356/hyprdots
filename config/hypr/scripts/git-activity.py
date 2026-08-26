@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""Count this user's commits per day across every git repository under $HOME.
-
-Writes a JSON map of "YYYY-MM-DD" -> commit count to
-~/.cache/git-activity.json, which the Quickshell calendar reads to shade its
-day cells. Run it from a scheduler; it is cheap but not instant, and the
-calendar never blocks on it.
-
-    git-activity.py            refresh the cache
-    git-activity.py --days 400 look further back than the default year
-"""
-
 import argparse
 import json
 import os
@@ -21,8 +10,6 @@ from pathlib import Path
 HOME = Path.home()
 CACHE = HOME / ".cache/git-activity.json"
 
-# Directories that never contain repositories worth counting, and that are
-# expensive to walk.
 SKIP_DIRS = {
     ".cache", ".cargo", ".rustup", ".npm", ".local/share/Steam", ".steam",
     "node_modules", ".venv", "venv", "__pycache__", ".mozilla", ".config",
@@ -31,9 +18,7 @@ SKIP_DIRS = {
 
 MAX_DEPTH = 5
 
-
 def find_repos(root: Path) -> list[Path]:
-    """Directories containing a .git entry, without descending into them."""
     found: list[Path] = []
     root_depth = len(root.parts)
 
@@ -44,8 +29,6 @@ def find_repos(root: Path) -> list[Path]:
             dirnames.clear()
             continue
 
-        # Prune before descending; walking a Steam library to find no repos is
-        # the single slowest thing this script could do.
         dirnames[:] = [
             d for d in dirnames
             if d not in SKIP_DIRS
@@ -58,9 +41,7 @@ def find_repos(root: Path) -> list[Path]:
 
     return found
 
-
 def identities() -> list[str]:
-    """Every email that counts as "me": git config plus the login name."""
     emails = set()
     try:
         result = subprocess.run(["git", "config", "--global", "user.email"],
@@ -71,9 +52,7 @@ def identities() -> list[str]:
         pass
     return sorted(emails)
 
-
 def commits_in(repo: Path, since: str, authors: list[str]) -> Counter:
-    """Commit dates in one repository, counted per day."""
     cmd = ["git", "-C", str(repo), "log", "--all", "--no-merges",
            f"--since={since}", "--date=short", "--pretty=%ad"]
     for email in authors:
@@ -88,7 +67,6 @@ def commits_in(repo: Path, since: str, authors: list[str]) -> Counter:
 
     return Counter(line.strip() for line in result.stdout.splitlines()
                    if line.strip())
-
 
 def main() -> int:
     ap = argparse.ArgumentParser()
@@ -122,7 +100,6 @@ def main() -> int:
         print(f"{len(repos)} repos, {sum(total.values())} commits "
               f"over {len(total)} days -> {CACHE}")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

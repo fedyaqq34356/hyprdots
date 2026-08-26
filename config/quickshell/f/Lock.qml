@@ -5,25 +5,11 @@ import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
 
-// Session lock.
-//
-// Replaces hyprlock, which cannot draw the clock or the password indicator
-// this wants. Authentication goes through the same PAM configuration hyprlock
-// used, so nothing about the system's auth setup changes.
-//
-// Safety notes, because a lock screen is the one component where a bug locks
-// you out of your own machine:
-//   - the surface is only created while `locked` is true;
-//   - a PAM failure resets the field and re-arms rather than leaving the
-//     screen in a state with no way forward;
-//   - if this file fails to load, the shell refuses to start and lock.sh
-//     falls back to hyprlock rather than leaving the screen unlocked.
 Scope {
     id: root
 
     property bool locked: false
 
-    // Blurred screenshot taken by lock-prepare.sh just before locking.
     readonly property string shot:
         "file://" + Quickshell.env("XDG_RUNTIME_DIR") + "/lock-bg.png"
 
@@ -35,7 +21,6 @@ Scope {
     IpcHandler {
         target: "lock"
 
-        // qs -c f ipc call lock lock
         function lock(): string {
             root.lock();
             return "locked";
@@ -54,8 +39,6 @@ Scope {
             id: surface
             color: "transparent"
 
-            // --- authentication ---------------------------------------------
-
             property string entry: ""
             property string notice: ""
             property bool failed: false
@@ -63,7 +46,6 @@ Scope {
 
             PamContext {
                 id: pam
-                // Same stack hyprlock authenticated against.
                 config: "hyprlock"
 
                 onPamMessage: {
@@ -102,14 +84,11 @@ Scope {
                 pam.start();
             }
 
-            // Photograph whoever is at the keyboard on a failed attempt.
             Process {
                 id: intruder
                 command: [Quickshell.env("HOME")
                           + "/.config/hypr/scripts/lock-intruder.sh"]
             }
-
-            // --- background --------------------------------------------------
 
             Image {
                 anchors.fill: parent
@@ -119,14 +98,10 @@ Scope {
                 asynchronous: true
             }
 
-            // Wallpaper shows through if the screenshot is missing, and the
-            // scrim keeps text readable over either.
             Rectangle {
                 anchors.fill: parent
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.55)
             }
-
-            // --- clock --------------------------------------------------------
 
             SystemClock {
                 id: lockClock
@@ -155,8 +130,6 @@ Scope {
                     font.pixelSize: 14
                 }
 
-                // --- password ----------------------------------------------
-
                 Item {
                     id: field
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -173,17 +146,11 @@ Scope {
                         NumberAnimation { target: shift; property: "x"; to: 0; duration: 55 }
                     }
 
-                    // Typed characters raise the wave instead of adding dots:
-                    // the length of the password stays unreadable over a
-                    // shoulder, but there is still feedback for every key.
                     WaveMeter {
                         anchors.top: parent.top
                         width: parent.width
                         height: 46
 
-                        // Deliberately non-linear and capped, so a long
-                        // password does not draw a taller wave than a short
-                        // one past a few characters.
                         value: Math.min(0.95, 0.18 + surface.entry.length * 0.09)
                         animating: true
                         spectrum: Cava.active ? Cava.levels : []
@@ -206,7 +173,6 @@ Scope {
                         Behavior on color { ColorAnimation { duration: 200 } }
                     }
 
-                    // The actual key sink. Never shows what was typed.
                     TextInput {
                         id: sink
                         anchors.fill: parent
@@ -227,7 +193,6 @@ Scope {
                         Component.onCompleted: forceActiveFocus()
                     }
 
-                    // Clearing `entry` from PAM has to clear the sink too.
                     Connections {
                         target: surface
                         function onEntryChanged() {
@@ -237,8 +202,6 @@ Scope {
                     }
                 }
             }
-
-            // --- now playing ---------------------------------------------------
 
             Rectangle {
                 visible: Media.has && Media.label !== ""
@@ -316,7 +279,6 @@ Scope {
                 }
             }
 
-            // Failed attempts, bottom right. Quiet unless there have been any.
             Text {
                 visible: surface.attempts > 0
                 anchors.bottom: parent.bottom

@@ -150,11 +150,7 @@ Scope {
 
                     value: root.value
                     flat: root.flat
-                    // While something is playing, the wave takes its shape from
-                    // the actual spectrum instead of a decorative sine. Cava is
-                    // already running for the bar, so this costs nothing extra.
                     spectrum: Cava.active ? Cava.levels : []
-                    // Only run the animation while the OSD is actually on screen.
                     animating: root.shown
 
                     fillColor: Colors.accent

@@ -1,10 +1,4 @@
 #!/bin/sh
-# Fire a test notification so the popup styling, animation and sound can be
-# checked without waiting for a real one.
-#
-#   notify-test.sh            one normal notification
-#   notify-test.sh critical   one critical notification (stays until clicked)
-#   notify-test.sh burst      four in a row, to check stacking and rate limiting
 
 case "${1:-normal}" in
     critical)

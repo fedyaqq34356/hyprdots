@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-# Snapshot /etc and the installed package list before a pacman transaction.
-#
-# Run automatically by /etc/pacman.d/hooks/00-config-snapshot.hook. The point
-# is not to replace a real backup: it is to make "the update broke something in
-# /etc" a five-minute problem instead of an evening.
-#
-#   config-snapshot            take a snapshot (what the hook calls)
-#   config-snapshot list       show what is stored
-#   config-snapshot diff [id]  what changed in /etc since that snapshot
-#   config-snapshot restore ID restore /etc from a snapshot
 set -euo pipefail
 
 STORE=/var/backups/config-snapshots
@@ -25,8 +15,6 @@ take() {
     id="$STORE/$ts"
     mkdir -p "$id"
 
-    # /etc is small enough that a full copy each time is simpler and safer
-    # than anything incremental, and zstd keeps it to a few megabytes.
     tar --zstd -cf "$id/etc.tar.zst" \
         --exclude=/etc/ssl/private \
         --exclude=/etc/shadow \
@@ -37,7 +25,6 @@ take() {
     pacman -Qq  > "$id/pkglist-all.txt"      2>/dev/null || true
     uname -r    > "$id/kernel.txt"
 
-    # Keep the store from growing without bound.
     local count
     count=$(find "$STORE" -mindepth 1 -maxdepth 1 -type d | wc -l)
     if (( count > KEEP )); then
@@ -72,14 +59,10 @@ diff_snapshot() {
 
     local tmp
     tmp=$(mktemp -d)
-    # ${tmp:-} because `set -u` turns an unset variable in the EXIT trap into
-    # an error that masks whatever actually went wrong.
     trap 'rm -rf "${tmp:-}"' EXIT
     tar --zstd -xf "$STORE/$id/etc.tar.zst" -C "$tmp"
 
     echo "изменения в /etc с $id:"
-    # "Only in /etc/..." lines are files created since the snapshot, which is
-    # exactly what we want to see; "Only in $tmp/..." would be files deleted.
     diff -rq "$tmp/etc" /etc 2>/dev/null \
         | sed "s#$tmp/etc#снимок#g" \
         | sed 's/^Files /изменён: /; s/ and .* differ$//' \
@@ -91,12 +74,10 @@ restore() {
     local id="${1:-}"
     [[ -n $id && -d "$STORE/$id" ]] || { echo "укажи id снимка (config-snapshot list)" >&2; exit 1; }
 
-    # Restoring over a live /etc is not something to do by accident.
     echo "Это перезапишет /etc содержимым снимка $id."
     read -r -p "Впиши YES для подтверждения: " answer
     [[ $answer == YES ]] || { echo "отменено"; exit 1; }
 
-    # Snapshot the current state first, so a bad restore is also reversible.
     take >/dev/null
     tar --zstd -xf "$STORE/$id/etc.tar.zst" -C /
     echo "/etc восстановлен из $id"
