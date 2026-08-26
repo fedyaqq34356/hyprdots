@@ -47,6 +47,8 @@ ShellRoot {
     MediaPanel { id: media }
     Calendar { id: calendar }
     SysRings { id: sysRings }
+    Vault { id: vault }
+    Lock {}
 
     GlobalShortcut {
         appid: "quickshell"
@@ -71,7 +73,15 @@ ShellRoot {
         name: "volumeUp"
         onPressed: {
             const a = Pipewire.defaultAudioSink?.audio;
-            if (a) { a.muted = false; a.volume = Math.min(1, a.volume + 0.05); }
+            if (!a) return;
+            a.muted = false;
+            if (a.volume >= 0.999) {
+                // Already at the ceiling: a knock says the key was received
+                // and the level is not going to move.
+                Sfx.limit();
+                return;
+            }
+            a.volume = Math.min(1, a.volume + 0.05);
         }
     }
 
@@ -80,7 +90,12 @@ ShellRoot {
         name: "volumeDown"
         onPressed: {
             const a = Pipewire.defaultAudioSink?.audio;
-            if (a) a.volume = Math.max(0, a.volume - 0.05);
+            if (!a) return;
+            if (a.volume <= 0.001) {
+                Sfx.limit();
+                return;
+            }
+            a.volume = Math.max(0, a.volume - 0.05);
         }
     }
 
@@ -115,6 +130,12 @@ ShellRoot {
         appid: "quickshell"
         name: "sysRings"
         onPressed: sysRings.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "vault"
+        onPressed: vault.toggle()
     }
 
     GlobalShortcut {

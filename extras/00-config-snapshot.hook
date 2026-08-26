@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Snapshotting /etc and the package list...
+When = PreTransaction
+Exec = /usr/local/bin/config-snapshot
+AbortOnFail = No

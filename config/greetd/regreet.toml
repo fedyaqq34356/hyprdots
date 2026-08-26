@@ -1,0 +1,27 @@
+# Appearance of the login screen.
+#
+# The greeter runs as the `greeter` user, so everything it reads has to live
+# somewhere that user can reach: /usr/share and /etc, never $HOME.
+
+[background]
+path = "/usr/share/backgrounds/greeter.jpg"
+fit = "Cover"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "Adwaita"
+font_name = "JetBrainsMono Nerd Font 12"
+icon_theme_name = "Papirus-Dark"
+theme_name = "Adwaita-dark"
+
+[commands]
+reboot = ["loginctl", "reboot"]
+poweroff = ["loginctl", "poweroff"]
+
+[appearance]
+greeting_msg = "С возвращением"
+
+[widget.clock]
+format = "%H:%M   %A, %d %B"
+resolution = "500ms"
+label_width = 200
