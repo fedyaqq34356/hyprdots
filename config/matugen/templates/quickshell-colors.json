@@ -1,0 +1,12 @@
+{
+  "bg":           "{{colors.surface.default.hex}}",
+  "bgAlt":        "{{colors.surface_variant.default.hex}}",
+  "fg":           "{{colors.on_surface.default.hex}}",
+  "fgDim":        "{{colors.on_surface_variant.default.hex}}",
+  "outline":      "{{colors.outline.default.hex}}",
+  "outlineFaint": "{{colors.outline_variant.default.hex}}",
+  "accent":       "{{colors.primary.default.hex}}",
+  "accentAlt":    "{{colors.tertiary.default.hex}}",
+  "accentText":   "{{colors.on_primary.default.hex}}",
+  "bad":          "{{colors.error.default.hex}}"
+}
