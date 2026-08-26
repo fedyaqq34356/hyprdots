@@ -32,11 +32,16 @@ Scope {
                 right: true
             }
 
+            // Окно выше самой полосы: в запасе снизу рисуются подсказки.
+            // Ввод при этом ограничен полосой, иначе прозрачная зона
+            // перехватывала бы клики по окнам под баром.
             implicitHeight: 96
             exclusiveZone: 34
             color: "transparent"
             mask: Region { item: strip }
 
+            // Подсказка вешается на элемент как дочерний обработчик наведения:
+            // HoverHandler не Item, поэтому в раскладке места не занимает.
             component Tip: HoverHandler {
                 property string text: ""
                 onHoveredChanged: hovered ? tips.show(parent, text) : tips.hide(parent)
@@ -54,6 +59,10 @@ Scope {
                 id: island
                 property bool hovered: false
 
+                // Каждый островок выезжает сверху со своей задержкой, так что
+                // бар собирается слева направо, а не возникает целиком.
+                property int introDelay: 0
+
                 radius: 12
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b,
                                hovered ? 0.92 : 0.80)
@@ -64,6 +73,8 @@ Scope {
 
                 scale: hovered ? 1.04 : 1.0
 
+                // Островки лежат на обоях, а не на плоскости: без тени
+                // граница читается только за счёт рамки.
                 layer.enabled: true
                 layer.effect: MultiEffect {
                     shadowEnabled: true
@@ -81,8 +92,37 @@ Scope {
                 HoverHandler {
                     onHoveredChanged: island.hovered = hovered
                 }
+
+                // Свой transform, а не y: островки выровнены по anchors, и
+                // трогать y напрямую нельзя.
+                opacity: 0
+                transform: Translate { id: intro; y: -42 }
+
+                Component.onCompleted: introAnim.start()
+
+                SequentialAnimation {
+                    id: introAnim
+
+                    PauseAnimation { duration: island.introDelay }
+
+                    ParallelAnimation {
+                        NumberAnimation {
+                            target: intro; property: "y"; to: 0
+                            duration: 620
+                            easing.type: Easing.OutBack
+                            easing.overshoot: 1.05
+                        }
+                        NumberAnimation {
+                            target: island; property: "opacity"; to: 1
+                            duration: 380
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
             }
 
+            // Полоса бара. Всё видимое содержимое живёт здесь, чтобы маска
+            // ввода совпадала ровно с ним.
             Item {
                 id: strip
                 anchors.top: parent.top
@@ -92,6 +132,7 @@ Scope {
 
                 Island {
                     id: wsIsland
+                    introDelay: 0
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.leftMargin: 8
@@ -115,6 +156,8 @@ Scope {
                                     Hyprland.focusedWorkspace
                                     && Hyprland.focusedWorkspace.id === modelData.id
 
+                                // Пока в лаунчере подсвечено приложение,
+                                // столы с его окнами загораются отдельно.
                                 readonly property bool hasApp:
                                     Running.onWorkspace(modelData.id)
 
@@ -172,8 +215,11 @@ Scope {
                     }
                 }
 
+                // Плеер. Появляется только когда есть что показывать, иначе
+                // бар держал бы пустое место под редкий случай.
                 Island {
                     id: mediaIsland
+                    introDelay: 110
                     visible: Media.has && Media.label !== ""
 
                     anchors.left: wsIsland.right
@@ -197,30 +243,50 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 7
 
-                        Rectangle {
-                            width: 16
-                            height: 16
-                            radius: 5
-                            clip: true
+                        // Обложка в кольце прогресса: позиция в треке видна,
+                        // не занимая места под отдельную полосу или цифры.
+                        Item {
+                            width: 22
+                            height: 22
                             anchors.verticalCenter: parent.verticalCenter
-                            color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.7)
 
-                            Image {
-                                id: barCover
+                            ProgressRing {
                                 anchors.fill: parent
-                                source: Media.art
-                                fillMode: Image.PreserveAspectCrop
-                                asynchronous: true
-                                visible: Media.art !== "" && status === Image.Ready
+                                visible: Media.hasPosition
+                                value: Media.progress
+                                color: Colors.accent
+                                trackColor: Qt.rgba(Colors.outline.r,
+                                                    Colors.outline.g,
+                                                    Colors.outline.b, 0.30)
                             }
 
-                            Text {
+                            Rectangle {
+                                width: 16
+                                height: 16
+                                radius: 5
+                                clip: true
                                 anchors.centerIn: parent
-                                visible: !barCover.visible
-                                text: Media.playing ? "󰝚" : "󰎈"
-                                color: Colors.accent
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 11
+                                color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.7)
+
+                                Image {
+                                    id: barCover
+                                    anchors.fill: parent
+                                    source: Media.art
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    visible: Media.art !== "" && status === Image.Ready
+                                }
+
+                                // Пока обложка не загрузилась — состояние
+                                // воспроизведения всё равно видно.
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: !barCover.visible
+                                    text: Media.playing ? "󰝚" : "󰎈"
+                                    color: Colors.accent
+                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.pixelSize: 10
+                                }
                             }
 
                             MouseArea {
@@ -230,13 +296,18 @@ Scope {
                             }
                         }
 
+                        // Вместо названия — спектр. Название целиком
+                        // читается в подсказке и в панели плеера, а в баре
+                        // полосы говорят то же самое без прокрутки.
                         Row {
                             id: spectrum
-                            width: parent.width - 30
+                            width: parent.width - 36
                             height: 18
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 2
 
+                            // Полосы делят доступную ширину поровну, иначе
+                            // спектр не дотягивался бы до края островка.
                             readonly property real barWidth:
                                 (width - spacing * (Cava.bars - 1)) / Cava.bars
 
@@ -246,6 +317,10 @@ Scope {
                                 Rectangle {
                                     required property int index
 
+                                    // cava редко упирается в потолок своей
+                                    // шкалы, поэтому добавляем запас усиления
+                                    // и подрезаем — иначе спектр выглядит
+                                    // придавленным даже на громкой музыке.
                                     readonly property real level: {
                                         const v = Cava.levels[index];
                                         if (v === undefined) return 0;
@@ -256,6 +331,8 @@ Scope {
                                     radius: width / 2
                                     anchors.verticalCenter: parent.verticalCenter
 
+                                    // Минимум оставляет ровную линию точек
+                                    // в тишине вместо пустого места.
                                     height: Math.max(width, level * spectrum.height)
 
                                     color: Media.playing ? Colors.accent : Colors.fgDim
@@ -291,6 +368,7 @@ Scope {
 
                 Island {
                     id: clockIsland
+                    introDelay: 220
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
                     height: 26
@@ -316,6 +394,7 @@ Scope {
                 }
 
                 Island {
+                    introDelay: 330
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.rightMargin: 8
@@ -328,6 +407,8 @@ Scope {
                         spacing: 8
 
 
+                        // Recording is the loudest thing in the bar on purpose:
+                        // it is the only state you can forget you left running.
                         Row {
                             id: recRow
                             spacing: 6
@@ -410,6 +491,8 @@ Scope {
 
                         Sep { visible: SystemTray.items.values.length > 0 }
 
+                        // Connectivity and sound: glyphs stay quiet, only a
+                        // problem state takes colour.
                         Row {
                             spacing: 8
 
@@ -506,9 +589,13 @@ Scope {
 
                         Sep {}
 
+                        // Identity of the session: layout and charge. These are
+                        // the two you actually read, so they carry the contrast.
                         Row {
                             spacing: 9
 
+                            // Периферия подаёт голос, только когда садится:
+                            // постоянный значок «мышь заряжена» — шум.
                             Row {
                                 id: periphRow
                                 spacing: 4
@@ -596,6 +683,8 @@ Scope {
                 }
             }
 
+            // Пока любое окно в полный экран, сессия не должна засыпать:
+            // геймпад и мышь в игре не всегда считаются активностью ввода.
             IdleInhibitor {
                 window: win
                 enabled: {
@@ -608,6 +697,8 @@ Scope {
                 }
             }
 
+            // Подсказки рисуются под полосой, в немаскированной зоне окна.
+            // Один экземпляр на бар: одновременно наведён всегда один элемент.
             Item {
                 id: tips
                 anchors.fill: parent
@@ -639,6 +730,7 @@ Scope {
                     opacity: tips.current ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 140 } }
 
+                    // Не даём подсказке уехать за край экрана.
                     x: Math.max(6, Math.min(tips.width - width - 6,
                                             tips.at.x - width / 2))
                     y: 42
