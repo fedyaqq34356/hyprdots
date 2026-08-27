@@ -1,50 +1,32 @@
 #!/usr/bin/env bash
 
-CHOICE_FILE="$HOME/.config/hypr/shell-choice"
-
-ensure_dunst() {
-    pgrep -x dunst >/dev/null || setsid -f dunst >/dev/null 2>&1
-}
-
-start_waybar() {
-    pkill -x 'quickshell|qs' 2>/dev/null
-    sleep 0.4
-    pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
-    ensure_dunst
-    echo "waybar" > "$CHOICE_FILE"
-    echo "-> waybar"
-}
-
 start_qs() {
     if ! command -v quickshell >/dev/null; then
         echo "quickshell is not installed. Run: sudo pacman -S quickshell" >&2
         exit 1
     fi
-    pkill -x waybar     2>/dev/null
-    pkill -x dunst      2>/dev/null
+    pkill -x dunst 2>/dev/null
     pkill -x 'quickshell|qs' 2>/dev/null
     sleep 0.6
     QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
     sleep 2
     if pgrep -x 'quickshell|qs' >/dev/null; then
-        echo "qs" > "$CHOICE_FILE"
         echo "-> quickshell"
     else
-        echo "quickshell failed to start, falling back to waybar" >&2
-        start_waybar
+        echo "quickshell failed to start" >&2
         exit 1
     fi
 }
 
 case "${1:-status}" in
-    qs)     start_qs ;;
-    waybar) start_waybar ;;
+    qs|restart) start_qs ;;
+    stop)  pkill -x 'quickshell|qs' 2>/dev/null; echo "-> stopped" ;;
     status)
-        echo "saved choice: $(cat "$CHOICE_FILE" 2>/dev/null || echo 'none (waybar)')"
-        pgrep -x waybar     >/dev/null && echo "  waybar     running"
-        pgrep -x dunst      >/dev/null && echo "  dunst      running"
-        pgrep -x 'quickshell|qs' >/dev/null && echo "  quickshell running"
-        true
+        if pgrep -x 'quickshell|qs' >/dev/null; then
+            echo "quickshell running"
+        else
+            echo "quickshell not running"
+        fi
         ;;
-    *) echo "usage: shell-switch [qs|waybar|status]" >&2; exit 1 ;;
+    *) echo "usage: shell-switch [qs|restart|stop|status]" >&2; exit 1 ;;
 esac
