@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Калькулятор в rofi. Ввод считается на лету, Enter копирует результат в
-# буфер и кладёт выражение в историю. История показывается, пока строка пуста.
 set -u
 
 HIST="$HOME/.local/share/rofi-calc-history"
@@ -16,7 +14,6 @@ expr = sys.argv[1].strip()
 if not expr:
     sys.exit(1)
 
-# только математика: имена ограничены белым списком math
 allowed = {k: v for k, v in vars(math).items() if not k.startswith("_")}
 allowed.update({"abs": abs, "round": round, "min": min, "max": max,
                 "sum": sum, "pow": pow, "int": int, "float": float})
@@ -68,7 +65,6 @@ case "${ROFI_RETV}" in
         emit_history
         ;;
     1)
-        # выбрана строка из истории или введено выражение
         line="$query"
         expr="${line%% = *}"
         if res=$(calc "$expr"); then

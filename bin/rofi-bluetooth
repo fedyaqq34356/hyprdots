@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# Меню Bluetooth: питание, сканирование, подключение и отключение.
-# Иконка выбирается по классу устройства, а не по имени.
 set -u
 
 THEME="$HOME/.config/rofi/themes/list.rasi"
 
-# bt без работающего демона висит бесконечно — везде таймаут
 bt() { timeout 6 bluetoothctl "$@"; }
 
 if ! pgrep -x bluetoothd >/dev/null 2>&1; then
@@ -33,7 +30,6 @@ power_state() { bt show 2>/dev/null | awk '/Powered:/ {print $2; exit}'; }
 scan_state()  { bt show 2>/dev/null | awk '/Discovering:/ {print $2; exit}'; }
 
 icon_for() {
-    # $1 — MAC
     local cls name icon
     cls=$(bt info "$1" 2>/dev/null | awk -F': ' '/Icon:/ {print $2; exit}')
     case "$cls" in
@@ -78,7 +74,6 @@ devices_menu() {
 }
 
 mac_for_line() {
-    # обратный поиск MAC по подписи пункта
     local label="$1"
     label="${label#* }"
     label="${label# }"

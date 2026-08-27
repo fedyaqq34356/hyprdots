@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Файловый выбор с превью: картинки показываются как есть, для видео
-# кадр вытаскивается ffmpegthumbnailer и кэшируется.
 set -u
 
 CACHE="$HOME/.cache/rofi-thumbs"
