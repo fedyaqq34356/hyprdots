@@ -61,3 +61,11 @@ post_hook   = "python3 $HOME/.config/hypr/scripts/apply-browser-theme.py"
 input_path  = "~/.config/matugen/templates/cursor-trigger.txt"
 output_path = "~/.config/matugen/out/cursor-trigger.txt"
 post_hook   = "python3 $HOME/.config/hypr/scripts/gen-cursor-theme.py --reload"
+
+[templates.rofi-list]
+input_path  = "~/.config/matugen/templates/rofi-list.rasi"
+output_path = "~/.config/rofi/themes/list.rasi"
+
+[templates.rofi-grid]
+input_path  = "~/.config/matugen/templates/rofi-grid.rasi"
+output_path = "~/.config/rofi/themes/grid.rasi"

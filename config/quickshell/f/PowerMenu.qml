@@ -54,10 +54,18 @@ Scope {
 
     Process { id: runner }
 
+    readonly property var farewell: ["e", "r", "p"]
+
     function activate(index) {
         const action = root.actions[index];
         if (!action) return;
         root.close();
+
+        if (root.farewell.indexOf(action.key) !== -1) {
+            Bye.run(action.run);
+            return;
+        }
+
         runner.command = action.run;
         runner.running = true;
     }
