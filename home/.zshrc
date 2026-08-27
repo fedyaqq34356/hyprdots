@@ -5,13 +5,26 @@ HISTSIZE=50000
 SAVEHIST=50000
 setopt appendhistory histignorealldups sharehistory incappendhistory histignorespace
 
+# история: строки с секретами в неё не попадают вовсе
 zshaddhistory() {
 	emulate -L zsh
+	setopt localoptions extendedglob
 	local line=${1%%$'\n'}
-	if [[ "$line" == *(TOKEN|PASSWORD|SECRET|API_KEY|APIKEY|Authorization|BEARER)*=* || "$line" == *Bearer\ * || "$line" == *(token|password|secret)=* ]]; then
-		return 1
-	fi
+	local lower=${line:l}
+	case "$lower" in
+		*token*|*password*|*passwd*|*secret*|*api[-_]key*|*apikey*|*bearer*|\
+		*authorization*|*private[-_]key*|*access[-_]key*|*client[-_]secret*|\
+		*sk-ant-*|*ghp_*|*github_pat_*|*aws_secret*|*bot[0-9]*:aa*)
+			return 1 ;;
+	esac
 	return 0
+}
+
+# «секретная» сессия: ничего из неё не остаётся на диске
+secret() {
+	HISTFILE= HISTSIZE=0 SAVEHIST=0 LESSHISTFILE=- \
+	PYTHONHISTFILE=/dev/null NODE_REPL_HISTORY=/dev/null \
+	zsh -f -i
 }
 
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#585b70"
@@ -63,3 +76,41 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;
 esac
 export PATH="$HOME/bin:$PATH"
+
+# секреты живут в файле 600, а не в конфиге оболочки
+[[ -r "$HOME/.config/secrets/env" ]] && source "$HOME/.config/secrets/env"
+
+# истории интерпретаторов и пейджера рядом с остальным состоянием, не в $HOME
+export LESSHISTFILE=-
+export PYTHONHISTFILE="$HOME/.local/state/python_history"
+export NODE_REPL_HISTORY="$HOME/.local/state/node_repl_history"
+export SQLITE_HISTORY="$HOME/.local/state/sqlite_history"
+mkdir -p "$HOME/.local/state" 2>/dev/null
+
+# телеметрия тулчейнов и утилит — выключена
+export DO_NOT_TRACK=1
+export NEXT_TELEMETRY_DISABLED=1
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
+export GATSBY_TELEMETRY_DISABLED=1
+export NUXT_TELEMETRY_DISABLED=1
+export ASTRO_TELEMETRY_DISABLED=1
+export STORYBOOK_DISABLE_TELEMETRY=1
+export SAM_CLI_TELEMETRY=0
+export AZURE_CORE_COLLECT_TELEMETRY=0
+export HOMEBREW_NO_ANALYTICS=1
+export CHECKPOINT_DISABLE=1
+export TERRAFORM_TELEMETRY=0
+export INFLUXD_REPORTING_DISABLED=true
+export ADBLOCK=1
+export HINT_TELEMETRY=off
+export GOTELEMETRY=off
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+export npm_config_fund=false
+export npm_config_audit=false
+export NG_CLI_ANALYTICS=false
+export VUE_CLI_TELEMETRY=false
+export ELECTRON_ENABLE_LOGGING=0
+
+# core dump'ы никуда не пишутся из интерактивной оболочки
+ulimit -c 0

@@ -48,16 +48,84 @@ pick_output() {
     hyprctl -j monitors | jq -r '.[] | select(.focused) | "\(.x),\(.y) \(.width/.scale|floor)x\(.height/.scale|floor)"'
 }
 
+scrub_meta() {
+    [ -s "$1" ] || return 0
+    if have exiftool; then
+        exiftool -overwrite_original -all= "$1" >/dev/null 2>&1 && return 0
+    fi
+    if have magick; then
+        magick "$1" -strip "$1" >/dev/null 2>&1
+    fi
+}
+
+scan_secrets() {
+    have tesseract || return 0
+    text=$(tesseract "$1" - -l rus+eng 2>/dev/null) || return 0
+    hits=$(printf '%s' "$text" | grep -oiE \
+        'sk-ant-[a-z0-9_-]{8,}|ghp_[A-Za-z0-9]{16,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}|BEGIN [A-Z ]*PRIVATE KEY|/home/[a-z0-9_-]+/' \
+        | sort -u | head -4)
+    [ -z "$hits" ] && return 0
+    notify "Скриншот: проверь содержимое" \
+        "$(printf '%s' "$hits" | tr '\n' ' ')" -u critical -t 6000 -a screenshot
+}
+
 finish() {
     if [ ! -s "$FILE" ]; then
         rm -f "$FILE"
         exit 1
     fi
+    scrub_meta "$FILE"
     wl-copy --type image/png < "$FILE"
     notify "Скриншот" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
+    scan_secrets "$FILE" &
 }
 
 case "$MODE" in
+    blur)
+        GEOM=$(pick_region) || exit 1
+        [ -z "$GEOM" ] && exit 1
+        unfreeze
+        grim -g "$GEOM" "$FILE" || exit 1
+
+        if ! have magick; then
+            notify "Скриншот" "Нужен imagemagick для замыливания" -t 3000
+            finish
+            exit 0
+        fi
+
+        BASE_X=${GEOM%%,*}
+        REST=${GEOM#*,}
+        BASE_Y=${REST%% *}
+
+        while :; do
+            freeze
+            SUB=$(slurp -d 2>/dev/null) || { unfreeze; break; }
+            unfreeze
+            [ -z "$SUB" ] && break
+
+            SX=${SUB%%,*}
+            SR=${SUB#*,}
+            SY=${SR%% *}
+            SSIZE=${SUB##* }
+            SW=${SSIZE%%x*}
+            SH=${SSIZE##*x}
+
+            RX=$((SX - BASE_X))
+            RY=$((SY - BASE_Y))
+            [ "$RX" -lt 0 ] && RX=0
+            [ "$RY" -lt 0 ] && RY=0
+
+            magick "$FILE" \
+                \( +clone -crop "${SW}x${SH}+${RX}+${RY}" +repage \
+                   -resize 6% -resize "${SW}x${SH}!" -blur 0x8 \) \
+                -geometry "+${RX}+${RY}" -composite "$FILE" 2>/dev/null
+
+            notify "Скриншот" "Область замылена — выбери ещё или Esc" \
+                   -t 1800 -a screenshot -r 9993
+        done
+
+        finish
+        ;;
     region|edit)
         GEOM=$(pick_region) || exit 1
         [ -z "$GEOM" ] && exit 1
