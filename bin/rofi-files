@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Файловый выбор с превью: картинки показываются как есть, для видео
+# кадр вытаскивается ffmpegthumbnailer и кэшируется.
+set -u
+
+CACHE="$HOME/.cache/rofi-thumbs"
+mkdir -p "$CACHE"
+STATE="$CACHE/cwd"
+
+DIR="${1:-}"
+
+thumb_for() {
+    local f="$1"
+    case "${f,,}" in
+        *.jpg|*.jpeg|*.png|*.webp|*.gif|*.bmp|*.avif)
+            printf '%s\n' "$f"
+            return
+            ;;
+        *.mp4|*.mkv|*.webm|*.mov|*.avi|*.m4v|*.wmv|*.flv)
+            local key
+            key=$(printf '%s' "$f" | sha1sum | cut -d' ' -f1)
+            local out="$CACHE/$key.png"
+            if [[ ! -f "$out" || "$f" -nt "$out" ]]; then
+                ffmpegthumbnailer -i "$f" -o "$out" -s 320 -q 8 >/dev/null 2>&1 \
+                    || return 1
+            fi
+            printf '%s\n' "$out"
+            return
+            ;;
+    esac
+    return 1
+}
+
+list() {
+    printf '\0use-hot-keys\x1ftrue\n'
+    printf '\0prompt\x1f%s\n' "${DIR/#$HOME/~}"
+
+    if [[ "$DIR" != "/" ]]; then
+        printf '..\0icon\x1ffolder-up\x1finfo\x1fdir:%s\n' "$(dirname "$DIR")"
+    fi
+
+    while IFS= read -r d; do
+        [[ -z "$d" ]] && continue
+        printf '%s\0icon\x1ffolder\x1finfo\x1fdir:%s\n' "$(basename "$d")" "$d"
+    done < <(find "$DIR" -mindepth 1 -maxdepth 1 -type d ! -name '.*' | sort)
+
+    while IFS= read -r f; do
+        [[ -z "$f" ]] && continue
+        if t=$(thumb_for "$f"); then
+            printf '%s\0icon\x1f%s\x1finfo\x1ffile:%s\n' "$(basename "$f")" "$t" "$f"
+        fi
+    done < <(find "$DIR" -mindepth 1 -maxdepth 1 -type f ! -name '.*' | sort)
+}
+
+if [[ -z "${ROFI_RETV:-}" ]]; then
+    printf '%s' "${DIR:-$HOME/Pictures}" > "$STATE"
+    exec rofi -show filepreview \
+        -modi "filepreview:$0" \
+        -theme "$HOME/.config/rofi/themes/grid.rasi" \
+        -show-icons
+fi
+
+DIR=$(cat "$STATE" 2>/dev/null)
+[[ -d "$DIR" ]] || DIR="$HOME/Pictures"
+
+if [[ "${ROFI_RETV}" == 1 ]]; then
+    info="${ROFI_INFO:-}"
+    case "$info" in
+        dir:*)
+            DIR="${info#dir:}"
+            printf '%s' "$DIR" > "$STATE"
+            ;;
+        file:*)
+            setsid -f xdg-open "${info#file:}" >/dev/null 2>&1
+            exit 0
+            ;;
+    esac
+fi
+
+list

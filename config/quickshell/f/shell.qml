@@ -45,6 +45,8 @@ ShellRoot {
     Calendar { id: calendar }
     SysRings { id: sysRings }
     Lock {}
+    Curtain { id: curtain }
+    FocusTrail {}
 
     GlobalShortcut {
         appid: "quickshell"

@@ -1,0 +1,129 @@
+/* Генерируется matugen — править шаблон, не этот файл.
+   @import здесь не используется: в rofi 2.0 импорт внутри -theme
+   молча роняет разбор и включается дефолтная светлая тема. */
+* {
+    font:              "JetBrainsMono Nerd Font 11";
+    background-color:  transparent;
+    text-color:        {{colors.on_surface.default.hex}}FF;
+    margin:            0;
+    padding:           0;
+    spacing:           0;
+
+    bg:        {{colors.surface.default.hex}}E6;
+    bg-alt:    {{colors.surface_container_high.default.hex}}FF;
+    fg:        {{colors.on_surface.default.hex}}FF;
+    fg-dim:    {{colors.on_surface_variant.default.hex}}FF;
+    sel:       {{colors.surface_container_highest.default.hex}}FF;
+    accent:    {{colors.primary.default.hex}}FF;
+    accent-2:  {{colors.tertiary.default.hex}}FF;
+    line:      {{colors.outline.default.hex}}59;
+    bad:       {{colors.error.default.hex}}FF;
+}
+
+window {
+    transparency:     "real";
+    location:         center;
+    anchor:           center;
+    background-color: @bg;
+    border:           1px;
+    border-color:     @line;
+    border-radius:    18px;
+    padding:          14px;
+    children:         [ mainbox ];
+}
+
+mainbox {
+    spacing:  12px;
+    children: [ inputbar, message, listview ];
+}
+
+inputbar {
+    background-color: @bg-alt;
+    border:           1px;
+    border-color:     @line;
+    border-radius:    12px;
+    padding:          9px 14px;
+    spacing:          10px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    text-color:     @accent;
+    vertical-align: 0.5;
+}
+
+entry {
+    text-color:        @fg;
+    placeholder:       "поиск";
+    placeholder-color: @fg-dim;
+    cursor:            text;
+    vertical-align:    0.5;
+}
+
+message {
+    background-color: transparent;
+    padding:          0px 4px;
+}
+
+textbox {
+    text-color:     @fg-dim;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    background-color: transparent;
+    vertical-align:   0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+    highlight:        bold {{colors.tertiary.default.hex}};
+}
+
+element normal.normal    { text-color: @fg; }
+element alternate.normal { text-color: @fg; }
+element normal.urgent    { text-color: @bad; }
+element normal.active    { text-color: @accent; }
+
+element selected.normal {
+    background-color: @sel;
+    text-color:       @accent;
+    border:           1px;
+    border-color:     @accent;
+}
+
+element selected.urgent {
+    background-color: @sel;
+    text-color:       @bad;
+    border:           1px;
+    border-color:     @bad;
+}
+
+error-message {
+    background-color: @bg;
+    border-radius:    12px;
+    padding:          14px;
+}
+
+window { width: 480px; }
+
+listview {
+    columns:      1;
+    lines:        9;
+    cycle:        true;
+    dynamic:      true;
+    scrollbar:    false;
+    spacing:      4px;
+    fixed-height: false;
+}
+
+element {
+    padding:       9px 12px;
+    spacing:       11px;
+    border-radius: 11px;
+    cursor:        pointer;
+}
+
+element-icon { size: 20px; }
