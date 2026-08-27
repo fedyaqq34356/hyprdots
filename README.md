@@ -9,7 +9,7 @@ recolour themselves around it.
 
 [English](#english) · [Русский](#русский)
 
-`Hyprland` `Quickshell` `Waybar` `matugen` `hyprlock` `kitty` `zsh`
+`Hyprland` `Quickshell` `matugen` `hyprlock` `kitty` `zsh`
 
 <br>
 
@@ -90,15 +90,12 @@ file manager and shell. Every colour in the system is derived from the current w
 [matugen](https://github.com/InioX/matugen) (Material You), so the desktop is never out of sync
 with what is on the screen.
 
-Two shell stacks ship side by side and can be swapped at runtime:
+The shell is Quickshell throughout — bar, launcher, clipboard, notifications, volume and
+brightness OSD, wallpaper picker, overview and power menu are all one process.
 
-| Stack | Contents | Switch |
-| --- | --- | --- |
-| **Quickshell** (default) | custom bar, launcher, clipboard, notifications, volume/brightness OSD, wallpaper picker | `shell-switch qs` |
-| **Waybar** | Waybar + dunst + rofi, with the same indicators: recording, brightness, volume, layout, battery | `shell-switch waybar` |
-
-A watchdog supervises the active stack: if Quickshell dies, Waybar is brought up automatically, so
-the desktop is never left without a bar.
+A watchdog supervises it: if Quickshell dies it is restarted, and after three failures in a row it
+stops retrying and says so in a notification instead of flapping. `shell-switch status` reports
+the current state, `shell-switch restart` reloads it.
 
 ### Install
 
@@ -154,13 +151,12 @@ cd hyprdots && ./install.sh --update
 wallpaper ──▶ matugen ──┬──▶ hyprland   window borders
                         ├──▶ hyprlock   lock screen
                         ├──▶ quickshell bar, launcher, OSD
-                        ├──▶ waybar     bar
                         ├──▶ kitty      terminal palette
                         ├──▶ rofi       launcher
                         ├──▶ dunst      notifications
                         ├──▶ gtk 3/4    Thunar and every other GTK app
                         ├──▶ papirus    folder icons tinted to the accent
-                        ├──▶ wlogout    power menu on the Waybar stack
+                        ├──▶ wlogout    power menu
                         └──▶ cava       audio visualiser
 ```
 
@@ -224,8 +220,8 @@ fire straight away; arrows move the selection, `Enter` confirms, `Escape` or a c
 closes. Reboot and shutdown glow red instead of the theme accent, so the two irreversible entries
 never look like the others.
 
-It takes its colours from the wallpaper like everything else. Under the Waybar stack the same
-binding falls back to wlogout, which now reads the matugen palette as well.
+It takes its colours from the wallpaper like everything else. `wlogout` is still themed from the
+same palette and stays available as a standalone power menu.
 
 ### Screen capture
 
@@ -425,17 +421,16 @@ still needs an Xcursor build of the same theme, which `hyprcursor-util` cannot p
 config/
   hypr/          Hyprland, hyprlock, wallpaper and utility scripts
   quickshell/f/  the Quickshell stack (bar, launcher, clipboard, OSD, notifications)
-  waybar/        the fallback bar
   matugen/       colour-scheme templates for every application
   firejail/      sandbox overrides shared by every profile
   cliphist/      clipboard history limits
   kitty/         terminal
-  rofi/          launcher used by the Waybar stack
+  rofi/          launcher
   cava/          audio visualiser themes and shaders
   wlogout/       power menu
   yazi/          file manager
   fastfetch/     system information
-  gtk-3.0, gtk-4.0, qt6ct
+  gtk-3.0, gtk-4.0, qt5ct, qt6ct
   starship.toml  shell prompt
 home/            .zshrc, .zshenv, .bashrc
 bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
@@ -454,9 +449,10 @@ palette from `~/.cache/matugen/colors.json` at runtime.
 Arch or Artix Linux with an AUR helper (the installer builds `yay` if none is present).
 
 **Repositories:** hyprland · hyprlock · hyprpaper · hyprpolkitagent · xdg-desktop-portal-hyprland ·
-waybar · kitty · rofi-wayland · dunst · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
+kitty · rofi-wayland · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
 bat · ripgrep · lazygit · thunar · brightnessctl · playerctl · pipewire · wireplumber · cliphist ·
-wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt6ct · kvantum · papirus-icon-theme ·
+wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt5ct · qt6ct · kvantum ·
+kvantum-qt5 · papirus-icon-theme ·
 ttf-jetbrains-mono-nerd · zsh
 
 **AUR:** quickshell · matugen-bin · wlogout · wf-recorder · wl-clip-persist
@@ -490,15 +486,12 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE).
 [matugen](https://github.com/InioX/matugen) (Material You), поэтому оформление всегда совпадает с
 тем, что на экране.
 
-В комплекте два набора оболочки, переключаются на лету:
+Оболочка целиком на Quickshell: панель, лаунчер, буфер обмена, уведомления, индикаторы
+громкости и яркости, выбор обоев, обзор окон и меню выключения — всё один процесс.
 
-| Набор | Состав | Переключение |
-| --- | --- | --- |
-| **Quickshell** (по умолчанию) | своя панель, лаунчер, буфер обмена, уведомления, индикаторы громкости и яркости, выбор обоев | `shell-switch qs` |
-| **Waybar** | Waybar + dunst + rofi, те же индикаторы: запись, яркость, громкость, раскладка, батарея | `shell-switch waybar` |
-
-За активным набором следит watchdog: если Quickshell падает, автоматически поднимается Waybar —
-рабочий стол не остаётся без панели.
+За ним следит watchdog: упавший Quickshell перезапускается, а после трёх падений подряд попытки
+прекращаются и приходит уведомление — вместо бесконечного мигания панели. `shell-switch status`
+показывает состояние, `shell-switch restart` перезапускает.
 
 ### Установка
 
@@ -554,13 +547,12 @@ cd hyprdots && ./install.sh --update
 обои ──▶ matugen ──┬──▶ hyprland   рамки окон
                    ├──▶ hyprlock   экран блокировки
                    ├──▶ quickshell панель, лаунчер, индикаторы
-                   ├──▶ waybar     панель
                    ├──▶ kitty      палитра терминала
                    ├──▶ rofi       лаунчер
                    ├──▶ dunst      уведомления
                    ├──▶ gtk 3/4    Thunar и остальные GTK-приложения
                    ├──▶ papirus    иконки папок в тон акценту
-                   ├──▶ wlogout    меню выключения в наборе с Waybar
+                   ├──▶ wlogout    меню выключения
                    └──▶ cava       визуализатор звука
 ```
 
@@ -623,8 +615,8 @@ user_pref("media.av1.enabled", false);
 мимо закрывают. Перезагрузка и выключение подсвечиваются красным вместо цвета темы — два
 необратимых пункта не выглядят как остальные.
 
-Цвета берутся из обоев, как и везде. В наборе с Waybar та же клавиша открывает wlogout, который
-теперь тоже читает палитру matugen.
+Цвета берутся из обоев, как и везде. `wlogout` по-прежнему красится из той же палитры и остаётся
+отдельным меню выключения.
 
 ### Скриншоты
 
@@ -817,17 +809,16 @@ VPN, но только пока туннель поднят: определен�
 config/
   hypr/          Hyprland, hyprlock, скрипты обоев и утилит
   quickshell/f/  набор Quickshell (панель, лаунчер, буфер, индикаторы, уведомления)
-  waybar/        запасная панель
   matugen/       шаблоны цветовой схемы для всех приложений
   firejail/      общие правила песочницы для всех профилей
   cliphist/      ограничения истории буфера обмена
   kitty/         терминал
-  rofi/          лаунчер для набора с Waybar
+  rofi/          лаунчер
   cava/          темы и шейдеры визуализатора звука
   wlogout/       меню выключения
   yazi/          файловый менеджер
   fastfetch/     информация о системе
-  gtk-3.0, gtk-4.0, qt6ct
+  gtk-3.0, gtk-4.0, qt5ct, qt6ct
   starship.toml  приглашение оболочки
 home/            .zshrc, .zshenv, .bashrc
 bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
@@ -846,9 +837,10 @@ IDEAS.md         список того, что можно сделать дал�
 Arch или Artix Linux, помощник AUR (если его нет, установщик соберёт `yay`).
 
 **Репозитории:** hyprland · hyprlock · hyprpaper · hyprpolkitagent · xdg-desktop-portal-hyprland ·
-waybar · kitty · rofi-wayland · dunst · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
+kitty · rofi-wayland · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
 bat · ripgrep · lazygit · thunar · brightnessctl · playerctl · pipewire · wireplumber · cliphist ·
-wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt6ct · kvantum · papirus-icon-theme ·
+wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt5ct · qt6ct · kvantum ·
+kvantum-qt5 · papirus-icon-theme ·
 ttf-jetbrains-mono-nerd · zsh
 
 **AUR:** quickshell · matugen-bin · wlogout · wf-recorder · wl-clip-persist
