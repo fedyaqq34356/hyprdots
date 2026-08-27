@@ -3,7 +3,13 @@
 SRC="@DEFAULT_SOURCE@"
 DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 TARGET_FILE="$DIR/mic-lock.target"
-DEFAULT_LEVEL="${MIC_LOCK_LEVEL:-100}"
+PERSIST_FILE="$HOME/.config/hypr/mic-level"
+
+saved=$(cat "$PERSIST_FILE" 2>/dev/null)
+case "$saved" in
+    ''|*[!0-9]*) saved=100 ;;
+esac
+DEFAULT_LEVEL="${MIC_LOCK_LEVEL:-$saved}"
 
 [ -f "$TARGET_FILE" ] || printf '%s' "$DEFAULT_LEVEL" > "$TARGET_FILE"
 

@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 import QtQuick
 import Quickshell.Wayland
@@ -20,6 +21,20 @@ Scope {
 
     PwObjectTracker {
         objects: root.sources
+    }
+
+    Process {
+        id: micTarget
+        command: ["sh", "-c", ""]
+    }
+
+    function setMicTarget(vol) {
+        const pct = Math.round(Math.max(0, Math.min(1, vol)) * 100);
+        micTarget.command = [
+            Quickshell.env("HOME") + "/.config/hypr/scripts/mic-target.sh",
+            String(pct)
+        ];
+        micTarget.running = true;
     }
 
     component Slider: Rectangle {
@@ -83,6 +98,7 @@ Scope {
         id: ch
 
         property var node: null
+        property bool isSource: false
         property string title: ""
         property string iconOn: ""
         property string iconOff: ""
@@ -158,6 +174,7 @@ Scope {
                 if (!ch.au) return;
                 ch.au.muted = false;
                 ch.au.volume = v;
+                if (ch.isSource) root.setMicTarget(v);
             }
         }
     }
@@ -228,6 +245,7 @@ Scope {
 
                 Channel {
                     node: root.source
+                    isSource: true
                     title: "Микрофон"
                     iconOn: "󰍬"
                     iconOff: "󰍭"
@@ -311,5 +329,6 @@ Scope {
         if (!a) return;
         a.muted = false;
         a.volume = Math.max(0, Math.min(1, a.volume + delta));
+        root.setMicTarget(a.volume);
     }
 }
