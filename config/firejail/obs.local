@@ -1,0 +1,22 @@
+# Захват экрана в Wayland идёт через xdg-desktop-portal: OBS просит у портала
+# ScreenCast-сессию по D-Bus и получает в ответ дескриптор PipeWire.
+#
+# Сессионная шина на этой машине живёт в /tmp (dbus-launch, а не
+# ${RUNUSER}/bus), а профиль obs ставит private-tmp и подменяет /tmp пустым
+# tmpfs. Сокет шины внутрь песочницы не попадает, портал недоступен, и в
+# списке источников пусто. Сокет PipeWire при этом виден и работает.
+ignore private-tmp
+
+# На случай, если профиль когда-нибудь начнёт фильтровать D-Bus.
+dbus-user.talk org.freedesktop.portal.Desktop
+dbus-user.talk org.freedesktop.portal.Documents
+dbus-user.talk org.freedesktop.impl.portal.desktop.hyprland
+dbus-user.talk org.freedesktop.impl.portal.desktop.gtk
+
+# Пока идёт запись, экран не должен гаснуть.
+dbus-user.talk org.freedesktop.ScreenSaver
+dbus-user.talk org.freedesktop.PowerManagement.Inhibit
+
+# Управление громкостью и выбор источников звука.
+dbus-user.talk org.pipewire.PipeWire
+dbus-user.talk org.freedesktop.RealtimeKit1
