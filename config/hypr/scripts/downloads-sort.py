@@ -146,6 +146,25 @@ def notify(count: int) -> None:
     os.system(f'notify-send -a downloads-sort -i folder-download '
               f'"Downloads sorted" "{count} {word} filed away"')
 
+SCRUB_SUFFIXES = {
+    ".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".heic", ".avif",
+    ".mp4", ".mkv", ".mov", ".webm", ".m4v", ".mp3", ".flac", ".m4a",
+    ".opus", ".ogg", ".wav", ".pdf",
+}
+
+SCRUB = Path.home() / ".local/bin/scrub-meta"
+
+def scrub(path: Path) -> None:
+    """Снимает метаданные (в том числе GPS) с попавшего в Downloads файла."""
+    if path.suffix.lower() not in SCRUB_SUFFIXES or not SCRUB.is_file():
+        return
+    try:
+        subprocess.run([str(SCRUB), str(path)], check=False,
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
 def main() -> int:
     if not DOWNLOADS.is_dir():
         print(f"{DOWNLOADS} does not exist", file=sys.stderr)
@@ -172,6 +191,7 @@ def main() -> int:
             target = unique_target(folder / path.name)
             try:
                 shutil.move(str(path), str(target))
+                scrub(target)
                 moved += 1
             except OSError as exc:
                 print(f"skip {path.name}: {exc}", file=sys.stderr)

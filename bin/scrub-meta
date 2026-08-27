@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -u
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+MODE=scrub
+case "${1:-}" in
+    --check) MODE=check; shift ;;
+    --flat)  MODE=flat;  shift ;;
+    -h|--help|"")
+        sed -n '2,6p' "$0" | sed 's/^# \?//'
+        exit 0
+        ;;
+esac
+
+warn_missing() {
+    printf 'нет %s — %s пропущено\n' "$1" "$2" >&2
+}
+
+check_one() {
+    local f="$1"
+    printf '\n=== %s\n' "$f"
+    if have exiftool; then
+        exiftool -a -G1 -s "$f" 2>/dev/null \
+            | grep -viE '^\[(File|ExifTool)\]' | head -40
+    else
+        warn_missing exiftool "чтение метаданных"
+    fi
+    case "${f,,}" in
+        *.pdf)
+            if have pdfinfo; then pdfinfo "$f" 2>/dev/null | head -20; fi
+            if have qpdf; then
+                printf -- '--- скрытые слои/правки:\n'
+                qpdf --show-npages "$f" >/dev/null 2>&1 \
+                    && qpdf "$f" --json 2>/dev/null | grep -ciE '"/OCProperties"|"/Annots"' \
+                    | sed 's/^/  объектов с слоями|аннотациями: /'
+            fi
+            ;;
+    esac
+}
+
+scrub_image() {
+    if have exiftool; then
+        exiftool -overwrite_original -all= -TagsFromFile @ -Orientation "$1" >/dev/null 2>&1 && return 0
+    fi
+    have magick && magick "$1" -strip "$1" >/dev/null 2>&1
+}
+
+scrub_av() {
+    have ffmpeg || { warn_missing ffmpeg "очистка $1"; return 1; }
+    local tmp="${1}.scrub.tmp"
+    ext="${1##*.}"
+    if ffmpeg -y -loglevel error -i "$1" -map_metadata -1 -map_chapters -1 \
+              -c copy "$tmp.$ext" 2>/dev/null; then
+        mv -f "$tmp.$ext" "$1"
+    else
+        rm -f "$tmp.$ext"
+        return 1
+    fi
+}
+
+scrub_pdf() {
+    if have exiftool; then
+        exiftool -overwrite_original -all:all= "$1" >/dev/null 2>&1
+    fi
+    if have qpdf; then
+        local tmp="${1}.qpdf.tmp"
+        qpdf --linearize --remove-unreferenced-resources=yes "$1" "$tmp" 2>/dev/null \
+            && mv -f "$tmp" "$1" || rm -f "$tmp"
+    fi
+}
+
+flat_pdf() {
+    if have gs; then
+        local tmp="${1%.pdf}-flat.pdf"
+        gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dQUIET -dSAFER \
+           -dPDFSETTINGS=/prepress -dPrinted=false \
+           -sOutputFile="$tmp" "$1" 2>/dev/null || { rm -f "$tmp"; return 1; }
+        have exiftool && exiftool -overwrite_original -all:all= "$tmp" >/dev/null 2>&1
+        printf '%s\n' "$tmp"
+    else
+        warn_missing ghostscript "плоский экспорт PDF"
+        return 1
+    fi
+}
+
+for f in "$@"; do
+    [[ -f "$f" ]] || { printf 'нет файла: %s\n' "$f" >&2; continue; }
+
+    case "$MODE" in
+        check) check_one "$f"; continue ;;
+        flat)  flat_pdf "$f"; continue ;;
+    esac
+
+    case "${f,,}" in
+        *.jpg|*.jpeg|*.png|*.webp|*.tif|*.tiff|*.heic|*.avif|*.gif)
+            scrub_image "$f" && printf 'очищено: %s\n' "$f" ;;
+        *.mp4|*.mkv|*.mov|*.webm|*.m4v|*.avi|*.mp3|*.flac|*.m4a|*.opus|*.ogg|*.wav)
+            scrub_av "$f" && printf 'очищено: %s\n' "$f" ;;
+        *.pdf)
+            scrub_pdf "$f" && printf 'очищено: %s\n' "$f" ;;
+        *)
+            if have exiftool; then
+                exiftool -overwrite_original -all= "$f" >/dev/null 2>&1 \
+                    && printf 'очищено: %s\n' "$f"
+            fi
+            ;;
+    esac
+done
