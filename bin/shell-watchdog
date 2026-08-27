@@ -3,15 +3,14 @@
 exec 9>"$HOME/.cache/shell-watchdog.lock"
 flock -n 9 || exit 0
 
-CHOICE_FILE="$HOME/.config/hypr/shell-choice"
 CHECK_INTERVAL=5
 FAIL_LIMIT=3
 FAIL_WINDOW=120
 
 fails=0
 last_fail=0
-fell_back=0
 misses=0
+gave_up=0
 
 notify() {
     command -v notify-send >/dev/null 2>&1 || return 0
@@ -22,38 +21,17 @@ start_qs() {
     QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
 }
 
-stop_waybar() {
-    pkill -x waybar 2>/dev/null
-    pkill -x dunst  2>/dev/null
-}
-
-start_waybar() {
-    pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1
-    pgrep -x dunst  >/dev/null || setsid -f dunst  >/dev/null 2>&1
-}
-
 while true; do
     sleep "$CHECK_INTERVAL"
 
-    choice=$(cat "$CHOICE_FILE" 2>/dev/null || echo waybar)
-
-    [[ "$choice" == "qs" ]] || fell_back=0
-    (( fell_back )) && choice=waybar
-
-    if [[ "$choice" != "qs" ]]; then
-        pgrep -x 'quickshell|qs' >/dev/null && pkill -x 'quickshell|qs' 2>/dev/null
-        start_waybar
-        fails=0
-        misses=0
-        continue
-    fi
-
     if pgrep -x 'quickshell|qs' >/dev/null; then
-        pgrep -x waybar >/dev/null && stop_waybar
         fails=0
         misses=0
+        gave_up=0
         continue
     fi
+
+    (( gave_up )) && continue
 
     misses=$((misses + 1))
     (( misses < 2 )) && continue
@@ -65,12 +43,9 @@ while true; do
     fails=$((fails + 1))
 
     if (( fails >= FAIL_LIMIT )); then
-        fell_back=1
-        pkill -x 'quickshell|qs' 2>/dev/null
-        start_waybar
-        sleep 2
+        gave_up=1
         notify -u critical "Shell" \
-            "quickshell упал $fails раза подряд, временно waybar. Вернуть: echo qs > ~/.config/hypr/shell-choice"
+            "quickshell упал $fails раза подряд, перезапуск остановлен. Руками: shell-switch qs"
         fails=0
         continue
     fi
