@@ -4,8 +4,6 @@ import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 
-// След фокуса: при переходе фокуса между окнами по экрану на мгновение
-// прочерчивается «путь» из точки, где фокус был, в точку, куда ушёл.
 Scope {
     id: root
 
@@ -90,7 +88,6 @@ Scope {
             readonly property real len: Math.sqrt(dx * dx + dy * dy)
             readonly property real ang: Math.atan2(dy, dx) * 180 / Math.PI
 
-            // сама линия пути: короткий градиентный штрих от старого окна к новому
             Item {
                 id: path
                 x: root.fromX
@@ -114,7 +111,6 @@ Scope {
                 }
             }
 
-            // вспышка-кольцо в точке назначения
             Rectangle {
                 id: dot
                 width: 0

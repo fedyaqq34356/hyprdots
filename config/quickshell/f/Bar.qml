@@ -471,8 +471,6 @@ Scope {
                         anchors.centerIn: parent
                         spacing: 8
 
-                        // новые исходящие соединения — появляется, только
-                        // когда они есть, и само уходит через несколько секунд
                         Row {
                             id: outRow
                             spacing: 6

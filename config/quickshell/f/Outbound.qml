@@ -4,9 +4,6 @@ import Quickshell
 import Quickshell.Io
 import QtQuick
 
-// Новые исходящие соединения. Опрашивается ss, из него берутся только
-// пары «процесс → адрес», которых раньше не было. Ничего не пишется на диск:
-// список живёт в памяти и стареет сам.
 Singleton {
     id: root
 
@@ -55,8 +52,6 @@ Singleton {
                     if (root.seen[key] !== undefined) continue;
                     root.seen[key] = now;
 
-                    // первый проход после старта — это весь уже открытый
-                    // трафик, показывать его как «новое» смысла нет
                     if (!root.ready) continue;
 
                     fresh.push({ proc: parts[0], host: parts[1],
@@ -83,7 +78,6 @@ Singleton {
         onTriggered: probe.running = true
     }
 
-    // запись держится в баре недолго и уходит сама
     Timer {
         interval: 1000
         running: root.recent.length > 0
