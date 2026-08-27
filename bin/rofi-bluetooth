@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+# Меню Bluetooth: питание, сканирование, подключение и отключение.
+# Иконка выбирается по классу устройства, а не по имени.
+set -u
+
+THEME="$HOME/.config/rofi/themes/list.rasi"
+
+# bt без работающего демона висит бесконечно — везде таймаут
+bt() { timeout 6 bluetoothctl "$@"; }
+
+if ! pgrep -x bluetoothd >/dev/null 2>&1; then
+    ans=$(printf '󰂯  Запустить bluetoothd
+󰅖  Отмена
+' \
+          | rofi -dmenu -i -theme "$THEME" -p "bt" \
+                 -mesg "служба Bluetooth не запущена")
+    case "$ans" in
+        "󰂯  Запустить bluetoothd")
+            pkexec rc-service bluetoothd start >/dev/null 2>&1 \
+                || sudo rc-service bluetoothd start >/dev/null 2>&1
+            sleep 2
+            ;;
+        *) exit 0 ;;
+    esac
+    pgrep -x bluetoothd >/dev/null 2>&1 || {
+        notify-send -a bluetooth -u critical "Bluetooth" \
+            "не удалось запустить bluetoothd" 2>/dev/null
+        exit 1
+    }
+fi
+
+power_state() { bt show 2>/dev/null | awk '/Powered:/ {print $2; exit}'; }
+scan_state()  { bt show 2>/dev/null | awk '/Discovering:/ {print $2; exit}'; }
+
+icon_for() {
+    # $1 — MAC
+    local cls name icon
+    cls=$(bt info "$1" 2>/dev/null | awk -F': ' '/Icon:/ {print $2; exit}')
+    case "$cls" in
+        audio-headset|audio-headphones) icon="󰋋" ;;
+        audio-card|audio-speakers)      icon="󰓃" ;;
+        input-keyboard)                 icon="󰌌" ;;
+        input-mouse)                    icon="󰍽" ;;
+        input-gaming)                   icon="󰊴" ;;
+        phone)                          icon="󰄜" ;;
+        computer)                       icon="󰟀" ;;
+        printer)                        icon="󰐪" ;;
+        camera-photo|camera-video)      icon="󰄀" ;;
+        watch)                          icon="󰥔" ;;
+        *)                              icon="󰂯" ;;
+    esac
+    printf '%s' "$icon"
+}
+
+connected() {
+    bt info "$1" 2>/dev/null | grep -q "Connected: yes"
+}
+
+paired() {
+    bt info "$1" 2>/dev/null | grep -q "Paired: yes"
+}
+
+devices_menu() {
+    local mac name mark icon
+    while read -r _ mac name; do
+        [[ -z "$mac" ]] && continue
+        icon=$(icon_for "$mac")
+        if connected "$mac"; then
+            mark="  ●"
+        elif paired "$mac"; then
+            mark="  ○"
+        else
+            mark=""
+        fi
+        printf '%s  %s%s\n' "$icon" "$name" "$mark"
+        printf '%s\t%s\n' "$mac" "$name" >> "$MAP"
+    done < <(bt devices 2>/dev/null | sort -k3)
+}
+
+mac_for_line() {
+    # обратный поиск MAC по подписи пункта
+    local label="$1"
+    label="${label#* }"
+    label="${label# }"
+    label="${label%  ●}"
+    label="${label%  ○}"
+    awk -F'\t' -v n="$label" '$2 == n {print $1; exit}' "$MAP"
+}
+
+MAP=$(mktemp)
+trap 'rm -f "$MAP"' EXIT
+
+while true; do
+    : > "$MAP"
+
+    pw=$(power_state)
+    sc=$(scan_state)
+
+    header=""
+    if [[ "$pw" == "yes" ]]; then
+        header="󰂯  Bluetooth: включён"
+        toggle="󰂲  Выключить"
+    else
+        header="󰂲  Bluetooth: выключен"
+        toggle="󰂯  Включить"
+    fi
+
+    if [[ "$sc" == "yes" ]]; then
+        scanline="󰐷  Остановить поиск"
+    else
+        scanline="󰐷  Искать устройства"
+    fi
+
+    {
+        printf '%s\n' "$toggle"
+        [[ "$pw" == "yes" ]] && printf '%s\n' "$scanline"
+        [[ "$pw" == "yes" ]] && devices_menu
+    } > "$MAP.menu"
+
+    choice=$(rofi -dmenu -i -theme "$THEME" -p "bt" -mesg "$header" \
+                  -format 's' < "$MAP.menu")
+    rc=$?
+    rm -f "$MAP.menu"
+    [[ $rc -ne 0 || -z "$choice" ]] && exit 0
+
+    case "$choice" in
+        "󰂯  Включить")
+            bt power on >/dev/null 2>&1
+            continue
+            ;;
+        "󰂲  Выключить")
+            bt power off >/dev/null 2>&1
+            continue
+            ;;
+        "󰐷  Искать устройства")
+            ( timeout 25 bluetoothctl --timeout 20 scan on >/dev/null 2>&1 & )
+            notify-send -a bluetooth "Bluetooth" "поиск устройств 20 секунд" 2>/dev/null
+            sleep 4
+            continue
+            ;;
+        "󰐷  Остановить поиск")
+            bt scan off >/dev/null 2>&1
+            continue
+            ;;
+    esac
+
+    mac=$(mac_for_line "$choice")
+    [[ -z "$mac" ]] && continue
+
+    if connected "$mac"; then
+        action=$(printf '󰂲  Отключить\n󰅖  Забыть устройство\n󰌑  Назад\n' \
+                 | rofi -dmenu -i -theme "$THEME" -p "$choice")
+        case "$action" in
+            "󰂲  Отключить")
+                if timeout 15 bluetoothctl disconnect "$mac" >/dev/null 2>&1; then
+                    notify-send -a bluetooth "Bluetooth" "отключено" 2>/dev/null
+                else
+                    notify-send -a bluetooth -u critical "Bluetooth" "не удалось отключить" 2>/dev/null
+                fi
+                ;;
+            "󰅖  Забыть устройство")
+                bt remove "$mac" >/dev/null 2>&1
+                ;;
+        esac
+    else
+        paired "$mac" || timeout 30 bluetoothctl pair "$mac" >/dev/null 2>&1
+        bt trust "$mac" >/dev/null 2>&1
+        if timeout 25 bluetoothctl connect "$mac" >/dev/null 2>&1; then
+            notify-send -a bluetooth "Bluetooth" "подключено: ${choice#* }" 2>/dev/null
+        else
+            notify-send -a bluetooth -u critical "Bluetooth" \
+                "не удалось подключиться к ${choice#* }" 2>/dev/null
+        fi
+    fi
+done

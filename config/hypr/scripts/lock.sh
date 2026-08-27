@@ -42,15 +42,39 @@ case "${1:-}" in
     qs|hyprlock) choice="$1"; shift ;;
 esac
 
+RUN="${XDG_RUNTIME_DIR:-/tmp}"
+FLAG="$RUN/session-locked"
+MISSED="$RUN/missed-notifications"
+
+lock_begin() {
+    echo 0 > "$MISSED"
+    echo 1 > "$FLAG"
+}
+
+lock_end() {
+    echo 0 > "$FLAG"
+    echo 0 > "$MISSED"
+    command -v qs >/dev/null 2>&1 && qs -c f ipc call curtain up >/dev/null 2>&1
+}
+
 if [[ "$choice" == "qs" ]]; then
     "$CONFIG_DIR/scripts/lock-prepare.sh" 2>/dev/null
 
-    if command -v qs >/dev/null 2>&1 && qs -c f ipc call lock lock >/dev/null 2>&1; then
-        exit 0
+    if command -v qs >/dev/null 2>&1; then
+        lock_begin
+        if qs -c f ipc call lock lock >/dev/null 2>&1; then
+            exit 0
+        fi
+        echo 0 > "$FLAG"
     fi
 
     notify-send -u critical "Экран блокировки" \
         "Quickshell не ответил, блокирую через hyprlock" 2>/dev/null
 fi
 
-exec hyprlock "$@"
+"$CONFIG_DIR/scripts/lock-prepare.sh" 2>/dev/null
+lock_begin
+hyprlock "$@"
+status=$?
+lock_end
+exit "$status"

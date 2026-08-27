@@ -1,0 +1,29 @@
+# Процессы, которым сеть положена по профессии: их соединения в баре
+# не показываются, иначе браузер забивает собой всё.
+# По одному имени в строке, как в выводе ss.
+librewolf
+firefox
+chromium
+chrome
+brave
+discord
+Discord
+DiscordCanary
+Equicord
+steam
+steamwebhelper
+telegram-desktop
+Telegram
+element-desktop
+spotify
+qbittorrent
+transmission
+pipewire
+wireplumber
+NetworkManager
+dnscrypt-proxy
+ntpd
+pacman
+paru
+yay
+node

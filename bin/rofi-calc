@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Калькулятор в rofi. Ввод считается на лету, Enter копирует результат в
+# буфер и кладёт выражение в историю. История показывается, пока строка пуста.
+set -u
+
+HIST="$HOME/.local/share/rofi-calc-history"
+MAX=200
+mkdir -p "$(dirname "$HIST")"
+touch "$HIST"
+
+calc() {
+    python3 - "$1" <<'PY'
+import sys, math, re
+
+expr = sys.argv[1].strip()
+if not expr:
+    sys.exit(1)
+
+# только математика: имена ограничены белым списком math
+allowed = {k: v for k, v in vars(math).items() if not k.startswith("_")}
+allowed.update({"abs": abs, "round": round, "min": min, "max": max,
+                "sum": sum, "pow": pow, "int": int, "float": float})
+
+expr = expr.replace("^", "**").replace(",", ".").replace("×", "*").replace("÷", "/")
+
+if re.search(r"[A-Za-z_][A-Za-z_0-9]*", expr):
+    for name in set(re.findall(r"[A-Za-z_][A-Za-z_0-9]*", expr)):
+        if name not in allowed:
+            sys.exit(1)
+
+try:
+    val = eval(expr, {"__builtins__": {}}, allowed)
+except Exception:
+    sys.exit(1)
+
+if isinstance(val, float):
+    if val == int(val) and abs(val) < 1e15:
+        print(int(val))
+    else:
+        print(repr(round(val, 10)))
+else:
+    print(val)
+PY
+}
+
+emit_history() {
+    printf '\0message\x1f<i>история — Enter повторяет выражение</i>\n'
+    tac "$HIST" 2>/dev/null | awk '!seen[$0]++' | head -n 40 | while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        printf '%s\0icon\x1faccessories-calculator\x1fnonselectable\x1ffalse\n' "$line"
+    done
+}
+
+if [[ -z "${ROFI_RETV:-}" ]]; then
+    exec rofi -show calc \
+        -modi "calc:$0" \
+        -theme "$HOME/.config/rofi/themes/list.rasi" \
+        -kb-custom-1 "Alt+c" \
+        -matching normal
+fi
+
+query="${1:-}"
+
+case "${ROFI_RETV}" in
+    0)
+        printf '\0prompt\x1f\n'
+        printf '\0no-custom\x1ffalse\n'
+        emit_history
+        ;;
+    1)
+        # выбрана строка из истории или введено выражение
+        line="$query"
+        expr="${line%% = *}"
+        if res=$(calc "$expr"); then
+            printf '%s' "$res" | wl-copy 2>/dev/null
+            printf '%s = %s\n' "$expr" "$res" >> "$HIST"
+            tail -n "$MAX" "$HIST" > "$HIST.tmp" && mv "$HIST.tmp" "$HIST"
+            notify-send -a rofi-calc "$expr = $res" "скопировано в буфер" 2>/dev/null
+        fi
+        exit 0
+        ;;
+    2)
+        printf '\0prompt\x1f\n'
+        if res=$(calc "$query"); then
+            printf '%s = %s\0icon\x1faccessories-calculator\n' "$query" "$res"
+        fi
+        emit_history
+        ;;
+    10)
+        : > "$HIST"
+        printf '\0message\x1f<i>история очищена</i>\n'
+        ;;
+    *)
+        emit_history
+        ;;
+esac

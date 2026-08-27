@@ -43,6 +43,16 @@ Scope {
             property string notice: ""
             property bool failed: false
             property int attempts: 0
+            property int missed: 0
+
+            function missedWord(n) {
+                const tens = n % 100;
+                if (tens >= 11 && tens <= 14) return "уведомлений";
+                const ones = n % 10;
+                if (ones === 1) return "уведомление";
+                if (ones >= 2 && ones <= 4) return "уведомления";
+                return "уведомлений";
+            }
 
             PamContext {
                 id: pam
@@ -55,6 +65,7 @@ Scope {
 
                 onCompleted: function (result) {
                     if (result === PamResult.Success) {
+                        unlockFx.running = true;
                         root.locked = false;
                         return;
                     }
@@ -66,7 +77,7 @@ Scope {
                         : "неверный пароль";
                     surface.entry = "";
                     intruder.running = true;
-                    shake.restart();
+                    dissolve.restart();
                 }
 
                 onError: function (err) {
@@ -82,6 +93,31 @@ Scope {
                 surface.notice = "проверяю…";
                 surface.failed = false;
                 pam.start();
+            }
+
+            Process {
+                id: unlockFx
+                command: ["qs", "-c", "f", "ipc", "call", "curtain", "up"]
+            }
+
+            Process {
+                id: missedProbe
+                command: ["sh", "-c",
+                          "cat \"${XDG_RUNTIME_DIR:-/tmp}/missed-notifications\" 2>/dev/null || echo 0"]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        const n = parseInt(this.text.trim(), 10);
+                        surface.missed = isNaN(n) ? 0 : n;
+                    }
+                }
+            }
+
+            Timer {
+                interval: 2000
+                running: true
+                repeat: true
+                triggeredOnStart: true
+                onTriggered: missedProbe.running = true
             }
 
             Process {
@@ -112,6 +148,40 @@ Scope {
                 anchors.centerIn: parent
                 spacing: 34
 
+                Item {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 108
+                    height: 108
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 108
+                        height: 108
+                        radius: 54
+                        color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                       Colors.accent.b, 0.14)
+                    }
+
+                    ClippingRectangle {
+                        anchors.centerIn: parent
+                        width: 92
+                        height: 92
+                        radius: 46
+                        color: "transparent"
+                        border.width: 2
+                        border.color: Colors.accent
+
+                        Image {
+                            anchors.fill: parent
+                            anchors.margins: 2
+                            source: "file://" + Quickshell.env("HOME")
+                                    + "/.local/share/avatar/avatar.png"
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                        }
+                    }
+                }
+
                 HandClock {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatDateTime(lockClock.date, "HH:mm")
@@ -136,14 +206,44 @@ Scope {
                     width: 360
                     height: 96
 
-                    transform: Translate { id: shift }
-
                     SequentialAnimation {
-                        id: shake
-                        NumberAnimation { target: shift; property: "x"; to: 14; duration: 55 }
-                        NumberAnimation { target: shift; property: "x"; to: -12; duration: 55 }
-                        NumberAnimation { target: shift; property: "x"; to: 7; duration: 55 }
-                        NumberAnimation { target: shift; property: "x"; to: 0; duration: 55 }
+                        id: dissolve
+                        NumberAnimation {
+                            target: field; property: "opacity"
+                            to: 0.0; duration: 260; easing.type: Easing.InCubic
+                        }
+                        PauseAnimation { duration: 90 }
+                        NumberAnimation {
+                            target: field; property: "opacity"
+                            to: 1.0; duration: 320; easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Rectangle {
+                        id: pulse
+                        anchors.top: parent.top
+                        width: parent.width
+                        height: 46
+                        radius: 23
+                        color: "transparent"
+                        border.width: 1
+                        border.color: surface.failed ? Colors.bad : Colors.accent
+                        opacity: 0
+                        scale: 1.0
+                    }
+
+                    ParallelAnimation {
+                        id: pulseBeat
+                        NumberAnimation {
+                            target: pulse; property: "opacity"
+                            from: 0.75; to: 0; duration: 420
+                            easing.type: Easing.OutCubic
+                        }
+                        NumberAnimation {
+                            target: pulse; property: "scale"
+                            from: 0.97; to: 1.06; duration: 420
+                            easing.type: Easing.OutCubic
+                        }
                     }
 
                     WaveMeter {
@@ -185,6 +285,7 @@ Scope {
                             surface.entry = text;
                             if (text !== "")
                                 surface.failed = false;
+                            pulseBeat.restart();
                         }
 
                         Keys.onReturnPressed: surface.submit()
@@ -276,6 +377,39 @@ Scope {
                             width: Math.min(implicitWidth, 320)
                         }
                     }
+                }
+            }
+
+            Row {
+                visible: surface.missed > 0
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottomMargin: 40
+                spacing: 8
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 22
+                    height: 22
+                    radius: 11
+                    color: Colors.accent
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: surface.missed > 99 ? "99+" : String(surface.missed)
+                        color: Colors.accentText
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 10
+                        font.weight: Font.Bold
+                    }
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "пропущено " + surface.missedWord(surface.missed)
+                    color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.7)
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 11
                 }
             }
 

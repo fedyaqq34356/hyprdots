@@ -17,18 +17,33 @@ monitors() {
 MONS=$(monitors)
 [[ -z "$MONS" ]] && MONS=""
 
+PREV=""
+[[ -f "$HOME/.config/hypr/current-wallpaper" ]] && PREV=$(<"$HOME/.config/hypr/current-wallpaper")
+
 if pgrep -x awww-daemon >/dev/null 2>&1; then
     awww img "$WALLPAPER" \
-        --transition-type wipe --transition-duration 1.2 \
-        --transition-fps 60 --transition-angle 30 >/dev/null 2>&1
+        --transition-type fade --transition-duration 1.4 \
+        --transition-fps 60 --transition-bezier .25,1,.3,1 >/dev/null 2>&1
 else
+    # preload first so the new image is in VRAM before the swap: hyprpaper
+    # then crossfades instead of blanking and popping the new wallpaper in
     hyprctl hyprpaper preload "$WALLPAPER" >/dev/null 2>&1
+    for _ in $(seq 1 40); do
+        hyprctl hyprpaper listloaded 2>/dev/null | grep -qxF "$WALLPAPER" && break
+        sleep 0.05
+    done
+
     if [[ -n "$MONS" ]]; then
         while IFS= read -r m; do
             [[ -n "$m" ]] && hyprctl hyprpaper wallpaper "$m,$WALLPAPER" >/dev/null 2>&1
         done <<< "$MONS"
     else
         hyprctl hyprpaper wallpaper ",$WALLPAPER" >/dev/null 2>&1
+    fi
+
+    # drop the old image only after the swap, so the fade has both frames
+    if [[ -n "$PREV" && "$PREV" != "$WALLPAPER" ]]; then
+        ( sleep 2; hyprctl hyprpaper unload "$PREV" >/dev/null 2>&1 ) &
     fi
 fi
 
