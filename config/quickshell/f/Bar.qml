@@ -471,6 +471,48 @@ Scope {
                         anchors.centerIn: parent
                         spacing: 8
 
+                        // новые исходящие соединения — появляется, только
+                        // когда они есть, и само уходит через несколько секунд
+                        Row {
+                            id: outRow
+                            spacing: 6
+                            visible: Outbound.active
+                            opacity: Outbound.active ? 1 : 0
+
+                            Behavior on opacity {
+                                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                            }
+
+                            Tip { text: Outbound.tooltip }
+
+                            Text {
+                                text: "󰤨"
+                                color: Colors.warn
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 12
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                SequentialAnimation on opacity {
+                                    running: Outbound.active
+                                    loops: 3
+                                    NumberAnimation { to: 0.35; duration: 320 }
+                                    NumberAnimation { to: 1.0;  duration: 320 }
+                                }
+                            }
+
+                            Text {
+                                text: Outbound.label
+                                color: Colors.warn
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 10
+                                elide: Text.ElideRight
+                                width: Math.min(implicitWidth, 200)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        Sep { visible: Outbound.active }
+
                         Row {
                             id: recRow
                             spacing: 6

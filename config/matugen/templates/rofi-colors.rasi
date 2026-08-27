@@ -1,8 +1,13 @@
 * {
-    background:     {{colors.surface.default.hex}}FF;
-    background-alt: {{colors.surface_variant.default.hex}}FF;
-    foreground:     {{colors.on_surface.default.hex}}FF;
-    selected:       {{colors.surface_variant.default.hex}}FF;
-    active:         {{colors.primary.default.hex}}FF;
-    urgent:         {{colors.error.default.hex}}FF;
+    background:      {{colors.surface.default.hex}}FF;
+    background-alt:  {{colors.surface_container_high.default.hex}}FF;
+    background-glass:{{colors.surface.default.hex}}E6;
+    foreground:      {{colors.on_surface.default.hex}}FF;
+    foreground-dim:  {{colors.on_surface_variant.default.hex}}FF;
+    selected:        {{colors.surface_container_highest.default.hex}}FF;
+    active:          {{colors.primary.default.hex}}FF;
+    active-alt:      {{colors.tertiary.default.hex}}FF;
+    on-active:       {{colors.on_primary.default.hex}}FF;
+    outline:         {{colors.outline.default.hex}}55;
+    urgent:          {{colors.error.default.hex}}FF;
 }
