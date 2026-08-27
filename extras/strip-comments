@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Убирает строки-комментарии из файлов репозитория.
+
+Правило этого репозитория: в публикуемых конфигах комментариев нет.
+Локальные копии в ~/.config при этом остаются как есть.
+
+Трогаются только строки, состоящие из комментария целиком. Инлайновые
+комментарии не удаляются: в shell '#' встречается внутри строк и в
+${var#prefix}, отличить надёжно нельзя.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+HASH = {".sh", ".py", ".conf", ".toml", ".list", ".rasi", ".txt", ".hook", ".jsonc"}
+SLASH = {".qml", ".css", ".js", ".json"}
+NO_EXT_IS_SHELL = True
+
+
+def strip_hash(lines: list[str]) -> list[str]:
+    out: list[str] = []
+    for i, line in enumerate(lines):
+        if i == 0 and line.startswith("#!"):
+            out.append(line)
+            continue
+        if line.lstrip().startswith("#"):
+            continue
+        out.append(line)
+    return out
+
+
+def strip_slash(lines: list[str]) -> list[str]:
+    out: list[str] = []
+    in_block = False
+    for line in lines:
+        stripped = line.strip()
+        if in_block:
+            if "*/" in stripped:
+                in_block = False
+            continue
+        if stripped.startswith("/*"):
+            if "*/" not in stripped:
+                in_block = True
+            continue
+        if stripped.startswith("//"):
+            continue
+        out.append(line)
+    return out
+
+
+def collapse(lines: list[str]) -> list[str]:
+    out: list[str] = []
+    blank = 0
+    for line in lines:
+        if line.strip() == "":
+            blank += 1
+            if blank > 1:
+                continue
+        else:
+            blank = 0
+        out.append(line)
+    while out and out[0].strip() == "":
+        out.pop(0)
+    while out and out[-1].strip() == "":
+        out.pop()
+    return out
+
+
+def process(path: Path) -> bool:
+    suffix = path.suffix
+    if suffix in HASH:
+        fn = strip_hash
+    elif suffix in SLASH:
+        fn = strip_slash
+    elif suffix == "" and NO_EXT_IS_SHELL:
+        head = path.read_bytes()[:2]
+        if head != b"#!":
+            return False
+        fn = strip_hash
+    else:
+        return False
+
+    try:
+        original = path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return False
+
+    lines = original.split("\n")
+    result = "\n".join(collapse(fn(lines))) + "\n"
+
+    if result == original:
+        return False
+
+    path.write_text(result, encoding="utf-8")
+    return True
+
+
+def main(argv: list[str]) -> int:
+    roots = [Path(a) for a in argv[1:]] or [Path("config"), Path("bin"), Path("extras")]
+    changed = 0
+    for root in roots:
+        if root.is_file():
+            changed += process(root)
+            continue
+        for path in sorted(root.rglob("*")):
+            if path.is_file() and ".git" not in path.parts:
+                changed += process(path)
+    print(f"очищено файлов: {changed}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
