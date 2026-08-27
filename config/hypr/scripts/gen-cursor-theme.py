@@ -2,6 +2,7 @@
 import argparse
 import re
 import shutil
+import struct
 import subprocess
 import sys
 from pathlib import Path
@@ -163,6 +164,133 @@ def build_shapes(fill: str, edge: str) -> dict:
         ),
     }
 
+XCURSOR_SIZES = (24, 32, 48, 64, 96)
+
+def render_png(svg: str, size: int, out: Path) -> bool:
+    """Рисует SVG в PNG заданного размера через imagemagick."""
+    if not shutil.which("magick"):
+        return False
+    svg_file = out.with_suffix(".svg")
+    svg_file.write_text(svg)
+    r = subprocess.run(
+        ["magick", "-background", "none", "-density", str(size * 4),
+         str(svg_file), "-resize", f"{size}x{size}", str(out)],
+        capture_output=True,
+    )
+    svg_file.unlink(missing_ok=True)
+    return r.returncode == 0 and out.exists()
+
+def png_to_argb(path: Path, size: int) -> bytes | None:
+    """PNG → сырой поток ARGB, как его ждёт формат Xcursor."""
+    r = subprocess.run(
+        ["magick", str(path), "-depth", "8", "-alpha", "set",
+         f"-resize", f"{size}x{size}!", "BGRA:-"],
+        capture_output=True,
+    )
+    if r.returncode != 0 or len(r.stdout) != size * size * 4:
+        return None
+    return r.stdout
+
+def write_xcursor(frames: list[tuple[int, int, int, bytes]], dest: Path) -> None:
+    """Собирает файл Xcursor: заголовок, оглавление и по картинке на размер.
+
+    Формат простой, поэтому xcursorgen не нужен: magic 'Xcur', таблица
+    смещений, дальше чанки изображений с пикселями ARGB.
+    """
+    IMAGE_TYPE = 0xFFFD0002
+    header = struct.pack("<4sIII", b"Xcur", 16, 0x00010000, len(frames))
+
+    toc_size = 12 * len(frames)
+    offset = len(header) + toc_size
+
+    toc = b""
+    chunks = b""
+    for size, xhot, yhot, pixels in frames:
+        toc += struct.pack("<III", IMAGE_TYPE, size, offset)
+        chunk = struct.pack(
+            "<IIIIIIIII",
+            36, IMAGE_TYPE, size, 1, size, size, xhot, yhot, 0,
+        ) + pixels
+        chunks += chunk
+        offset += len(chunk)
+
+    dest.write_bytes(header + toc + chunks)
+
+def build_xcursor(shapes: dict, dest_root: Path) -> int:
+    """Собирает Xcursor-вариант темы: его читают GTK, Qt, XWayland и Electron.
+
+    Без него все они молча берут запасной курсор, и палитра до них не доходит.
+    """
+    if not shutil.which("magick"):
+        print("нет imagemagick — Xcursor-вариант не собран")
+        return 0
+
+    cursors = dest_root / "cursors"
+    if cursors.exists():
+        shutil.rmtree(cursors)
+    cursors.mkdir(parents=True)
+
+    tmp = BUILD_DIR / "png"
+    if tmp.exists():
+        shutil.rmtree(tmp)
+    tmp.mkdir(parents=True)
+
+    made = 0
+    for name, (svg, hx, hy, aliases) in shapes.items():
+        frames = []
+        for size in XCURSOR_SIZES:
+            png = tmp / f"{name}-{size}.png"
+            if not render_png(svg, size, png):
+                continue
+            pixels = png_to_argb(png, size)
+            if pixels is None:
+                continue
+            frames.append((size, int(hx * size), int(hy * size), pixels))
+
+        if not frames:
+            continue
+
+        write_xcursor(frames, cursors / name)
+        made += 1
+
+        for alias in aliases:
+            if alias == name:
+                continue
+            link = cursors / alias
+            link.unlink(missing_ok=True)
+            link.symlink_to(name)
+
+    (dest_root / "index.theme").write_text(
+        f"[Icon Theme]\nName={THEME_NAME}\nComment=Cursor theme from the current palette\n"
+    )
+    (dest_root / "cursor.theme").write_text(
+        f"[Icon Theme]\nName={THEME_NAME}\nInherits={THEME_NAME}\n"
+    )
+
+    shutil.rmtree(tmp, ignore_errors=True)
+    return made
+
+def apply_gtk() -> None:
+    """Прописывает тему в GTK и dconf: иначе там остаётся Adwaita."""
+    for version in ("gtk-3.0", "gtk-4.0"):
+        ini = Path.home() / ".config" / version / "settings.ini"
+        if not ini.is_file():
+            continue
+        text = ini.read_text()
+        new = re.sub(r"^gtk-cursor-theme-name=.*$",
+                     f"gtk-cursor-theme-name={THEME_NAME}", text, flags=re.M)
+        if "gtk-cursor-theme-name=" not in new:
+            new = new.rstrip("\n") + f"\ngtk-cursor-theme-name={THEME_NAME}\n"
+        if new != text:
+            ini.write_text(new)
+
+    if shutil.which("gsettings"):
+        subprocess.run(
+            ["gsettings", "set", "org.gnome.desktop.interface",
+             "cursor-theme", THEME_NAME],
+            capture_output=True,
+        )
+
 def write_theme(shapes: dict) -> Path:
     src = BUILD_DIR / "src"
     if src.exists():
@@ -218,8 +346,15 @@ def install(built: Path) -> Path:
     return dest
 
 def reload_hyprland() -> None:
+    """Заставляет Hyprland перечитать тему.
+
+    Курсор кэшируется по имени темы, а имя не меняется, поэтому одного
+    setcursor мало: сначала переключаемся на другую тему, потом обратно.
+    """
     if not shutil.which("hyprctl"):
         return
+    subprocess.run(["hyprctl", "setcursor", "Adwaita", "24"],
+                   capture_output=True)
     subprocess.run(["hyprctl", "setcursor", THEME_NAME, "24"],
                    capture_output=True)
 
@@ -237,10 +372,16 @@ def main() -> int:
     fill, edge = read_palette()
     print(f"palette: fill={fill} edge={edge}")
 
-    src = write_theme(build_shapes(fill, edge))
+    shapes = build_shapes(fill, edge)
+    src = write_theme(shapes)
     built = compile_theme(src)
     dest = install(built)
     print(f"installed: {dest}")
+
+    made = build_xcursor(shapes, dest)
+    print(f"xcursor: {made} курсоров")
+
+    apply_gtk()
 
     if args.reload:
         reload_hyprland()
