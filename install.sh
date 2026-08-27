@@ -81,11 +81,11 @@ command -v pacman >/dev/null || die "this installer targets Arch-based systems (
 
 PACMAN_PKGS=(
     hyprland hyprlock hyprpaper hypridle hyprpolkitagent xdg-desktop-portal-hyprland
-    waybar kitty rofi-wayland dunst cava fastfetch yazi
+    kitty rofi-wayland cava fastfetch yazi
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
-    qt6ct kvantum papirus-icon-theme xdg-user-dirs polkit
+    qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     zsh zsh-autosuggestions zsh-syntax-highlighting
 )
@@ -236,9 +236,6 @@ reload_session() {
     if pgrep -x quickshell >/dev/null; then
         run pkill -x quickshell
         run setsid -f "$HOME/.local/bin/shell-autostart" >/dev/null 2>&1
-    elif pgrep -x waybar >/dev/null; then
-        run pkill -x waybar
-        run setsid -f waybar >/dev/null 2>&1
     fi
     ok "session reloaded"
 }
@@ -261,7 +258,7 @@ ${GREEN}${BOLD}Done.${RESET}
   1. log out and start Hyprland
   2. press ${BOLD}Super+W${RESET} to pick a wallpaper — the whole desktop is recoloured from it
   3. press ${BOLD}Super+Shift+L${RESET} to see the lock screen
-  4. run ${BOLD}shell-switch qs${RESET} for the Quickshell bar, ${BOLD}shell-switch waybar${RESET} for Waybar
+  4. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
 
   backup of the previous configuration: ${BACKUP_DIR/#$HOME/\~}
 EOF
