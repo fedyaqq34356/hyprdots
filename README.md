@@ -55,7 +55,7 @@ recolour themselves around it.
 <td><img src="assets/clipboard.jpg" alt="Clipboard history"></td>
 </tr>
 <tr>
-<td align="center"><sub>player — <code>Super</code> + <code>M</code></sub></td>
+<td align="center"><sub>player — <code>Super</code> + <code>A</code></sub></td>
 <td align="center"><sub>clipboard — <code>Super</code> + <code>V</code></sub></td>
 </tr>
 <tr>
