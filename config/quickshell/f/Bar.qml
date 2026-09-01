@@ -669,7 +669,36 @@ Scope {
                                     anchors.fill: parent
                                     anchors.margins: -4
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: wifi.toggle()
+                                    onClicked: net.toggle("wifi")
+                                }
+                            }
+
+                            Text {
+                                id: btGlyph
+                                visible: Bt.present && (Bt.powered || Bt.connectedCount > 0)
+                                text: Bt.glyph
+                                color: Bt.connectedCount > 0 ? Colors.accentAlt : Colors.fgDim
+                                opacity: Bt.connectedCount > 0 ? 0.95 : 0.6
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 12
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Tip {
+                                    text: Bt.connectedCount > 0
+                                    ? Bt.label(Bt.primary)
+                                      + (Bt.primary && Bt.primary.batteryAvailable
+                                         ? "  ·  " + Math.round(Bt.primary.battery * 100) + "%" : "")
+                                      + "\nклик — Bluetooth"
+                                    : "Bluetooth  ·  клик — устройства"
+                                }
+
+                                Behavior on color { ColorAnimation { duration: 250 } }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: net.toggle("bt")
                                 }
                             }
 

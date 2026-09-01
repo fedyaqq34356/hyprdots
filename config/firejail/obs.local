@@ -7,6 +7,14 @@
 # списке источников пусто. Сокет PipeWire при этом виден и работает.
 ignore private-tmp
 
+# Портал опознаёт того, кто к нему обратился, читая /proc/<pid>/root.
+# noroot поднимает отдельный user namespace, restrict-namespaces режет
+# доступ к namespace'ам — и снаружи этот путь перестаёт открываться:
+#   AccessDenied: Portal operation not allowed: Unable to open /proc/<pid>/root
+# В профиле Discord, где демонстрация экрана работает, обеих опций нет.
+ignore noroot
+ignore restrict-namespaces
+
 # На случай, если профиль когда-нибудь начнёт фильтровать D-Bus.
 dbus-user.talk org.freedesktop.portal.Desktop
 dbus-user.talk org.freedesktop.portal.Documents
