@@ -43,36 +43,42 @@ recolour themselves around it.
 <td align="center"><sub>calendar — days shaded by commit count</sub></td>
 </tr>
 <tr>
-<td><img src="assets/wifi.jpg" alt="Wi-Fi panel"></td>
-<td><img src="assets/audio.jpg" alt="Audio panel"></td>
+<td><img src="assets/wifi.jpg" alt="Wi-Fi networks on the orbit view"></td>
+<td><img src="assets/bluetooth.jpg" alt="Bluetooth devices on the orbit view"></td>
 </tr>
 <tr>
 <td align="center"><sub>Wi-Fi — <code>Super</code> + <code>N</code></sub></td>
-<td align="center"><sub>audio — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
+<td align="center"><sub>Bluetooth — <code>Super</code> + <code>B</code></sub></td>
 </tr>
 <tr>
+<td><img src="assets/audio.jpg" alt="Audio devices on the orbit view"></td>
 <td><img src="assets/media.jpg" alt="Media panel"></td>
-<td><img src="assets/clipboard.jpg" alt="Clipboard history"></td>
 </tr>
 <tr>
+<td align="center"><sub>audio — <code>Super</code> + <code>Shift</code> + <code>M</code></sub></td>
 <td align="center"><sub>player — <code>Super</code> + <code>A</code></sub></td>
-<td align="center"><sub>clipboard — <code>Super</code> + <code>V</code></sub></td>
 </tr>
 <tr>
+<td><img src="assets/clipboard.jpg" alt="Clipboard history"></td>
 <td><img src="assets/wallpapers.jpg" alt="Wallpaper picker"></td>
-<td><img src="assets/focus.jpg" alt="Focus mode"></td>
 </tr>
 <tr>
+<td align="center"><sub>clipboard — <code>Super</code> + <code>V</code></sub></td>
 <td align="center"><sub>wallpapers — <code>Super</code> + <code>W</code></sub></td>
-<td align="center"><sub>focus mode — <code>Super</code> + <code>Ctrl</code> + <code>F</code></sub></td>
 </tr>
 <tr>
+<td><img src="assets/focus.jpg" alt="Focus mode"></td>
 <td><img src="assets/power.jpg" alt="Power menu"></td>
-<td><img src="assets/thunar.jpg" alt="Thunar following the wallpaper palette"></td>
 </tr>
 <tr>
+<td align="center"><sub>focus mode — <code>Super</code> + <code>Ctrl</code> + <code>F</code></sub></td>
 <td align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
-<td align="center"><sub>GTK apps recoloured with everything else</sub></td>
+</tr>
+<tr>
+<td colspan="2"><img src="assets/thunar.jpg" alt="Thunar following the wallpaper palette" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub>GTK apps recoloured with everything else</sub></td>
 </tr>
 </table>
 
@@ -270,9 +276,11 @@ opacity, and only a problem state takes colour, so a dropped Wi-Fi link or a mut
 the one thing that stands out. The layout badge (`EN` / `RU` / `UA` …) follows
 `Alt`+`Shift` and can also be clicked to cycle layouts.
 
-`Super`+`Shift`+`M` opens the audio panel: microphone and output volume on separate sliders, a mute
-button on each, and the list of input devices — click one to make it the default microphone.
-`Escape` closes the panel, `↑`/`↓` change the microphone level, `M` mutes it.
+`Super`+`Shift`+`M` opens the audio panel on the same orbit view: the current output sits in the
+middle with its volume drawn as an arc around it, and every other sink circles it. Click a device to
+make it the default, roll the wheel over it to set that device's own volume, or over the core for
+the current one. `Tab` switches between outputs and inputs, `+`/`-` change the level, `M` mutes,
+`Escape` closes.
 
 Folder icons follow as well. Papirus ships one folder set per colour, and
 `config/hypr/scripts/papirus-tint.py` picks whichever is closest to the current accent in CIE Lab
@@ -280,10 +288,18 @@ and builds a small user icon theme that inherits Papirus-Dark and overrides only
 root, no touching `/usr/share`. It runs from a matugen hook, so a new wallpaper repaints the
 folders with everything else.
 
-Clicking the Wi-Fi glyph, or `Super`+`N`, opens the network panel: the current connection with its
-signal level, link rate and live throughput, a radio toggle and the list of access points. Picking a secured network opens a
-password field, clicking the active one disconnects. It drives `nmcli` and refreshes off
-`nmcli monitor` events.
+Clicking the Wi-Fi glyph, or `Super`+`N`, opens the network panel, and `Super`+`B` opens it on the
+Bluetooth tab. Both share one view: whatever you are connected to burns in the middle, and the
+alternatives orbit it on two tilted rings — the stronger the signal, the closer in and the faster
+it travels. Hovering a chip stops the rotation and prints the full detail under the graph, since a
+96-pixel chip cannot hold a link rate and a MAC address. Clicking connects; a secured network opens
+a password field; clicking the active one disconnects.
+
+The ring radii, the chip size and the tilt are not a taste decision — the combination was checked by
+exhaustive search, so no two chips can overlap at any pair of ring rotations. Beyond the eight
+orbit slots the panel switches to a plain list with the same rows, and the footer says how many were
+left out. Wi-Fi drives `nmcli` and refreshes off `nmcli monitor`; Bluetooth talks to BlueZ over
+D-Bus, so battery levels and pairing state arrive as they change rather than on a poll.
 
 Next to the workspaces sits the player: album art and a spectrum drawn by a second `cava` instance
 reading raw levels off pipewire. The track name lives in the tooltip and in the panel instead of
@@ -373,6 +389,7 @@ still needs an Xcursor build of the same theme, which `hyprcursor-util` cannot p
 | `Super` + `E` | file manager |
 | `Super` + `W` | wallpaper picker |
 | `Super` + `N` | Wi-Fi networks |
+| `Super` + `B` | Bluetooth devices |
 | `Super` + `V` | clipboard history |
 | `Super` + `Shift` + `V` | wipe the clipboard and its history |
 | `Super` + `P` | power menu |
@@ -680,14 +697,25 @@ user_pref("media.av1.enabled", false);
 ниже 40%: постоянный значок «мышь заряжена» это шум. Пока открыт лаунчер, точки рабочих столов, где
 уже запущено подсвеченное приложение, загораются — вторая копия не заводится по недосмотру.
 
-Клик по значку Wi-Fi (или `Super`+`N`) открывает панель сетей: текущее подключение с уровнем
-сигнала, скоростью канала и живым трафиком, переключатель радио, список точек. Клик по защищённой сети открывает поле пароля, клик по
-активной — отключает. Всё через `nmcli`, состояние обновляется по событиям `nmcli monitor`. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по
-нему же можно кликнуть, чтобы переключить раскладку.
+Клик по значку Wi-Fi (или `Super`+`N`) открывает панель сетей, `Super`+`B` — её же на вкладке
+Bluetooth. Вид общий: то, к чему подключён, горит в центре, остальное вращается вокруг по двум
+наклонённым кольцам — чем сильнее сигнал, тем ближе к центру и тем быстрее орбита. Наведение
+останавливает вращение и печатает подробности под графом: в чип шириной 96 пикселей не влезают ни
+скорость канала, ни MAC. Клик подключает, защищённая сеть открывает поле пароля, клик по активной
+отключает.
 
-`Super`+`Shift`+`M` открывает панель звука: отдельные ползунки для микрофона и вывода, кнопка
-отключения у каждого и список устройств ввода — клик выбирает микрофон по умолчанию. `Escape`
-закрывает панель, `↑`/`↓` меняют уровень микрофона, `M` его выключает.
+Радиусы колец, размер чипа и наклон — не вопрос вкуса: сочетание проверено полным перебором, и при
+любом взаимном повороте колец два чипа не могут наложиться. Всё, что не поместилось в восемь
+орбитальных мест, доступно в списочном режиме, а в подвале написано, сколько осталось за кадром.
+Wi-Fi работает через `nmcli` и обновляется по событиям `nmcli monitor`, Bluetooth разговаривает с
+BlueZ по D-Bus, поэтому заряд наушников и состояние сопряжения приходят по факту изменения, а не по
+опросу. Индикатор раскладки (`EN` / `RU` / `UA` …) следует за `Alt`+`Shift`, по нему же можно
+кликнуть, чтобы переключить раскладку.
+
+`Super`+`Shift`+`M` открывает панель звука на том же орбитальном виде: текущий выход в центре,
+громкость нарисована дугой вокруг него, остальные устройства кружат рядом. Клик делает устройство
+основным, колесо над ним меняет громкость именно этого устройства, над ядром — текущего. `Tab`
+переключает выход и вход, `+`/`-` меняют уровень, `M` заглушает, `Escape` закрывает.
 
 Громкость, микрофон и яркость показывают одну и ту же карточку внизу активного экрана. Уровень
 нарисован бегущей волной, а не полоской. Пока что-то играет, спектр из `cava` управляет местной
@@ -761,6 +789,7 @@ VPN, но только пока туннель поднят: определен�
 | `Super` + `E` | файловый менеджер |
 | `Super` + `W` | выбор обоев |
 | `Super` + `N` | сети Wi-Fi |
+| `Super` + `B` | устройства Bluetooth |
 | `Super` + `V` | история буфера обмена |
 | `Super` + `Shift` + `V` | стереть буфер обмена и его историю |
 | `Super` + `P` | меню выключения |
