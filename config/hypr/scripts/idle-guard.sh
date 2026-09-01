@@ -8,6 +8,16 @@ LIST="$CONF/idle-inhibit.list"
 [ -f "$LIST" ] || cp "$CONF/idle-inhibit.list.example" "$LIST" 2>/dev/null
 
 blocked() {
+    if [ -e "${XDG_RUNTIME_DIR:-/tmp}/dnd-mode" ]; then
+        echo "dnd"; return 0
+    fi
+
+    if command -v playerctl >/dev/null 2>&1; then
+        if playerctl -a status 2>/dev/null | grep -q '^Playing$'; then
+            echo "player"; return 0
+        fi
+    fi
+
     if hyprctl -j workspaces 2>/dev/null | grep -q '"hasfullscreen": true'; then
         echo "fullscreen"; return 0
     fi

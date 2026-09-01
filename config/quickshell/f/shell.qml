@@ -39,7 +39,7 @@ ShellRoot {
     WallpaperPicker { id: wallpapers }
     AudioPanel { id: audioPanel }
     PowerMenu { id: powerMenu }
-    WifiPanel { id: wifi }
+    NetPanel { id: net }
     Overview { id: overview }
     MediaPanel { id: media }
     Calendar { id: calendar }
@@ -52,6 +52,16 @@ ShellRoot {
         appid: "quickshell"
         name: "launcher"
         onPressed: launcher.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "dnd"
+        onPressed: {
+            Dnd.toggle();
+            osd.flash(Dnd.active ? "󰂛" : "󰂚", 0, false,
+                      Dnd.active ? "не беспокоить" : "уведомления вкл", true);
+        }
     }
 
     GlobalShortcut {
@@ -149,7 +159,13 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "wifi"
-        onPressed: wifi.toggle()
+        onPressed: net.toggle("wifi")
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "bluetooth"
+        onPressed: net.toggle("bt")
     }
 
     GlobalShortcut {
