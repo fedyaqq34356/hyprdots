@@ -17,6 +17,9 @@ Scope {
         imageSupported: true
 
         onNotification: function (n) {
+            if (Dnd.active)
+                return;
+
             n.tracked = true;
 
             if (n.transient)
