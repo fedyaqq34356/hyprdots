@@ -1,7 +1,59 @@
+<div align="center">
+
+<br>
+
 # What changed
 
-A record of everything added to the desktop in this round, and every key that
-now does something.
+**Everything added in this round, and every key that now does something.**
+
+<a href="../README.md"><img src="https://img.shields.io/badge/back%20to-README-E4E3D8?style=flat-square&labelColor=13140E" alt="README"></a>
+<img src="https://img.shields.io/badge/idle%20CPU-43%25%20→%206%25-C6C8B5?style=flat-square&labelColor=13140E" alt="idle CPU">
+
+<br>
+
+</div>
+
+<table>
+<tr>
+<td valign="top" width="50%">
+
+**New surfaces**
+
+[Desktop widgets](#desktop-widgets--super--shift--w) ·
+[Settings](#settings--super--shift--p) ·
+[Equaliser](#equaliser--super--shift--q) ·
+[Drawing](#drawing--super--shift--g) ·
+[Dock](#dock) ·
+[Authorisation](#authorisation-prompts) ·
+[Tour](#first-run-tour) ·
+[Typed notifications](#typed-notifications) ·
+[Screen time](#screen-time) ·
+[Idle](#idle-handling) ·
+[Languages](#interface-languages) ·
+[Sounds](#sounds)
+
+</td>
+<td valign="top" width="50%">
+
+**Changed**
+
+[Launcher](#launcher) ·
+[File manager](#file-manager) ·
+[Terminal](#terminal) ·
+[Editor](#editor) ·
+[Typography](#typography) ·
+[Config layout](#layout-of-the-config) ·
+[Performance](#performance)
+
+**Reference**
+
+[Keybindings](#keybindings) ·
+[yazi](#yazi) ·
+[Left to do by hand](#still-to-do-by-hand)
+
+</td>
+</tr>
+</table>
 
 ---
 
