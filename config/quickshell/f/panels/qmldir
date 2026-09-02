@@ -1,0 +1,17 @@
+AudioPanel AudioPanel.qml
+Calendar Calendar.qml
+Clipboard Clipboard.qml
+Eq Eq.qml
+Files Files.qml
+Guide Guide.qml
+Launcher Launcher.qml
+MediaPanel MediaPanel.qml
+NetPanel NetPanel.qml
+NetRow NetRow.qml
+NotifCenter NotifCenter.qml
+NotifRow NotifRow.qml
+Overview Overview.qml
+PowerMenu PowerMenu.qml
+Settings Settings.qml
+SysRings SysRings.qml
+WallpaperPicker WallpaperPicker.qml
