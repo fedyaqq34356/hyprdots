@@ -37,15 +37,15 @@ purge_trash() {
     done
     shopt -u nullglob
 }
-freed()    { echo -e "${GRN}  освобождено: ${1:-0} -> ${2:-0}${RST}"; }
+freed()    { echo -e "${GRN}  freed: ${1:-0} -> ${2:-0}${RST}"; }
 say()      { echo -e "$@"; }
 
 say ""
-say "${BLD}${CYN}=== ОЧИСТКА КЭША $(date '+%F %T') ===${RST}"
+say "${BLD}${CYN}=== CACHE CLEANUP $(date '+%F %T') ===${RST}"
 say ""
 
 if (( ! AUTO )); then
-    say "${YLW}> pacman кэш...${RST}"
+    say "${YLW}> pacman cache...${RST}"
     BEFORE=$(dir_size /var/cache/pacman/pkg)
     sudo paccache -rk1 2>&1 | grep -E "disk space|removed|error" || true
     sudo paccache -ruk0 2>&1 | grep -E "disk space|removed|error" || true
@@ -53,9 +53,9 @@ if (( ! AUTO )); then
     say ""
 fi
 
-say "${YLW}> chrome кэш...${RST}"
+say "${YLW}> chrome cache...${RST}"
 if pgrep -x chrome >/dev/null 2>&1; then
-    say "   chrome запущен — пропуск (закрой и запусти снова)"
+    say "   chrome is running — skipped (close it and run again)"
 else
     BEFORE=$(dir_size ~/.cache/google-chrome)
     rm -rf ~/.cache/google-chrome
@@ -63,9 +63,9 @@ else
 fi
 say ""
 
-say "${YLW}> spotify кэш...${RST}"
+say "${YLW}> spotify cache...${RST}"
 if pgrep -x spotify >/dev/null 2>&1; then
-    say "   spotify запущен — пропуск"
+    say "   spotify is running — skipped"
 else
     BEFORE=$(dir_size ~/.cache/spotify)
     rm -rf ~/.cache/spotify
@@ -73,24 +73,24 @@ else
 fi
 say ""
 
-say "${YLW}> yay кэш сборок...${RST}"
+say "${YLW}> yay build cache...${RST}"
 BEFORE=$(dir_size ~/.cache/yay)
 if [[ -d ~/.cache/yay ]]; then
     rm -rf ~/.cache/yay/*/
     freed "${BEFORE:-0}" "$(dir_size ~/.cache/yay)"
 else
-    say "   уже пусто"
+    say "   already empty"
 fi
 say ""
 
-say "${YLW}> миниатюры...${RST}"
+say "${YLW}> thumbnails...${RST}"
 BEFORE=$(dir_size ~/.cache/thumbnails)
 rm -rf ~/.cache/thumbnails
 mkdir -p ~/.cache/thumbnails
 freed "$BEFORE" 0
 say ""
 
-say "${YLW}> pip кэш...${RST}"
+say "${YLW}> pip cache...${RST}"
 BEFORE=$(dir_size ~/.cache/pip)
 rm -rf ~/.cache/pip
 freed "$BEFORE" 0
@@ -99,7 +99,7 @@ say ""
 TRASH_DAYS=${TRASH_DAYS:-30}
 CUTOFF=$(( $(date +%s) - TRASH_DAYS * 86400 ))
 
-say "${YLW}> корзина (старше ${TRASH_DAYS} дней)...${RST}"
+say "${YLW}> trash (older than ${TRASH_DAYS} days)...${RST}"
 for TRASH in ~/.local/share/Trash /mnt/*/.Trash-"$(id -u)" /run/media/"$USER"/*/.Trash-"$(id -u)"; do
     [[ -d "$TRASH/files" ]] || continue
     BEFORE=$(dir_size "$TRASH")
@@ -109,10 +109,10 @@ for TRASH in ~/.local/share/Trash /mnt/*/.Trash-"$(id -u)" /run/media/"$USER"/*/
 done
 say ""
 
-say "${BLD}${GRN}Готово.${RST}"
+say "${BLD}${GRN}Done.${RST}"
 if (( ! AUTO )); then
     say ""
     free -h | grep -E "^(Mem|Swap)"
     say ""
-    read -n1 -rp "Нажмите любую клавишу..."
+    read -n1 -rp "Press any key..."
 fi

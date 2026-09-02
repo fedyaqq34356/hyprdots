@@ -67,7 +67,7 @@ finish() {
         exit 1
     fi
     wl-copy --type image/png < "$FILE"
-    notify "Скриншот" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
+    notify "Screenshot" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
 }
 
 case "$MODE" in
@@ -82,7 +82,7 @@ case "$MODE" in
             elif have swappy; then
                 swappy -f "$FILE" -o "$FILE"
             else
-                notify "Скриншот" "Редактор не установлен: pacman -S satty" -t 3000
+                notify "Screenshot" "Editor missing: pacman -S satty" -t 3000
             fi
         fi
         finish
@@ -119,12 +119,12 @@ case "$MODE" in
         [ -z "$HEX" ] && exit 1
         SWATCH=$(mktemp -t swatch-XXXX.png)
         magick -size 96x96 "xc:$HEX" "$SWATCH" 2>/dev/null
-        notify "Цвет" "$HEX скопирован" -i "$SWATCH" -t 3000 -a screenshot
+        notify "Colour" "$HEX copied" -i "$SWATCH" -t 3000 -a screenshot
         (sleep 6; rm -f "$SWATCH") >/dev/null 2>&1 &
         ;;
     ocr)
         have tesseract || {
-            notify "OCR" "Не установлен: pacman -S tesseract tesseract-data-rus" -t 4000
+            notify "OCR" "Missing: pacman -S tesseract tesseract-data-eng" -t 4000
             exit 1
         }
 
@@ -133,11 +133,11 @@ case "$MODE" in
         SLURP_STYLE=(-d -b 000000aa -c efbd90ff -s efbd9033 -w 3)
 
         GEOM=$(pick_region) || {
-            notify "OCR" "Область не выбрана" -t 2000 -a screenshot -r 9993
+            notify "OCR" "No region selected" -t 2000 -a screenshot -r 9993
             exit 1
         }
         if [ -z "$GEOM" ]; then
-            notify "OCR" "Область не выбрана" -t 2000 -a screenshot -r 9993
+            notify "OCR" "No region selected" -t 2000 -a screenshot -r 9993
             exit 1
         fi
         unfreeze
@@ -158,7 +158,7 @@ case "$MODE" in
         TEXT=$(printf '%s' "$TEXT" | sed -e 's/[[:space:]]*$//' -e '/./,$!d')
 
         if [ -z "$TEXT" ]; then
-            notify "OCR" "Текст не распознан" -t 2500 -a screenshot -r 9993
+            notify "OCR" "No text recognised" -t 2500 -a screenshot -r 9993
             exit 1
         fi
 

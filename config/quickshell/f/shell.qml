@@ -35,7 +35,7 @@ ShellRoot {
     }
 
     Bar {}
-    Osd { id: osd }
+    Osd {}
     Notifications {}
     FullscreenFlash {}
 
@@ -54,6 +54,7 @@ ShellRoot {
     Lock { id: lock }
     Curtain { id: curtain }
     FocusTrail {}
+    Greeting {}
 
     LazyLoader {
         id: deskLoader
@@ -110,7 +111,7 @@ ShellRoot {
         name: "dnd"
         onPressed: {
             Dnd.toggle();
-            osd.flash(Dnd.active ? "󰂛" : "󰂚", 0, false,
+            Feedback.flash(Dnd.active ? "󰂛" : "󰂚", 0, false,
                       Dnd.active ? I18n.t("notif.dnd") : I18n.t("notif.dndOff"), true);
         }
     }
@@ -157,6 +158,7 @@ ShellRoot {
                 return;
             }
             a.volume = Math.min(1, a.volume + 0.05);
+            Sfx.tick();
         }
     }
 
@@ -171,6 +173,7 @@ ShellRoot {
                 return;
             }
             a.volume = Math.max(0, a.volume - 0.05);
+            Sfx.tick();
         }
     }
 
@@ -179,7 +182,9 @@ ShellRoot {
         name: "volumeMute"
         onPressed: {
             const a = Pipewire.defaultAudioSink?.audio;
-            if (a) a.muted = !a.muted;
+            if (!a) return;
+            a.muted = !a.muted;
+            Sfx.flip(!a.muted);
         }
     }
 
@@ -247,8 +252,8 @@ ShellRoot {
         appid: "quickshell"
         name: "brightnessUp"
         onPressed: {
-            if (Brightness.available) Brightness.change(0.05);
-            else osd.flash("󰃞", 0, false, I18n.t("bar.noBacklight"));
+            if (Brightness.available) { Brightness.change(0.05); Sfx.tick(); }
+            else Feedback.flash("󰃞", 0, false, I18n.t("bar.noBacklight"));
         }
     }
 
@@ -256,8 +261,8 @@ ShellRoot {
         appid: "quickshell"
         name: "brightnessDown"
         onPressed: {
-            if (Brightness.available) Brightness.change(-0.05);
-            else osd.flash("󰃞", 0, false, I18n.t("bar.noBacklight"));
+            if (Brightness.available) { Brightness.change(-0.05); Sfx.tick(); }
+            else Feedback.flash("󰃞", 0, false, I18n.t("bar.noBacklight"));
         }
     }
 
@@ -276,6 +281,7 @@ ShellRoot {
                 a.muted = false;
                 a.volume = Math.min(1, a.volume + 0.05);
                 setMicTarget(a.volume);
+                Sfx.tick();
             }
         }
     }
@@ -288,6 +294,7 @@ ShellRoot {
             if (a) {
                 a.volume = Math.max(0, a.volume - 0.05);
                 setMicTarget(a.volume);
+                Sfx.tick();
             }
         }
     }
@@ -297,7 +304,9 @@ ShellRoot {
         name: "micMute"
         onPressed: {
             const a = Pipewire.defaultAudioSource?.audio;
-            if (a) a.muted = !a.muted;
+            if (!a) return;
+            a.muted = !a.muted;
+            Sfx.flip(!a.muted);
         }
     }
 

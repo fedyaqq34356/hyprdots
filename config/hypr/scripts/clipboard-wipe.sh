@@ -6,4 +6,4 @@ cliphist wipe
 wl-copy --clear
 wl-copy --primary --clear 2>/dev/null
 
-bash "$NOTIFY" "Буфер обмена" "История очищена ($COUNT записей)" -t 2500 -a clipboard >/dev/null 2>&1
+bash "$NOTIFY" "Clipboard" "History cleared ($COUNT entries)" -t 2500 -a clipboard >/dev/null 2>&1

@@ -5,12 +5,12 @@ n=$(cat "$RUN/missed-notifications" 2>/dev/null)
 ((n == 0)) && exit 0
 
 case $((n % 10)) in
-    1) word="уведомление" ;;
-    2|3|4) word="уведомления" ;;
-    *) word="уведомлений" ;;
+    1) word="notification" ;;
+    2|3|4) word="notifications" ;;
+    *) word="notifications" ;;
 esac
 case $n in
-    11|12|13|14) word="уведомлений" ;;
+    11|12|13|14) word="notifications" ;;
 esac
 
 printf '󰂚  %d %s\n' "$n" "$word"

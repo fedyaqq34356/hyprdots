@@ -16,7 +16,7 @@ Rectangle {
 
     width: 36
     height: 36
-    radius: 13
+    radius: Shape.chip
     antialiasing: true
 
     color: hover.hovered ? Qt.rgba(button.tint.r, button.tint.g, button.tint.b, 0.22)

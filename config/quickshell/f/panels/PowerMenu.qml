@@ -139,7 +139,7 @@ Scope {
 
             Glass {
                 anchors.fill: parent
-                radius: 30
+                radius: Shape.modal
                 elevation: 3
                 tintOpacity: 0.72
             }
@@ -231,7 +231,7 @@ Scope {
 
                             width: 132
                             height: 132
-                            radius: 20
+                            radius: Shape.modal
                             color: current
                                 ? Qt.rgba(tile.tint.r, tile.tint.g, tile.tint.b, 0.16)
                                 : Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.85)

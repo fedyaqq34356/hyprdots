@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Effects
+import "root:/design"
 
 Item {
     id: glass
 
     default property alias content: inner.data
 
-    property real radius: 18
+    property real radius: Shape.field
     property int elevation: 1
     property color tint: Colors.bg
     property real tintOpacity: 0.72

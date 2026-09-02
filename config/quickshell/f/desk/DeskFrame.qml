@@ -1,5 +1,6 @@
 import Quickshell
 import QtQuick
+import QtQuick.Effects
 import "root:/design"
 import "root:/reusables"
 import "root:/services"
@@ -59,7 +60,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: -10
-        radius: 18
+        radius: Shape.field
         color: frame.selected
             ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
             : "transparent"

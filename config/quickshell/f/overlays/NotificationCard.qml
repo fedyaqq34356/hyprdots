@@ -29,7 +29,7 @@ Rectangle {
 
     width: 270
     height: card.headHeight + extra.height
-    radius: 14
+    radius: Shape.chip
 
     Behavior on height {
         NumberAnimation {
@@ -292,7 +292,7 @@ Rectangle {
 
             ClippingRectangle {
                 anchors.fill: parent
-                radius: 10
+                radius: Shape.chip
                 color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.6)
 
                 Image {

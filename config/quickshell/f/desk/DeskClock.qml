@@ -7,6 +7,9 @@ Item {
     id: face
 
     property string variant: "minimal"
+
+    readonly property bool bare: true
+
     readonly property string mono: "JetBrainsMono Nerd Font"
 
     implicitWidth: body.implicitWidth

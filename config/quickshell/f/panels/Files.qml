@@ -162,7 +162,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     color: Colors.bg
                 }
             }
@@ -170,7 +170,7 @@ Scope {
             Rectangle {
                 id: card
                 anchors.fill: parent
-                radius: 28
+                radius: Shape.card
                 clip: true
 
                 gradient: Gradient {
@@ -181,7 +181,7 @@ Scope {
 
                 Sheen {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     edge: Colors.accent
                     edgeOpacity: 0.26
                 }
@@ -306,7 +306,7 @@ Scope {
                         Rectangle {
                             id: frame
                             anchors.fill: parent
-                            radius: 16
+                            radius: Shape.field
                             color: tile.current
                                 ? root.alpha(Colors.accent, 0.14)
                                 : root.alpha(Colors.bgAlt, 0.45)
@@ -331,7 +331,7 @@ Scope {
 
                                 Rectangle {
                                     anchors.fill: parent
-                                    radius: 10
+                                    radius: Shape.chip
                                     color: root.alpha(Colors.bg, 0.55)
                                     visible: tile.isDir || thumb.status !== Image.Ready
                                 }
@@ -372,7 +372,7 @@ Scope {
                                 Rectangle {
                                     id: thumbMask
                                     anchors.fill: parent
-                                    radius: 10
+                                    radius: Shape.chip
                                     color: "black"
                                     visible: false
                                     layer.enabled: true
@@ -390,7 +390,7 @@ Scope {
                                 text: tile.modelData.name
                                 color: tile.current ? Colors.fg : Colors.fgDim
                                 opacity: tile.current ? 1 : 0.75
-                                font.family: root.mono
+                                font.family: Fonts.display
                                 font.pixelSize: 9
                                 font.weight: tile.current ? Font.DemiBold : Font.Normal
                                 elide: Text.ElideMiddle

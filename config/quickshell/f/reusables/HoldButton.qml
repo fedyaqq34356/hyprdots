@@ -18,7 +18,7 @@ Rectangle {
 
     width: 36
     height: 36
-    radius: 13
+    radius: Shape.chip
     antialiasing: true
 
     color: control.holding

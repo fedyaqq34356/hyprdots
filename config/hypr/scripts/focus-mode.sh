@@ -19,7 +19,7 @@ enable() {
         keyword animation borderangle,0" >/dev/null
 
     : > "$STATE"
-    notify "Фокус-режим" "Только активное окно. Повтор — выключить."
+    notify "Focus mode" "Active window only. Press again to turn off."
 }
 
 disable() {
@@ -33,7 +33,7 @@ disable() {
         keyword animation borderangle,1,60,linear,loop" >/dev/null
 
     rm -f "$STATE"
-    notify "Фокус-режим" "Выключен"
+    notify "Focus mode" "Off"
 }
 
 case "${1:-toggle}" in

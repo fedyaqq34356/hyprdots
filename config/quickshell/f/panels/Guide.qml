@@ -133,7 +133,7 @@ Scope {
             anchors.centerIn: parent
             width: 520
             height: 300
-            radius: 34
+            radius: Shape.modal
             elevation: 3
             tintOpacity: 0.92
 

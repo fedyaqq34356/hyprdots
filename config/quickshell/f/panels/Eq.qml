@@ -60,7 +60,7 @@ Scope {
             anchors.centerIn: parent
             width: 620
             height: 372
-            radius: 34
+            radius: Shape.modal
             elevation: 3
 
             opacity: root.shown ? 1 : 0
@@ -114,7 +114,7 @@ Scope {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: 18
+                        radius: Shape.field
                         color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.35)
                     }
 
@@ -382,7 +382,7 @@ Scope {
 
                             width: pillText.implicitWidth + 20
                             height: 26
-                            radius: 10
+                            radius: Shape.chip
                             color: pill.active
                                 ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.2)
                                 : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.5)

@@ -23,7 +23,7 @@ Rectangle {
 
     width: parent ? parent.width : 0
     height: Math.max(52, content.implicitHeight + 22)
-    radius: 14
+    radius: Shape.chip
 
     color: hover.hovered ? Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.62)
                          : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.34)
@@ -81,7 +81,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         width: 30
         height: 30
-        radius: 10
+        radius: Shape.chip
         color: row.critical
             ? Qt.rgba(row.edge.r, row.edge.g, row.edge.b, 0.18)
             : Qt.rgba(row.avatar.r, row.avatar.g, row.avatar.b, 0.16)
@@ -133,7 +133,7 @@ Rectangle {
                 text: row.entry.summary !== "" ? row.entry.summary : row.entry.app
                 color: Colors.fg
                 opacity: 0.95
-                font.family: row.mono
+                font.family: Fonts.display
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
