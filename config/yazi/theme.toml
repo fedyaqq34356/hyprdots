@@ -1,2 +1,3 @@
 [flavor]
-use = "catppuccin-mocha-mauve"
+dark  = "matugen"
+light = "matugen"

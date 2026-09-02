@@ -64,3 +64,11 @@ output_path = "~/.config/rofi/themes/list.rasi"
 [templates.rofi-grid]
 input_path  = "~/.config/matugen/templates/rofi-grid.rasi"
 output_path = "~/.config/rofi/themes/grid.rasi"
+
+[templates.yazi]
+input_path  = "~/.config/matugen/templates/yazi-flavor.toml"
+output_path = "~/.config/yazi/flavors/matugen.yazi/flavor.toml"
+
+[templates.zed]
+input_path  = "~/.config/matugen/templates/zed-theme.json"
+output_path = "~/.config/zed/themes/matugen.json"

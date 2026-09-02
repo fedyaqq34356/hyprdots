@@ -16,7 +16,7 @@ image_quality = 85
 
 [opener]
 edit = [
-  { run = '${EDITOR:-nvim} "$@"', block = true, for = "unix" },
+  { run = '${EDITOR:-nano} "$@"', block = true, for = "unix" },
 ]
 open = [
   { run = 'xdg-open "$@"', for = "unix" },
