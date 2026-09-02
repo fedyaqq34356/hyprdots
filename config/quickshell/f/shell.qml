@@ -3,6 +3,11 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import QtQuick
+import "root:/bar"
+import "root:/desk"
+import "root:/overlays"
+import "root:/panels"
+import "root:/services"
 
 ShellRoot {
 
@@ -41,12 +46,58 @@ ShellRoot {
     PowerMenu { id: powerMenu }
     NetPanel { id: net }
     Overview { id: overview }
+    NotifCenter { id: notifCenter }
+    Files { id: files }
     MediaPanel { id: media }
     Calendar { id: calendar }
     SysRings { id: sysRings }
-    Lock {}
+    Lock { id: lock }
     Curtain { id: curtain }
     FocusTrail {}
+
+    LazyLoader {
+        id: deskLoader
+        active: Prefs.widgetsEnabled
+        Desk {}
+    }
+
+    LazyLoader {
+        id: dockLoader
+        active: Prefs.dockEnabled
+        Dock {}
+    }
+
+    LazyLoader {
+        id: drawLoader
+        active: Prefs.drawEnabled
+        Draw {}
+    }
+
+    LazyLoader {
+        id: quickLoader
+        active: Prefs.quickActionsEnabled
+
+        Quick {
+            draw: drawLoader.item
+            dock: dockLoader.item
+            desk: deskLoader.item
+        }
+    }
+
+    LazyLoader {
+        active: Prefs.polkitEnabled
+        Polkit {}
+    }
+
+    Settings { id: settings }
+    Guide { id: guide }
+    Eq { id: eq }
+
+    Binding {
+        target: Wellbeing
+        property: "paused"
+        value: lock.locked || Idle.screenOff
+    }
 
     GlobalShortcut {
         appid: "quickshell"
@@ -60,8 +111,26 @@ ShellRoot {
         onPressed: {
             Dnd.toggle();
             osd.flash(Dnd.active ? "󰂛" : "󰂚", 0, false,
-                      Dnd.active ? "не беспокоить" : "уведомления вкл", true);
+                      Dnd.active ? I18n.t("notif.dnd") : I18n.t("notif.dndOff"), true);
         }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "notifCenter"
+        onPressed: notifCenter.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "files"
+        onPressed: files.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "launcherCalc"
+        onPressed: launcher.toggleCalc()
     }
 
     GlobalShortcut {
@@ -179,7 +248,7 @@ ShellRoot {
         name: "brightnessUp"
         onPressed: {
             if (Brightness.available) Brightness.change(0.05);
-            else osd.flash("󰃞", 0, false, "нет подсветки");
+            else osd.flash("󰃞", 0, false, I18n.t("bar.noBacklight"));
         }
     }
 
@@ -188,7 +257,7 @@ ShellRoot {
         name: "brightnessDown"
         onPressed: {
             if (Brightness.available) Brightness.change(-0.05);
-            else osd.flash("󰃞", 0, false, "нет подсветки");
+            else osd.flash("󰃞", 0, false, I18n.t("bar.noBacklight"));
         }
     }
 
@@ -230,5 +299,41 @@ ShellRoot {
             const a = Pipewire.defaultAudioSource?.audio;
             if (a) a.muted = !a.muted;
         }
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "settings"
+        onPressed: settings.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "eq"
+        onPressed: eq.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "guide"
+        onPressed: guide.open()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "deskEdit"
+        onPressed: if (deskLoader.item) deskLoader.item.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "draw"
+        onPressed: if (drawLoader.item) drawLoader.item.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "dock"
+        onPressed: if (dockLoader.item) dockLoader.item.toggle()
     }
 }

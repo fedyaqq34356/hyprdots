@@ -17,3 +17,7 @@ __pycache__/
 *.pyc
 config/rofi/themes/list.rasi
 config/rofi/themes/grid.rasi
+config/yazi/flavors/
+config/yazi/plugins/
+config/zed/themes/
+config/matugen/out/
