@@ -41,7 +41,7 @@ and the lock screen recolour themselves around it.
 <td><img src="assets/notifications.png" alt="Notification cards"></td>
 </tr>
 <tr>
-<td align="center"><sub>volume — the wave takes its shape from the spectrum</sub></td>
+<td align="center"><sub>volume — the clock widens, the ring becomes the level</sub></td>
 <td align="center"><sub>notifications — the border counts the time down</sub></td>
 </tr>
 <tr>
@@ -50,7 +50,7 @@ and the lock screen recolour themselves around it.
 </tr>
 <tr>
 <td align="center"><sub>system — <code>Super</code> + <code>F1</code></sub></td>
-<td align="center"><sub>calendar — days shaded by commit count</sub></td>
+<td align="center"><sub>calendar — the month as an orbit, tick length is that day's commits</sub></td>
 </tr>
 <tr>
 <td><img src="assets/wifi.jpg" alt="Wi-Fi networks on the orbit view"></td>
