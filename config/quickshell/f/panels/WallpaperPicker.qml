@@ -246,7 +246,7 @@ Scope {
             anchors.centerIn: parent
             width: Math.min(1180, parent.width - 80)
             height: Math.min(760, parent.height - 80)
-            radius: 26
+            radius: Shape.card
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.96)
             border.width: 1
             border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
@@ -311,7 +311,7 @@ Scope {
                 Rectangle {
                     width: parent.width
                     height: 46
-                    radius: 14
+                    radius: Shape.chip
                     color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
                     border.width: 1
                     border.color: search.activeFocus
@@ -417,7 +417,7 @@ Scope {
 
                             width: tinted ? 34 : label.implicitWidth + 24
                             height: 34
-                            radius: 11
+                            radius: Shape.chip
                             anchors.verticalCenter: parent.verticalCenter
 
                             color: active
@@ -499,7 +499,7 @@ Scope {
                             id: tile
                             anchors.fill: parent
                             anchors.margins: 7
-                            radius: 16
+                            radius: Shape.field
                             color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
                                            Colors.bgAlt.b, 0.35)
                             border.width: cell.isCurrent || cell.isFocused ? 2 : 1
@@ -557,7 +557,7 @@ Scope {
                                     bottomPadding: 5
                                     text: root.baseName(cell.modelData)
                                     color: cell.isCurrent ? Colors.accent : Colors.fg
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.display
                                     font.pixelSize: 10
                                     elide: Text.ElideMiddle
                                 }
@@ -570,7 +570,7 @@ Scope {
                                 anchors.margins: 8
                                 width: 22
                                 height: 22
-                                radius: 11
+                                radius: Shape.chip
                                 color: Colors.accent
 
                                 Text {

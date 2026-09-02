@@ -27,7 +27,7 @@ Row {
 
             width: label.implicitWidth + 22
             height: 26
-            radius: 10
+            radius: Shape.chip
             antialiasing: true
 
             color: pill.active

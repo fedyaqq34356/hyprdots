@@ -159,7 +159,7 @@ Scope {
             y: parent.height * 0.14
             width: 640
             height: 500
-            radius: 22
+            radius: Shape.card
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.95)
             border.width: 1
             border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
@@ -180,7 +180,7 @@ Scope {
                 Rectangle {
                     width: parent.width
                     height: 46
-                    radius: 13
+                    radius: Shape.chip
                     color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
                     border.width: 1
                     border.color: search.activeFocus
@@ -283,7 +283,7 @@ Scope {
 
                         width: list.width
                         height: 56
-                        radius: 12
+                        radius: Shape.chip
                         color: selected
                             ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
                             : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.30)

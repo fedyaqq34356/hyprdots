@@ -32,7 +32,7 @@ Rectangle {
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
 
     height: 48
-    radius: 15
+    radius: Shape.chip
 
     color: row.active ? row.alpha(row.tint, 0.16)
          : hover.hovered ? row.alpha(Colors.bgAlt, 0.55)
@@ -116,7 +116,7 @@ Rectangle {
                 color: row.active ? Colors.fg : Colors.fgDim
                 opacity: row.active ? 1 : 0.9
                 elide: Text.ElideRight
-                font.family: row.mono
+                font.family: Fonts.display
                 font.pixelSize: 13
                 font.weight: row.active ? Font.DemiBold : Font.Normal
             }

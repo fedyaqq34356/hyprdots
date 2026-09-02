@@ -127,7 +127,7 @@ Scope {
                 anchors.bottomMargin: DeskLayout.editing ? 48 : -120
                 width: paletteRow.implicitWidth + 36
                 height: 74
-                radius: 26
+                radius: Shape.card
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
                 antialiasing: true
 
