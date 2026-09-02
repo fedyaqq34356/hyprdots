@@ -11,7 +11,17 @@ Singleton {
 
     readonly property string place: {
         const env = Quickshell.env("WEATHER_PLACE");
-        return env && env !== "" ? env : "";
+        if (env && env !== "")
+            return encodeURIComponent(env);
+        return Prefs.weatherPlace !== "" ? encodeURIComponent(Prefs.weatherPlace) : "";
+    }
+
+    onPlaceChanged: refetch.restart()
+
+    Timer {
+        id: refetch
+        interval: 400
+        onTriggered: root.refresh()
     }
 
     property real temp: 0

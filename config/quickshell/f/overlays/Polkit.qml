@@ -95,7 +95,7 @@ Scope {
                 width: 420
                 elevation: 3
                 height: body.implicitHeight + 56
-                radius: 30
+                radius: Shape.modal
 
                 transform: Translate { id: shift; x: 0 }
 
@@ -140,7 +140,7 @@ Scope {
                         Rectangle {
                             width: 46
                             height: 46
-                            radius: 16
+                            radius: Shape.field
                             anchors.verticalCenter: parent.verticalCenter
                             color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                            Colors.accent.b, 0.16)
@@ -161,7 +161,7 @@ Scope {
                             Text {
                                 text: I18n.t("polkit.title")
                                 color: Colors.fg
-                                font.family: win.mono
+                                font.family: Fonts.display
                                 font.pixelSize: 15
                             }
 

@@ -51,7 +51,7 @@ Scope {
                     anchors.centerIn: parent
                     width: grid.width + 56
                     height: grid.height + 76
-                    radius: 26
+                    radius: Shape.card
 
                     color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.93)
                     border.width: 1
