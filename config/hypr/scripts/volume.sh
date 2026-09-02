@@ -18,7 +18,7 @@ else
     elif [ "$VOL" -le 66 ];  then ICON="audio-volume-medium"
     else                          ICON="audio-volume-high"
     fi
-    MSG="Громкость: ${VOL}%"
+    MSG="Volume: ${VOL}%"
 fi
 
 dunstify -a "volume" -u low -r 9991 -h int:value:"$VOL" -i "$ICON" "$MSG"

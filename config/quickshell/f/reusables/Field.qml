@@ -19,7 +19,7 @@ Rectangle {
     function clear() { input.text = ""; }
 
     height: 44
-    radius: 14
+    radius: Shape.chip
     color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.6)
     border.width: 1
     border.color: field.focused

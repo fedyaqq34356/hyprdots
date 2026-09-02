@@ -81,6 +81,9 @@
     "November",
     "December"
   ],
+  "cal.next": "next month",
+  "cal.prev": "previous month",
+  "cal.today": "today",
   "cal.weekdays": [
     "Mo",
     "Tu",
@@ -135,6 +138,10 @@
   "guide.quick.title": "Quick actions",
   "guide.time.body": "Notifications are kept even while silenced, so nothing is lost to do-not-disturb. Screen time is counted per application and never leaves this machine.",
   "guide.time.title": "Attention",
+  "hello.day": "Good afternoon",
+  "hello.evening": "Good evening",
+  "hello.morning": "Good morning",
+  "hello.night": "Good night",
   "launcher.calc": "calc",
   "launcher.copied": "Enter — copy",
   "launcher.incomplete": "expression is incomplete",
@@ -205,6 +212,10 @@
   "ov.keys": "arrows — select · Enter — go · middle click — close · type — filter",
   "ov.noMatch": "nothing found",
   "ov.noWindows": "no open windows",
+  "plural.commit": {
+    "many": "commits",
+    "one": "commit"
+  },
   "plural.device": {
     "many": "devices",
     "one": "device"
@@ -246,10 +257,18 @@
   "set.draw": "drawing",
   "set.drawHint": "Super+Shift+G — draw over the screen",
   "set.font": "headings",
+  "set.greeting": "welcome screen",
+  "set.greetingHint": "once per login, with the day's facts",
   "set.guide": "show the tour",
   "set.idle": "idle handling",
   "set.idleHint": "lock and screen off on a timer",
   "set.language": "language",
+  "set.osd": "key feedback",
+  "set.osdIsland": "in the bar",
+  "set.osdPanel": "floating card",
+  "set.place": "weather place",
+  "set.placeHint": "empty means the service guesses from your IP",
+  "set.placeInput": "city, village, or coordinates",
   "set.polkit": "authorisation prompts",
   "set.polkitHint": "a polkit agent in the shell's style",
   "set.quick": "quick actions",

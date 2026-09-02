@@ -40,20 +40,20 @@ if [[ "${1:-}" == "--entry" ]]; then
     who=$(owner)
 
     if looks_secret "$data"; then
-        log "СЕКРЕТ  длина=$len  типы=$types  положил: $who"
-        notify-send -a clipboard -u critical "Буфер обмена" \
-            "Похоже на секрет — очищу через ${SECRET_TTL}с" 2>/dev/null
+        log "SECRET  length=$len  types=$types  from: $who"
+        notify-send -a clipboard -u critical "Clipboard" \
+            "Looks like a secret — clearing in ${SECRET_TTL}s" 2>/dev/null
         (
             sleep "$SECRET_TTL"
             current=$(wl-paste --no-newline 2>/dev/null)
             if [[ "$current" == "$data" ]]; then
                 wl-copy --clear
-                log "очищено по таймеру"
-                notify-send -a clipboard "Буфер обмена" "Секрет очищен" 2>/dev/null
+                log "cleared on a timer"
+                notify-send -a clipboard "Clipboard" "Secret cleared" 2>/dev/null
             fi
         ) &
     else
-        log "запись   длина=$len  типы=$types  положил: $who"
+        log "entry   length=$len  types=$types  from: $who"
     fi
     exit 0
 fi

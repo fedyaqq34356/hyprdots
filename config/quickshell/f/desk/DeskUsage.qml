@@ -8,6 +8,9 @@ Item {
     id: face
 
     property string variant: "rings"
+
+    readonly property bool bare: face.variant === "rings"
+
     readonly property string mono: "JetBrainsMono Nerd Font"
 
     implicitWidth: loader.implicitWidth
@@ -62,7 +65,7 @@ Item {
         Rectangle {
             implicitWidth: 240
             implicitHeight: rows.implicitHeight + 30
-            radius: 22
+            radius: Shape.card
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.42)
 
             Sheen {

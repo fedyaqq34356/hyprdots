@@ -155,7 +155,7 @@ SCRUB_SUFFIXES = {
 SCRUB = Path.home() / ".local/bin/scrub-meta"
 
 def scrub(path: Path) -> None:
-    """Снимает метаданные (в том числе GPS) с попавшего в Downloads файла."""
+    """Strips metadata, GPS included, from files landing in Downloads."""
     if path.suffix.lower() not in SCRUB_SUFFIXES or not SCRUB.is_file():
         return
     try:

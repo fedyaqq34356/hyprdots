@@ -249,7 +249,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     color: Colors.bg
                 }
             }
@@ -258,7 +258,7 @@ Scope {
                 id: card
                 width: 640
                 height: header.height + stage.height + caption.height + footer.height + 56
-                radius: 28
+                radius: Shape.card
 
                 gradient: Gradient {
                     GradientStop { position: 0.0
@@ -273,7 +273,7 @@ Scope {
 
                 Sheen {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     edge: Colors.accent
                     edgeOpacity: 0.26
                 }
@@ -313,7 +313,7 @@ Scope {
                     Rectangle {
                         width: muteRow.implicitWidth + 26
                         height: 36
-                        radius: 13
+                        radius: Shape.chip
                         color: root.muted ? root.alpha(Colors.bgAlt, 0.7)
                                           : root.alpha(Colors.accent, 0.18)
                         border.width: 1
@@ -504,7 +504,7 @@ Scope {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 260
                         height: 40
-                        radius: 14
+                        radius: Shape.chip
                         color: root.alpha(Colors.bgAlt, 0.55)
                         border.width: 1
                         border.color: root.alpha(Colors.outline, 0.14)
@@ -514,7 +514,7 @@ Scope {
                             height: parent.height - 8
                             y: 4
                             x: root.outTab ? 4 : parent.width - width - 4
-                            radius: 11
+                            radius: Shape.chip
                             color: root.alpha(Colors.accent, 0.24)
                             border.width: 1
                             border.color: root.alpha(Colors.accent, 0.42)

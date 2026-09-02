@@ -65,7 +65,7 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -4
-                radius: 18
+                radius: Shape.field
                 antialiasing: true
                 color: "transparent"
                 border.width: 3
@@ -76,7 +76,7 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                radius: 15
+                radius: Shape.chip
                 antialiasing: true
 
                 color: node.active ? node.alpha(node.tint, 0.26)

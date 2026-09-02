@@ -19,6 +19,7 @@ Scope {
     readonly property string mono: "JetBrainsMono Nerd Font"
 
     readonly property var rows: [
+        { key: "greetingEnabled",     title: I18n.t("set.greeting"),   hint: I18n.t("set.greetingHint") },
         { key: "sfxEnabled",          title: I18n.t("set.sfx"),        hint: I18n.t("set.sfxHint") },
         { key: "widgetsEnabled",      title: I18n.t("set.widgets"),    hint: I18n.t("set.widgetsHint") },
         { key: "dockEnabled",         title: I18n.t("set.dock"),       hint: I18n.t("set.dockHint") },
@@ -73,7 +74,7 @@ Scope {
             anchors.centerIn: parent
             width: 460
             height: body.implicitHeight + 52
-            radius: 32
+            radius: Shape.modal
             elevation: 3
 
             opacity: root.shown ? 1 : 0
@@ -131,7 +132,7 @@ Scope {
                         Rectangle {
                             anchors.fill: parent
                             anchors.margins: -8
-                            radius: 14
+                            radius: Shape.chip
                             color: rowHover.hovered
                                 ? Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.06)
                                 : "transparent"
@@ -211,6 +212,51 @@ Scope {
                     }
                 }
 
+                Column {
+                    width: parent.width
+                    spacing: 8
+
+                    Row {
+                        width: parent.width
+
+                        Text {
+                            text: I18n.t("set.place")
+                            color: Colors.fgDim
+                            opacity: 0.7
+                            font.family: root.mono
+                            font.pixelSize: 11
+                        }
+
+                        Item { width: parent.width - 230; height: 1 }
+
+                        Text {
+                            text: Weather.ready && Weather.city !== ""
+                                ? Weather.city.toLowerCase() + "  " + Math.round(Weather.temp) + "°"
+                                : I18n.t("set.placeHint")
+                            color: Weather.ready ? Colors.accent : Colors.fgDim
+                            opacity: Weather.ready ? 0.9 : 0.45
+                            elide: Text.ElideRight
+                            font.family: root.mono
+                            font.pixelSize: 10
+                        }
+                    }
+
+                    Field {
+                        id: place
+
+                        width: parent.width
+                        height: 38
+                        placeholder: I18n.t("set.placeInput")
+                        mono: root.mono
+                        text: Prefs.weatherPlace
+
+                        onAccepted: (value) => {
+                            Prefs.set("weatherPlace", value.trim());
+                            Sfx.tapAlt();
+                        }
+                    }
+                }
+
                 Row {
                     width: parent.width
                     spacing: 10
@@ -280,6 +326,31 @@ Scope {
                         auto: false
                         options: Fonts.displayChoices
                         onPicked: (value) => Prefs.set("fontDisplay", value)
+                    }
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: 10
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: I18n.t("set.osd")
+                        color: Colors.fgDim
+                        opacity: 0.7
+                        font.family: root.mono
+                        font.pixelSize: 11
+                    }
+
+                    Segment {
+                        anchors.verticalCenter: parent.verticalCenter
+                        current: Prefs.osdStyle
+                        auto: false
+                        options: [
+                            { value: "island", label: I18n.t("set.osdIsland") },
+                            { value: "panel", label: I18n.t("set.osdPanel") }
+                        ]
+                        onPicked: (value) => Prefs.set("osdStyle", value)
                     }
                 }
 

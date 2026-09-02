@@ -253,7 +253,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     color: Colors.bg
                 }
             }
@@ -262,7 +262,7 @@ Scope {
                 id: card
                 width: 640
                 height: header.height + stage.height + caption.height + footer.height + 56
-                radius: 28
+                radius: Shape.card
 
                 gradient: Gradient {
                     GradientStop { position: 0.0
@@ -277,7 +277,7 @@ Scope {
 
                 Sheen {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     edge: root.tint
                     edgeOpacity: 0.26
                 }
@@ -349,7 +349,7 @@ Scope {
                         id: powerChip
                         width: powerRow.implicitWidth + 26
                         height: 36
-                        radius: 13
+                        radius: Shape.chip
                         color: root.radioOn ? root.alpha(root.tint, 0.18)
                                             : root.alpha(Colors.bgAlt, 0.7)
                         border.width: 1
@@ -569,7 +569,7 @@ Scope {
                             Rectangle {
                                 width: parent.width
                                 height: 46
-                                radius: 15
+                                radius: Shape.chip
                                 color: root.alpha(Colors.bgAlt, 0.85)
                                 border.width: 1
                                 border.color: password.activeFocus
@@ -615,7 +615,7 @@ Scope {
                                     Rectangle {
                                         width: 34
                                         height: 30
-                                        radius: 11
+                                        radius: Shape.chip
                                         anchors.verticalCenter: parent.verticalCenter
                                         color: password.text === ""
                                             ? "transparent" : root.alpha(root.tint, 0.28)
@@ -698,7 +698,7 @@ Scope {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 260
                         height: 40
-                        radius: 14
+                        radius: Shape.chip
                         color: root.alpha(Colors.bgAlt, 0.55)
                         border.width: 1
                         border.color: root.alpha(Colors.outline, 0.14)
@@ -708,7 +708,7 @@ Scope {
                             height: parent.height - 8
                             y: 4
                             x: root.wifiTab ? 4 : parent.width - width - 4
-                            radius: 11
+                            radius: Shape.chip
                             color: root.alpha(root.tint, 0.24)
                             border.width: 1
                             border.color: root.alpha(root.tint, 0.42)

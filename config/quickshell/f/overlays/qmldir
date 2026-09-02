@@ -3,6 +3,7 @@ Dock Dock.qml
 Draw Draw.qml
 FocusTrail FocusTrail.qml
 FullscreenFlash FullscreenFlash.qml
+Greeting Greeting.qml
 Lock Lock.qml
 NotificationCard NotificationCard.qml
 Notifications Notifications.qml

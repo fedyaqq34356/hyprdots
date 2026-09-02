@@ -257,7 +257,7 @@ Scope {
             y: parent.height * 0.16
             width: 620
             height: 460
-            radius: 22
+            radius: Shape.card
             color: "transparent"
 
             opacity: root.shown ? 1 : 0
@@ -285,7 +285,7 @@ Scope {
             Glass {
                 z: -1
                 anchors.fill: parent
-                radius: 22
+                radius: Shape.card
                 elevation: 3
                 tint: Colors.bg
                 tintOpacity: 0.90
@@ -300,7 +300,7 @@ Scope {
                 Rectangle {
                     width: parent.width
                     height: 46
-                    radius: 13
+                    radius: Shape.chip
                     color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
                     border.width: 1
                     border.color: search.activeFocus
@@ -393,7 +393,7 @@ Scope {
                         Rectangle {
                             width: parent.width
                             height: 116
-                            radius: 18
+                            radius: Shape.field
                             color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                            Colors.accent.b, 0.10)
                             border.width: 1
@@ -404,7 +404,7 @@ Scope {
 
                             Sheen {
                                 anchors.fill: parent
-                                radius: 18
+                                radius: Shape.field
                                 border: false
                                 grainOpacity: 0.025
                             }
@@ -493,7 +493,7 @@ Scope {
 
                                 width: histList.width
                                 height: 30
-                                radius: 10
+                                radius: Shape.chip
                                 color: histHover.hovered
                                     ? Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
                                               Colors.bgAlt.b, 0.55)
@@ -537,7 +537,7 @@ Scope {
                         Rectangle {
                             width: parent.width
                             height: 54
-                            radius: 14
+                            radius: Shape.chip
                             color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
                                            Colors.bgAlt.b, 0.55)
                             border.width: 1
@@ -587,7 +587,7 @@ Scope {
 
                         width: list.width
                         height: 50
-                        radius: 12
+                        radius: Shape.chip
                         color: index === list.currentIndex
                             ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
                             : "transparent"

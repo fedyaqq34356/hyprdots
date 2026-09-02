@@ -149,7 +149,7 @@ Scope {
                 anchors.bottomMargin: 42
                 width: tools.implicitWidth + 32
                 height: 62
-                radius: 22
+                radius: Shape.card
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
                 antialiasing: true
 
@@ -168,7 +168,7 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 30
                         height: 30
-                        radius: 15
+                        radius: Shape.chip
                         color: root.ink
                         border.width: 2
                         border.color: Qt.rgba(1, 1, 1, 0.2)

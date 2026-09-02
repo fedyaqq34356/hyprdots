@@ -125,7 +125,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     color: Colors.bg
                 }
             }
@@ -133,7 +133,7 @@ Scope {
             Rectangle {
                 id: card
                 anchors.fill: parent
-                radius: 28
+                radius: Shape.card
                 clip: true
 
                 gradient: Gradient {
@@ -172,7 +172,7 @@ Scope {
 
                 Sheen {
                     anchors.fill: parent
-                    radius: 28
+                    radius: Shape.card
                     edge: root.tint
                     edgeOpacity: 0.26
                 }
@@ -191,7 +191,7 @@ Scope {
                         Rectangle {
                             width: 40
                             height: 40
-                            radius: 14
+                            radius: Shape.chip
                             anchors.verticalCenter: parent.verticalCenter
                             color: root.alpha(root.tint, 0.16)
                             border.width: 1
@@ -239,7 +239,7 @@ Scope {
                             Text {
                                 text: I18n.t("notif.title")
                                 color: Colors.fg
-                                font.family: root.mono
+                                font.family: Fonts.display
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
                             }
@@ -282,7 +282,7 @@ Scope {
                     anchors.leftMargin: 20
                     anchors.rightMargin: 20
                     height: 46
-                    radius: 15
+                    radius: Shape.chip
 
                     color: Dnd.active ? root.alpha(Colors.bgAlt, 0.75)
                                       : root.alpha(Colors.accent, 0.16)
@@ -340,7 +340,7 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 40
                         height: 22
-                        radius: 11
+                        radius: Shape.chip
                         color: Dnd.active ? root.alpha(Colors.outline, 0.25)
                                           : root.alpha(Colors.accent, 0.50)
                         Behavior on color { ColorAnimation { duration: Motion.base } }
@@ -428,7 +428,7 @@ Scope {
                                 id: groupHead
                                 width: parent.width
                                 height: 34
-                                radius: 12
+                                radius: Shape.chip
                                 color: headHover.hovered
                                     ? root.alpha(Colors.bgAlt, 0.55)
                                     : "transparent"

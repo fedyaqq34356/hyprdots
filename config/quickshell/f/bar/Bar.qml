@@ -65,7 +65,7 @@ Scope {
 
                 property int introDelay: 0
 
-                radius: 12
+                radius: Shape.chip
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b,
                                hovered ? 0.92 : 0.80)
                 border.width: 1
@@ -418,45 +418,173 @@ Scope {
 
                 Island {
                     id: clockIsland
+
+                    readonly property bool feedback:
+                        Prefs.osdStyle === "island" && Feedback.shown
+
                     introDelay: 220
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
                     height: 26
-                    width: clockText.implicitWidth + 24
+                    width: clockIsland.feedback
+                        ? readout.implicitWidth + 30
+                        : clockText.implicitWidth + 24
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: Motion.slow
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Motion.expo
+                        }
+                    }
 
                     Tip {
-                        text: calendar.longDate + I18n.t("bar.clickCal")
+                        text: clockIsland.feedback
+                            ? Feedback.label
+                            : calendar.longDate + I18n.t("bar.clickCal")
                     }
 
                     RectRing {
                         id: secondsArc
                         anchors.fill: parent
                         radius: parent.radius
-                        thickness: 2
+                        thickness: clockIsland.feedback ? 2.5 : 2
                         inset: 1
-                        color: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                       Colors.accent.b, 0.85)
+                        color: clockIsland.feedback
+                            ? Colors.accent
+                            : Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                      Colors.accent.b, 0.85)
 
                         readonly property int seconds:
                             secondsClock.date.getSeconds()
 
-                        value: seconds / 60
+                        value: clockIsland.feedback
+                            ? Math.max(0, Math.min(1, Feedback.value))
+                            : seconds / 60
 
-                        Behavior on value {
-                            enabled: secondsArc.seconds !== 0
+                        wave: clockIsland.feedback
+                        amplitude: clockIsland.feedback
+                            ? 0.4 + Math.max(0, Math.min(1, Feedback.value)) * 1.9
+                            : 0
+                        wavelength: 34
+
+                        Behavior on amplitude {
                             NumberAnimation {
-                                duration: 1000
-                                easing.type: Easing.Linear
+                                duration: Motion.base
+                                easing.type: Easing.Bezier
+                                easing.bezierCurve: Motion.decel
+                            }
+                        }
+
+                        NumberAnimation on phase {
+                            running: clockIsland.feedback
+                            loops: Animation.Infinite
+                            from: 0
+                            to: Math.PI * 2
+                            duration: 1400
+                        }
+
+                        Behavior on thickness { NumberAnimation { duration: Motion.base } }
+                        Behavior on value {
+                            enabled: clockIsland.feedback || secondsArc.seconds !== 0
+                            NumberAnimation {
+                                duration: clockIsland.feedback ? Motion.slow : 1000
+                                easing.type: clockIsland.feedback
+                                    ? Easing.Bezier : Easing.Linear
+                                easing.bezierCurve: Motion.expo
                             }
                         }
                     }
 
                     RollText {
                         id: clockText
+
                         anchors.centerIn: parent
                         text: Qt.formatDateTime(clock.date, "HH:mm")
                         color: Colors.fg
                         pixelSize: 12
+
+                        opacity: clockIsland.feedback ? 0 : 1
+                        transform: Translate { y: clockIsland.feedback ? -13 : 0 }
+
+                        Behavior on opacity {
+                            NumberAnimation { duration: Motion.fast }
+                        }
+                    }
+
+                    Row {
+                        id: readout
+
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        opacity: clockIsland.feedback ? 1 : 0
+                        transform: Translate { y: clockIsland.feedback ? 0 : 13 }
+
+                        Behavior on opacity {
+                            SequentialAnimation {
+                                PauseAnimation {
+                                    duration: clockIsland.feedback ? Motion.instant : 0
+                                }
+                                NumberAnimation { duration: Motion.fast }
+                            }
+                        }
+
+                        Text {
+                            id: feedbackGlyph
+
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: Feedback.icon
+                            color: Colors.accent
+                            font.family: Fonts.glyph
+                            font.pixelSize: 13
+
+                            SequentialAnimation {
+                                id: glyphPop
+                                NumberAnimation {
+                                    target: feedbackGlyph; property: "scale"
+                                    to: 1.22; duration: Motion.instant
+                                }
+                                NumberAnimation {
+                                    target: feedbackGlyph; property: "scale"
+                                    to: 1.0; duration: Motion.base
+                                    easing.type: Easing.Bezier
+                                    easing.bezierCurve: Motion.snap
+                                }
+                            }
+                        }
+
+                        RollText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: Feedback.label
+                            color: Colors.fg
+                            family: "JetBrainsMono Nerd Font"
+                            pixelSize: 12
+                        }
+                    }
+
+                    SequentialAnimation {
+                        id: islandNudge
+                        NumberAnimation {
+                            target: clockIsland; property: "scale"
+                            to: 1.06; duration: Motion.instant
+                        }
+                        NumberAnimation {
+                            target: clockIsland; property: "scale"
+                            to: 1.0; duration: Motion.slow
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Motion.snap
+                        }
+                    }
+
+                    Connections {
+                        target: Feedback
+                        function onPulseChanged() {
+                            if (!clockIsland.feedback)
+                                return;
+                            islandNudge.restart();
+                            glyphPop.restart();
+                        }
                     }
 
                     MouseArea {
@@ -918,7 +1046,7 @@ Scope {
 
                     width: tipText.implicitWidth + 20
                     height: tipText.implicitHeight + 14
-                    radius: 10
+                    radius: Shape.chip
                     color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.96)
                     border.width: 1
                     border.color: Qt.rgba(Colors.outline.r, Colors.outline.g,

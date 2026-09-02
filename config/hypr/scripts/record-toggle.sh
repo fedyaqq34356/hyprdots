@@ -19,9 +19,9 @@ if pgrep -x wf-recorder >/dev/null; then
     if [ -n "${FILE:-}" ] && [ -s "$FILE" ]; then
         printf '%s' "$FILE" | wl-copy
         SIZE=$(du -h "$FILE" | cut -f1)
-        notify "Запись" "$(basename "$FILE") · $SIZE" -t 4000 -a record -r 9993
+        notify "Recording" "$(basename "$FILE") · $SIZE" -t 4000 -a record -r 9993
     else
-        notify "Запись" "Остановлена" -t 3000 -a record -r 9993
+        notify "Recording" "Stopped" -t 3000 -a record -r 9993
     fi
     exit 0
 fi
@@ -62,15 +62,15 @@ wf-recorder "${ARGS[@]}" >/dev/null 2>&1 &
 sleep 0.6
 
 if ! pgrep -x wf-recorder >/dev/null; then
-    notify "Запись" "Не удалось запустить wf-recorder" -u critical -t 4000 -a record
+    notify "Recording" "Could not start wf-recorder" -u critical -t 4000 -a record
     exit 1
 fi
 
 printf '%s %s\n' "$(date +%s)" "$FILE" > "$STATE"
 case "$AUDIO" in
-    1) SOUND=" + звук" ;;
-    2) SOUND=" + микрофон" ;;
+    1) SOUND=" + sound" ;;
+    2) SOUND=" + microphone" ;;
     *) SOUND="" ;;
 esac
-notify "Запись" "$([ "$MODE" = region ] && echo "Область" || echo "Экран")$SOUND" \
+notify "Recording" "$([ "$MODE" = region ] && echo "Region" || echo "Screen")$SOUND" \
        -t 2000 -a record -r 9993

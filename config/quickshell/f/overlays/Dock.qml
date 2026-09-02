@@ -77,7 +77,7 @@ Scope {
                 anchors.bottomMargin: win.open ? (Prefs.barAtTop ? 12 : 46) : -96
                 width: Math.max(84, icons.implicitWidth + 28)
                 height: 78
-                radius: 26
+                radius: Shape.card
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.88)
                 antialiasing: true
                 visible: win.apps.length > 0

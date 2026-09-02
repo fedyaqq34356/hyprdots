@@ -3,19 +3,19 @@
 case "${1:-normal}" in
     critical)
         notify-send -u critical -a "test" \
-            "Критическое" "Рамка статичная, висит до клика"
+            "Critical" "A static frame, stays until clicked"
         ;;
     burst)
-        notify-send -a "test" "Первое" "Проверка стопки"
+        notify-send -a "test" "First" "Stack check"
         sleep 0.6
-        notify-send -a "test" "Второе" "Соседи подтягиваются"
+        notify-send -a "test" "Second" "The others follow"
         sleep 0.6
-        notify-send -a "test" "Третье" "Звук ограничен по частоте"
+        notify-send -a "test" "Third" "Sound is rate limited"
         sleep 0.6
-        notify-send -u critical -a "test" "Четвёртое" "И одно критическое"
+        notify-send -u critical -a "test" "Fourth" "And one critical"
         ;;
     *)
         notify-send -a "test" \
-            "Тестовое уведомление" "Обводка отсчитывает время, наведи мышь чтобы поставить на паузу"
+            "Test notification" "The outline counts down; hover to pause it"
         ;;
 esac

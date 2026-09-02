@@ -137,7 +137,7 @@ Scope {
 
                             width: 380
                             height: 252
-                            radius: 16
+                            radius: Shape.field
                             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
                             border.width: 1
                             border.color: current
@@ -182,7 +182,7 @@ Scope {
                                 elide: Text.ElideRight
                                 text: card.modelData.title || card.modelData.appId
                                 color: card.current ? Colors.fg : Colors.fgDim
-                                font.family: "JetBrainsMono Nerd Font"
+                                font.family: Fonts.display
                                 font.pixelSize: 11
                                 font.weight: card.current ? Font.DemiBold : Font.Normal
                             }

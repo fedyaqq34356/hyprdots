@@ -5,3 +5,4 @@ Spring Spring.qml
 singleton Colors Colors.qml
 singleton Fonts Fonts.qml
 singleton Motion Motion.qml
+singleton Shape Shape.qml

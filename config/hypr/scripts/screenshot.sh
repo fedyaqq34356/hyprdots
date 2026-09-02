@@ -65,7 +65,7 @@ scan_secrets() {
         'sk-ant-[a-z0-9_-]{8,}|ghp_[A-Za-z0-9]{16,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}|BEGIN [A-Z ]*PRIVATE KEY|/home/[a-z0-9_-]+/' \
         | sort -u | head -4)
     [ -z "$hits" ] && return 0
-    notify "Скриншот: проверь содержимое" \
+    notify "Screenshot: check what it caught" \
         "$(printf '%s' "$hits" | tr '\n' ' ')" -u critical -t 6000 -a screenshot
 }
 
@@ -76,7 +76,7 @@ finish() {
     fi
     scrub_meta "$FILE"
     wl-copy --type image/png < "$FILE"
-    notify "Скриншот" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
+    notify "Screenshot" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
     scan_secrets "$FILE" &
 }
 
@@ -88,7 +88,7 @@ case "$MODE" in
         grim -g "$GEOM" "$FILE" || exit 1
 
         if ! have magick; then
-            notify "Скриншот" "Нужен imagemagick для замыливания" -t 3000
+            notify "Screenshot" "Blurring needs imagemagick" -t 3000
             finish
             exit 0
         fi
@@ -120,7 +120,7 @@ case "$MODE" in
                    -resize 6% -resize "${SW}x${SH}!" -blur 0x8 \) \
                 -geometry "+${RX}+${RY}" -composite "$FILE" 2>/dev/null
 
-            notify "Скриншот" "Область замылена — выбери ещё или Esc" \
+            notify "Screenshot" "Region blurred — pick another or press Esc" \
                    -t 1800 -a screenshot -r 9993
         done
 
@@ -137,7 +137,7 @@ case "$MODE" in
             elif have swappy; then
                 swappy -f "$FILE" -o "$FILE"
             else
-                notify "Скриншот" "Редактор не установлен: pacman -S satty" -t 3000
+                notify "Screenshot" "Editor missing: pacman -S satty" -t 3000
             fi
         fi
         finish
@@ -173,23 +173,23 @@ case "$MODE" in
         [ -z "$HEX" ] && exit 1
         SWATCH=$(mktemp -t swatch-XXXX.png)
         magick -size 96x96 "xc:$HEX" "$SWATCH" 2>/dev/null
-        notify "Цвет" "$HEX скопирован" -i "$SWATCH" -t 3000 -a screenshot
+        notify "Colour" "$HEX copied" -i "$SWATCH" -t 3000 -a screenshot
         (sleep 6; rm -f "$SWATCH") >/dev/null 2>&1 &
         ;;
     ocr)
         have tesseract || {
-            notify "OCR" "Не установлен: pacman -S tesseract tesseract-data-rus" -t 4000
+            notify "OCR" "Missing: pacman -S tesseract tesseract-data-eng" -t 4000
             exit 1
         }
 
         SLURP_STYLE=(-d -b 000000aa -c efbd90ff -s efbd9033 -w 3)
 
         GEOM=$(pick_region) || {
-            notify "OCR" "Область не выбрана" -t 2000 -a screenshot -r 9993
+            notify "OCR" "No region selected" -t 2000 -a screenshot -r 9993
             exit 1
         }
         if [ -z "$GEOM" ]; then
-            notify "OCR" "Область не выбрана" -t 2000 -a screenshot -r 9993
+            notify "OCR" "No region selected" -t 2000 -a screenshot -r 9993
             exit 1
         fi
         unfreeze
@@ -207,7 +207,7 @@ case "$MODE" in
         TEXT=$(printf '%s' "$TEXT" | sed -e 's/[[:space:]]*$//' -e '/./,$!d')
 
         if [ -z "$TEXT" ]; then
-            notify "OCR" "Текст не распознан" -t 2500 -a screenshot -r 9993
+            notify "OCR" "No text recognised" -t 2500 -a screenshot -r 9993
             exit 1
         fi
 

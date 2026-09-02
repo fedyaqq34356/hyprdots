@@ -65,7 +65,7 @@ finish() {
         exit 1
     fi
     wl-copy --type image/png < "$FILE"
-    notify "Скриншот" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
+    notify "Screenshot" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
 }
 
 case "$MODE" in
@@ -80,7 +80,7 @@ case "$MODE" in
             elif have swappy; then
                 swappy -f "$FILE" -o "$FILE"
             else
-                notify "Скриншот" "Редактор не установлен: pacman -S satty" -t 3000
+                notify "Screenshot" "Editor missing: pacman -S satty" -t 3000
             fi
         fi
         finish
@@ -117,7 +117,7 @@ case "$MODE" in
         [ -z "$HEX" ] && exit 1
         SWATCH=$(mktemp -t swatch-XXXX.png)
         magick -size 96x96 "xc:$HEX" "$SWATCH" 2>/dev/null
-        notify "Цвет" "$HEX скопирован" -i "$SWATCH" -t 3000 -a screenshot
+        notify "Colour" "$HEX copied" -i "$SWATCH" -t 3000 -a screenshot
         (sleep 6; rm -f "$SWATCH") >/dev/null 2>&1 &
         ;;
     *)

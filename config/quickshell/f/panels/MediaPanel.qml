@@ -77,7 +77,7 @@ Scope {
             y: parent.height * 0.10
             width: 380
             height: body.implicitHeight + 44
-            radius: 26
+            radius: Shape.card
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.96)
             border.width: 0
             clip: true
@@ -106,7 +106,7 @@ Scope {
 
             Sheen {
                 anchors.fill: parent
-                radius: 26
+                radius: Shape.card
                 edge: Colors.accent
                 edgeOpacity: 0.30
             }

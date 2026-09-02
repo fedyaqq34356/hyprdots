@@ -1,4 +1,5 @@
 import QtQuick
+import "root:/design"
 
 Item {
     id: sheen

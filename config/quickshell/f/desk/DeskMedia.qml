@@ -9,6 +9,9 @@ Item {
     id: face
 
     property string variant: "cover"
+
+    readonly property bool bare: face.variant === "round"
+
     readonly property string mono: "JetBrainsMono Nerd Font"
 
     implicitWidth: loader.implicitWidth
@@ -29,7 +32,7 @@ Item {
         Rectangle {
             implicitWidth: 300
             implicitHeight: 108
-            radius: 22
+            radius: Shape.card
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.45)
 
             Sheen {
@@ -46,7 +49,7 @@ Item {
                 ClippingRectangle {
                     width: 80
                     height: 80
-                    radius: 16
+                    radius: Shape.field
                     color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.7)
                     anchors.verticalCenter: parent.verticalCenter
 

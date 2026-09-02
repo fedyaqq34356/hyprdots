@@ -68,8 +68,8 @@ if [[ "$choice" == "qs" ]]; then
         echo 0 > "$FLAG"
     fi
 
-    notify-send -u critical "Экран блокировки" \
-        "Quickshell не ответил, блокирую через hyprlock" 2>/dev/null
+    notify-send -u critical "Lock screen" \
+        "Quickshell did not answer, locking with hyprlock" 2>/dev/null
 fi
 
 "$CONFIG_DIR/scripts/lock-prepare.sh" 2>/dev/null

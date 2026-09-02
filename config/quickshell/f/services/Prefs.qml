@@ -13,7 +13,9 @@ Singleton {
     readonly property string notifySound: adapter.notifySound
     readonly property string language: adapter.language
     readonly property string fontDisplay: adapter.fontDisplay
+    readonly property string weatherPlace: adapter.weatherPlace
     readonly property string barPosition: adapter.barPosition
+    readonly property string osdStyle: adapter.osdStyle
     readonly property bool barAtTop: adapter.barPosition !== "bottom"
 
     readonly property bool widgetsEnabled: adapter.widgetsEnabled
@@ -23,6 +25,7 @@ Singleton {
     readonly property bool polkitEnabled: adapter.polkitEnabled
     readonly property bool dockEnabled: adapter.dockEnabled
     readonly property bool guideSeen: adapter.guideSeen
+    readonly property bool greetingEnabled: adapter.greetingEnabled
     readonly property bool idleEnabled: adapter.idleEnabled
     readonly property int idleLockSec: adapter.idleLockSec
     readonly property int idleScreenOffSec: adapter.idleScreenOffSec
@@ -64,7 +67,9 @@ Singleton {
             property string notifySound: "Sine"
             property string language: "en"
             property string fontDisplay: "Adwaita Sans"
+            property string weatherPlace: ""
             property string barPosition: "top"
+            property string osdStyle: "island"
 
             property bool widgetsEnabled: true
             property bool quickActionsEnabled: true
@@ -74,6 +79,7 @@ Singleton {
             property bool dockEnabled: true
 
             property bool guideSeen: false
+            property bool greetingEnabled: true
 
             property bool idleEnabled: true
             property int idleLockSec: 3000

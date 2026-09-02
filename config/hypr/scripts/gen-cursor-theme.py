@@ -167,7 +167,7 @@ def build_shapes(fill: str, edge: str) -> dict:
 XCURSOR_SIZES = (24, 32, 48, 64, 96)
 
 def render_png(svg: str, size: int, out: Path) -> bool:
-    """Рисует SVG в PNG заданного размера через imagemagick."""
+    """Renders SVG to PNG at a given size with imagemagick."""
     if not shutil.which("magick"):
         return False
     svg_file = out.with_suffix(".svg")
@@ -181,7 +181,7 @@ def render_png(svg: str, size: int, out: Path) -> bool:
     return r.returncode == 0 and out.exists()
 
 def png_to_argb(path: Path, size: int) -> bytes | None:
-    """PNG → сырой поток ARGB, как его ждёт формат Xcursor."""
+    """PNG to the raw ARGB stream the Xcursor format expects."""
     r = subprocess.run(
         ["magick", str(path), "-depth", "8", "-alpha", "set",
          f"-resize", f"{size}x{size}!", "BGRA:-"],
@@ -192,10 +192,10 @@ def png_to_argb(path: Path, size: int) -> bytes | None:
     return r.stdout
 
 def write_xcursor(frames: list[tuple[int, int, int, bytes]], dest: Path) -> None:
-    """Собирает файл Xcursor: заголовок, оглавление и по картинке на размер.
+    """Builds an Xcursor file: header, table of contents, one image per size.
 
-    Формат простой, поэтому xcursorgen не нужен: magic 'Xcur', таблица
-    смещений, дальше чанки изображений с пикселями ARGB.
+    The format is simple enough not to need xcursorgen: magic 'Xcur', an
+    offset table, then image chunks of ARGB pixels.
     """
     IMAGE_TYPE = 0xFFFD0002
     header = struct.pack("<4sIII", b"Xcur", 16, 0x00010000, len(frames))
@@ -217,12 +217,12 @@ def write_xcursor(frames: list[tuple[int, int, int, bytes]], dest: Path) -> None
     dest.write_bytes(header + toc + chunks)
 
 def build_xcursor(shapes: dict, dest_root: Path) -> int:
-    """Собирает Xcursor-вариант темы: его читают GTK, Qt, XWayland и Electron.
+    """Builds the Xcursor variant: GTK, Qt, XWayland and Electron all read it.
 
-    Без него все они молча берут запасной курсор, и палитра до них не доходит.
+    Without it they silently fall back and never see the palette.
     """
     if not shutil.which("magick"):
-        print("нет imagemagick — Xcursor-вариант не собран")
+        print("no imagemagick — the Xcursor variant was not built")
         return 0
 
     cursors = dest_root / "cursors"
@@ -271,7 +271,7 @@ def build_xcursor(shapes: dict, dest_root: Path) -> int:
     return made
 
 def apply_gtk() -> None:
-    """Прописывает тему в GTK и dconf: иначе там остаётся Adwaita."""
+    """Writes the theme into GTK and dconf, which otherwise keep Adwaita."""
     for version in ("gtk-3.0", "gtk-4.0"):
         ini = Path.home() / ".config" / version / "settings.ini"
         if not ini.is_file():
@@ -346,10 +346,10 @@ def install(built: Path) -> Path:
     return dest
 
 def reload_hyprland() -> None:
-    """Заставляет Hyprland перечитать тему.
+    """Makes Hyprland re-read the theme.
 
-    Курсор кэшируется по имени темы, а имя не меняется, поэтому одного
-    setcursor мало: сначала переключаемся на другую тему, потом обратно.
+    The cursor is cached by theme name and the name does not change, so one
+    setcursor is not enough: switch to another theme first, then back.
     """
     if not shutil.which("hyprctl"):
         return
@@ -379,7 +379,7 @@ def main() -> int:
     print(f"installed: {dest}")
 
     made = build_xcursor(shapes, dest)
-    print(f"xcursor: {made} курсоров")
+    print(f"xcursor: {made} cursors")
 
     apply_gtk()
 
