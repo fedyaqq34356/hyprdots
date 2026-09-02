@@ -362,6 +362,9 @@ That list is matched against process names with `pgrep -x`, one per line. Only
 `idle-inhibit.list.example` is tracked; copy it and add whatever should keep your own screen awake
 — the working copy is deliberately kept out of the repository.
 
+The outbound-connection ignore list works the same way: `outbound-ignore.list.example` is tracked,
+the working copy is not, because what a person runs is nobody else's business.
+
 `hypridle` is no longer started; the line is left commented in `config/hypr/config/startup.conf` for
 anyone who wants it back.
 
