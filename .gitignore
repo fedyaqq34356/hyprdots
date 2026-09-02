@@ -21,3 +21,4 @@ config/yazi/flavors/
 config/yazi/plugins/
 config/zed/themes/
 config/matugen/out/
+config/hypr/outbound-ignore.list
