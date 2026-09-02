@@ -1,0 +1,62 @@
+{
+  "cli_default_open_behavior": "existing_window",
+  "icon_theme": "Zed (Default)",
+
+  "ui_font_family": "Adwaita Sans",
+  "ui_font_size": 16,
+  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "buffer_font_size": 15,
+  "buffer_line_height": { "custom": 1.6 },
+
+  "theme": {
+    "mode": "dark",
+    "light": "One Light",
+    "dark": "Matugen Dark"
+  },
+
+  "format_on_save": "on",
+  "remove_trailing_whitespace_on_save": true,
+  "ensure_final_newline_on_save": true,
+  "soft_wrap": "editor_width",
+  "preferred_line_length": 88,
+  "wrap_guides": [88],
+
+  "scrollbar": { "show": "auto" },
+  "inlay_hints": { "enabled": false },
+
+  "terminal": {
+    "font_family": "JetBrainsMono Nerd Font",
+    "font_size": 14,
+    "line_height": { "custom": 1.4 },
+    "shell": { "program": "/bin/zsh" }
+  },
+
+  "languages": {
+    "Python": {
+      "language_servers": ["ruff", "pyright"],
+      "formatter": [{ "language_server": { "name": "ruff" } }],
+      "format_on_save": "on",
+      "tab_size": 4
+    },
+    "JSON": { "tab_size": 2 },
+    "QML": { "tab_size": 4 }
+  },
+
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "analysis": {
+            "diagnosticMode": "workspace",
+            "typeCheckingMode": "basic"
+          }
+        }
+      }
+    }
+  },
+
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  }
+}

@@ -45,7 +45,7 @@ keymap = [
   { on = ["s", "m"], run = "sort modified --dir-first", desc = "По дате изменения" },
   { on = ["s", "s"], run = "sort size     --dir-first", desc = "По размеру" },
 
-  { on = "g", run = "shell 'kitty @ launch --type=overlay lazygit' --confirm", desc = "lazygit" },
+  { on = "<C-g>", run = "shell 'kitty @ launch --type=overlay lazygit' --confirm", desc = "lazygit" },
 
   { on = "q", run = "quit",             desc = "Выйти" },
   { on = "Q", run = "quit --no-cwd-file", desc = "Выйти без смены директории" },
