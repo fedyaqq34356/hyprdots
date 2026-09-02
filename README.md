@@ -7,7 +7,7 @@
 Pick a wallpaper — the bar, the terminal, the notifications, the launcher and the lock screen
 recolour themselves around it.
 
-[English](#english) · [Русский](#русский)
+[English](#english) · [Русский](#русский) · [What changed](docs/UPDATE.md)
 
 `Hyprland` `Quickshell` `matugen` `hyprlock` `kitty` `zsh`
 
@@ -75,10 +75,50 @@ recolour themselves around it.
 <td align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
 </tr>
 <tr>
-<td colspan="2"><img src="assets/thunar.jpg" alt="Thunar following the wallpaper palette" width="100%"></td>
+<td><img src="assets/desk-edit.jpg" alt="Arranging the desktop widgets"></td>
+<td><img src="assets/settings.jpg" alt="Settings panel"></td>
 </tr>
 <tr>
-<td colspan="2" align="center"><sub>GTK apps recoloured with everything else</sub></td>
+<td align="center"><sub>desktop widgets — <code>Super</code> + <code>Shift</code> + <code>W</code></sub></td>
+<td align="center"><sub>settings — <code>Super</code> + <code>Shift</code> + <code>P</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/equalizer.jpg" alt="Ten band equaliser"></td>
+<td><img src="assets/notification-center.jpg" alt="Notification centre"></td>
+</tr>
+<tr>
+<td align="center"><sub>equaliser — <code>Super</code> + <code>Shift</code> + <code>Q</code></sub></td>
+<td align="center"><sub>notification centre — <code>Super</code> + <code>Shift</code> + <code>N</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/draw.jpg" alt="Drawing over the screen"></td>
+<td><img src="assets/polkit.jpg" alt="Authorisation prompt"></td>
+</tr>
+<tr>
+<td align="center"><sub>draw over the screen — <code>Super</code> + <code>Shift</code> + <code>G</code></sub></td>
+<td align="center"><sub>authorisation — the shell's own polkit agent</sub></td>
+</tr>
+<tr>
+<td><img src="assets/files.jpg" alt="Media browser"></td>
+<td><img src="assets/dock.jpg" alt="Dock"></td>
+</tr>
+<tr>
+<td align="center"><sub>media browser — <code>Super</code> + <code>Shift</code> + <code>B</code></sub></td>
+<td align="center"><sub>dock — hidden until the pointer reaches the edge</sub></td>
+</tr>
+<tr>
+<td><img src="assets/guide.jpg" alt="First run tour"></td>
+<td><img src="assets/calc.jpg" alt="Calculator inside the launcher"></td>
+</tr>
+<tr>
+<td align="center"><sub>the tour, once, on first login</sub></td>
+<td align="center"><sub>calculator — <code>Super</code> + <code>C</code></sub></td>
+</tr>
+<tr>
+<td colspan="2"><img src="assets/yazi.jpg" alt="yazi themed from the wallpaper" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub>the file manager takes the same palette — <code>Super</code> + <code>E</code></sub></td>
 </tr>
 </table>
 
@@ -209,14 +249,21 @@ plays — the `dec` column stays at zero when decoding is still on the CPU.
 
 ### Idle
 
-`hypridle` locks the session after 50 minutes without input and turns the panels off five minutes
-later. Both actions go through `config/hypr/scripts/idle-guard.sh`, which refuses to fire while a
-window is fullscreen, audio is genuinely playing (uncorked, not merely holding the device open), a
-recording is running, or any process named in `~/.config/hypr/idle-inhibit.list` is alive.
+The shell locks the session after 50 minutes without input and turns the panels off five minutes
+later. Both timers live in the shell's own settings rather than in a third config file with its own
+syntax, and both actions still go through `config/hypr/scripts/idle-guard.sh`, which refuses to fire
+while a window is fullscreen, audio is genuinely playing (uncorked, not merely holding the device
+open), a recording is running, or any process named in `~/.config/hypr/idle-inhibit.list` is alive.
+
+Keeping that decision in the script is deliberate: it already knows every reason not to lock, and a
+second opinion written in QML would only end up disagreeing with it.
 
 That list is matched against process names with `pgrep -x`, one per line. Only
 `idle-inhibit.list.example` is tracked; copy it and add whatever should keep your own screen awake
 — the working copy is deliberately kept out of the repository.
+
+`hypridle` is no longer started; the line is left commented in `config/hypr/config/startup.conf` for
+anyone who wants it back.
 
 ### Power menu
 
@@ -376,23 +423,138 @@ in a dark terminal alike. X11 aliases are declared, so GTK and Qt applications p
 still needs an Xcursor build of the same theme, which `hyprcursor-util` cannot produce.
 
 
+### Desktop widgets
+
+`Super` + `Shift` + `W` lifts the wallpaper layer into an editable state: a grid appears, widgets can
+be dragged, the wheel resizes them, and a palette along the bottom adds more. Outside that mode the
+layer carries an empty input mask, so clicks, drags and scrolls pass straight through to whatever is
+behind it — the widgets are visible and completely intangible.
+
+Positions are stored as fractions of the screen rather than pixels, so a layout arranged on a laptop
+panel lands in the same place on an external monitor. Each widget has faces to switch between:
+
+| Widget | Faces |
+| --- | --- |
+| clock | two stacked numerals, a line with the date, or handwritten strokes |
+| music | sleeve with title and seek line, or the record itself, turning while it plays |
+| weather | a card with a three day strip, or just a glyph and a number |
+| system | rings, or labelled bars |
+| screen time | today's applications as bars, or the total alone |
+
+Missing album art draws a record — grooves, a rotating highlight, a blank paper label — because "no
+cover" is the normal case for streams and radio, and a lone music glyph reads as a broken image.
+
+### Settings
+
+`Super` + `Shift` + `P` opens one card of switches. Every optional surface of the shell — sounds,
+desktop widgets, dock, drawing, screen time, the authorisation agent, idle handling — is one row
+here, one flag in `Prefs`, and one loader in `shell.qml`. Turning something off costs nothing at
+runtime; removing it means deleting its files and one line.
+
+The same card carries the interface language, the bar's edge, the heading font and the notification
+tone, each previewed on selection.
+
+### Sounds
+
+Every gesture in the shell has a sound: a click for buttons, a heavier one for anything that commits,
+distinct stingers for a panel opening and closing, a ratchet under a dragging finger, connect and
+disconnect for the radios. Playback is fire-and-forget through `execDetached`, one process per
+sample, because a single shared process can only hold one child — the second sound would cut the
+first off mid-note.
+
+Volume and the notification tone are in the settings; the whole set is one switch away from silence.
+
+### Equaliser
+
+`Super` + `Shift` + `Q` opens ten bands built on PipeWire's own biquad filters — no EasyEffects, no
+plugin packs, no second sound daemon. The graph is declared in
+`config/pipewire/pipewire.conf.d/99-shell-eq.conf` and read when PipeWire starts; gains after that
+are pushed live, one `pw-cli` call per change.
+
+Two things share the same grid: the curve the bands make, and the live spectrum behind it while
+something is playing. The sliders say what you asked for, the spectrum says whether there is anything
+there to lift, and the curve over it shows where your hand landed relative to the music. Handles sit
+on the curve rather than on a separate strip, and a double click returns one band to zero.
+
+Presets: flat, bass, treble, vocal, pop, rock, jazz, classic, and a night curve that lifts both ends
+for quiet listening.
+
+### Screen time
+
+Counted in the shell rather than by a background daemon: the shell already knows which toplevel is
+focused, so a separate process would only duplicate that and then disagree with it. A coarse 15
+second tick is enough for the shape of a day and cheap enough to leave running forever.
+
+Counting stops while the session is locked and while the screen is off. History is kept for two
+weeks, in `~/.local/state/quickshell/`, and never leaves the machine.
+
+### Authorisation
+
+The shell draws its own polkit prompt. Without one, an unrelated agent draws it — a different font, a
+different radius, a different idea of what a dialog looks like — at exactly the moment the user is
+being asked to trust what is on screen. A wrong password shakes the card rather than only printing a
+line of red text.
+
+### Files
+
+`Super` + `E` opens yazi inside kitty: image and video previews come through kitty's graphics
+protocol as real pixels rather than icons, and the flavour is generated by matugen alongside
+everything else, so the file manager recolours with the wallpaper. Thunar stays installed on
+`Super` + `Shift` + `Y` for dragging files into other applications, which a terminal cannot do.
+
+### Languages
+
+The interface ships in English and Russian, switchable in the settings without a restart. Strings
+live in `config/quickshell/f/lang/*.json`; plural rules belong to the language, so English supplies
+two forms and Russian three. Month and weekday names come from the same tables rather than from Qt's
+locale, because the shell's language is its own setting and does not follow `LANG`.
+
 ### Keybindings
 
 `Super` is the modifier.
+
+**Shell**
+
+| Key | Action |
+| --- | --- |
+| `Super` + `D` | application launcher |
+| `Super` + `C` | launcher in calculator mode |
+| `Super` + `Tab` | window overview with live thumbnails |
+| `Super` + `V` | clipboard history |
+| `Super` + `Shift` + `V` | wipe the clipboard and its history |
+| `Super` + `W` | wallpaper picker |
+| `Super` + `Shift` + `B` | media browser (thumbnail grid) |
+| `Super` + `N` | Wi-Fi networks |
+| `Super` + `B` | Bluetooth devices |
+| `Super` + `A` | media player panel |
+| `Super` + `Shift` + `M` | audio panel (output and microphone) |
+| `Super` + `Shift` + `D` | calendar with a commit heatmap |
+| `Super` + `F1` | system monitor rings |
+| `Super` + `Shift` + `N` | notification centre |
+| `Super` + `Ctrl` + `N` | do not disturb |
+| `Super` + `P` | power menu |
+| `Super` + `Shift` + `L` | lock screen |
+
+**Added recently**
+
+| Key | Action |
+| --- | --- |
+| `Super` + `Shift` + `P` | settings — every optional part has a switch here |
+| `Super` + `Shift` + `W` | arrange the desktop widgets |
+| `Super` + `Shift` + `Q` | ten band equaliser |
+| `Super` + `Shift` + `G` | draw over the screen |
+| `Super` + `Shift` + `A` | pin the dock |
+| `>` in the launcher | run the rest of the line in a shell |
+| `=` in the launcher | calculate the rest of the line |
+
+**Windows**
 
 | Key | Action |
 | --- | --- |
 | `Super` + `Return` | terminal (kitty) |
 | `Super` + `T` | scratchpad terminal |
-| `Super` + `D` | application launcher |
-| `Super` + `Tab` | window overview with thumbnails |
-| `Super` + `E` | file manager |
-| `Super` + `W` | wallpaper picker |
-| `Super` + `N` | Wi-Fi networks |
-| `Super` + `B` | Bluetooth devices |
-| `Super` + `V` | clipboard history |
-| `Super` + `Shift` + `V` | wipe the clipboard and its history |
-| `Super` + `P` | power menu |
+| `Super` + `E` | file manager (yazi in kitty) |
+| `Super` + `Shift` + `Y` | Thunar, for dragging files into other apps |
 | `Super` + `Q` | close window |
 | `Super` + `F` | fullscreen |
 | `Super` + `Shift` + `F` | toggle floating |
@@ -401,44 +563,64 @@ still needs an Xcursor build of the same theme, which `hyprcursor-util` cannot p
 | `Super` + `Shift` + arrows | resize a window |
 | `Super` + `1`…`9` | switch workspace |
 | `Super` + `Shift` + `1`…`9` | move window to workspace |
-| `Super` + `Shift` + `L` | lock screen |
+| `Super` + `Ctrl` + `F` | focus mode — only the active window stays lit |
 | `Super` + `Shift` + `R` | reload Hyprland |
 | `Super` + `Shift` + `E` | exit Hyprland |
+
+**Capture**
+
+| Key | Action |
+| --- | --- |
 | `Print` | screenshot of a selected area |
 | `Shift` + `Print` | select an area and open the annotation editor |
 | `Alt` + `Print` | screenshot of a window |
 | `Super` + `Print` | screenshot of the current monitor |
 | `Ctrl` + `Print` | screenshot of every monitor |
 | `Super` + `Shift` + `S` | screenshot of a selected area |
+| `Super` + `Shift` + `X` | blur a region of the last screenshot |
 | `Super` + `Shift` + `C` | colour picker, hex to the clipboard |
 | `Super` + `Shift` + `T` | recognise text in a selected area, copy it |
 | `Super` + `Alt` + `R` | record the monitor, with system audio |
 | `Super` + `Alt` + `Shift` + `R` | record a selected area |
-| `Super` + `A` | media player panel |
-| `Super` + `Shift` + `D` | calendar |
-| `Super` + `G` | game mode |
+
+**Sound and screen**
+
+| Key | Action |
+| --- | --- |
 | media keys | play / pause, next, previous track |
-| `Super` + `Shift` + `M` | audio panel (microphone and output) |
-| `Super` + `M` | mute the microphone |
-| `Super` + `Shift` + `=` / `-` | microphone volume |
 | `Super` + `=` / `-` | output volume |
+| `Super` + `Shift` + `=` / `-` | microphone volume |
+| `Super` + `M` | mute the microphone |
 | brightness keys | screen brightness, with an OSD |
-| `Super` + `F1` | system monitor rings |
-| `Super` + `Ctrl` + `F` | focus mode |
-| `Super` + `Shift` + `F5` | force a modeset on the internal panel |
-| `Super` + `Shift` + `N` | test notification |
-| `Super` + `Shift` + `Alt` + `N` | test critical notification |
-| `Super` + `Ctrl` + `Shift` + `N` | four notifications in a row |
+
+**Maintenance**
+
+| Key | Action |
+| --- | --- |
 | `Super` + `Shift` + `F3` | cache cleanup |
 | `Super` + `Shift` + `F4` | system update |
+| `Super` + `Shift` + `F5` | force a modeset on the internal panel |
+| `Super` + `Alt` + `N` | test notification |
+| `Super` + `Shift` + `Alt` + `N` | test critical notification |
+| `Super` + `Ctrl` + `Shift` + `N` | four notifications in a row |
 
 ### Layout
 
 ```
 config/
   hypr/          Hyprland, hyprlock, wallpaper and utility scripts
-  quickshell/f/  the Quickshell stack (bar, launcher, clipboard, OSD, notifications)
+  quickshell/f/  the shell itself
+      design/      colours, motion curves, glass and grain primitives
+      services/    singletons: audio, network, weather, screen time, prefs, i18n
+      reusables/   buttons, switches, sliders, fields, rings, the record
+      bar/         the bar
+      panels/      launcher, clipboard, calendar, settings, equaliser, tour
+      desk/        wallpaper-layer widgets and their editor
+      overlays/    notifications, OSD, lock, dock, drawing, polkit
+      lang/        en.json, ru.json
   matugen/       colour-scheme templates for every application
+  pipewire/      the equaliser graph
+  zed/           editor settings
   firejail/      sandbox overrides shared by every profile
   cliphist/      clipboard history limits
   kitty/         terminal
@@ -615,14 +797,21 @@ user_pref("media.av1.enabled", false);
 
 ### Простой
 
-`hypridle` блокирует сессию после 50 минут без ввода и через пять минут гасит экраны. Оба действия
-идут через `config/hypr/scripts/idle-guard.sh`: он не сработает, пока открыто полноэкранное окно,
-реально играет звук (именно играет, а не просто держит устройство), идёт запись экрана или запущен
-любой процесс из `~/.config/hypr/idle-inhibit.list`.
+Шелл блокирует сессию через 50 минут без ввода и гасит панели ещё через пять. Оба таймера лежат в
+настройках самого шелла, а не в третьем конфиге со своим синтаксисом, но решение «стоит ли» осталось
+за `config/hypr/scripts/idle-guard.sh`: он не даёт сработать, пока окно развёрнуто на весь экран,
+пока реально играет звук (поток откупорен, а не просто держит устройство), пока идёт запись и пока
+жив любой процесс из `~/.config/hypr/idle-inhibit.list`.
+
+Это сделано намеренно: скрипт уже знает все причины не блокировать, а второе мнение, написанное на
+QML, только спорило бы с ним.
 
 Список сверяется с именами процессов через `pgrep -x`, по одному в строке. В репозитории лежит
-только `idle-inhibit.list.example` — скопируй его и допиши, что должно держать твой экран
-включённым; рабочая копия намеренно не отслеживается.
+только `idle-inhibit.list.example` — скопируйте и допишите своё, рабочая копия из репозитория
+исключена.
+
+`hypridle` больше не запускается; строка оставлена закомментированной в
+`config/hypr/config/startup.conf`.
 
 ### Меню выключения
 
@@ -776,69 +965,200 @@ VPN, но только пока туннель поднят: определен�
 которую `hyprcursor-util` собирать не умеет.
 
 
+### Виджеты на столе
+
+`Super` + `Shift` + `W` поднимает слой обоев в режим правки: появляется сетка, виджеты таскаются
+мышью, колесо меняет размер, снизу выезжает палитра. Вне этого режима у слоя пустая маска ввода —
+клики, перетаскивания и прокрутка проходят насквозь, виджеты видно и они неосязаемы.
+
+Позиции хранятся долями экрана, а не пикселями, поэтому раскладка, собранная на ноутбучной матрице,
+ложится так же на внешнем мониторе. У каждого виджета несколько видов:
+
+| Виджет | Виды |
+| --- | --- |
+| часы | две цифры друг под другом, строка с датой или рукописные штрихи |
+| музыка | конверт с названием и полосой позиции либо сама пластинка, вращающаяся при игре |
+| погода | карточка с прогнозом на три дня или только глиф и число |
+| система | кольца или подписанные полосы |
+| экранное время | приложения за сегодня полосами или один итог |
+
+Когда обложки нет, рисуется пластинка — дорожки, вращающийся блик, пустая бумажная этикетка. Для
+радио и потоков «без обложки» это норма, а одинокий значок ноты читается как битая картинка.
+
+### Настройки
+
+`Super` + `Shift` + `P` открывает одну карточку с переключателями. Каждая необязательная часть шелла
+— звуки, виджеты, док, рисование, экранное время, агент прав, простой — это одна строка здесь, один
+флаг в `Prefs` и один загрузчик в `shell.qml`. Выключенное не стоит ничего, а удаляется вместе со
+своими файлами и одной строкой.
+
+Там же язык интерфейса, край для бара, шрифт заголовков и сигнал уведомлений — каждый с
+предпрослушкой или мгновенным применением.
+
+### Звук интерфейса
+
+У каждого жеста свой звук: клик для кнопок, тяжелее — для действий, которые что-то подтверждают,
+разные стингеры на открытие и закрытие панели, храповик под тянущей рукой, подключение и отключение
+для радиомодулей. Воспроизведение — «выстрелил и забыл» через `execDetached`, по процессу на сэмпл:
+один общий процесс держит только одного ребёнка, и второй звук обрывал бы первый на полуноте.
+
+Громкость и сигнал — в настройках, вся система выключается одним тумблером.
+
+### Эквалайзер
+
+`Super` + `Shift` + `Q` — десять полос на штатных биквадах PipeWire: ни EasyEffects, ни наборов
+плагинов, ни второго звукового демона. Граф описан в
+`config/pipewire/pipewire.conf.d/99-shell-eq.conf` и читается при старте PipeWire, а усиления потом
+уходят живьём, по одному вызову `pw-cli` на изменение.
+
+На одной сетке две вещи: кривая, которую задают полосы, и живой спектр за ней, пока что-то играет.
+Ползунки говорят, что попросили; спектр — есть ли там что поднимать; кривая поверх показывает, куда
+легла рука относительно музыки. Ручки сидят на самой кривой, двойной клик обнуляет полосу.
+
+Пресеты: ровно, низы, верхи, голос, поп, рок, джаз, классика и ночная кривая, поднимающая оба края
+для тихого прослушивания.
+
+### Экранное время
+
+Считает сам шелл, а не фоновый демон: он и так знает, какое окно в фокусе, и отдельный процесс лишь
+дублировал бы это, чтобы потом с ним не сойтись. Шаг в 15 секунд достаточно точен для формы дня и
+достаточно дёшев, чтобы работать всегда.
+
+Счёт останавливается на локскрине и при погашенном экране. История хранится две недели в
+`~/.local/state/quickshell/` и никуда не уходит с машины.
+
+### Запрос прав
+
+Шелл рисует свой polkit-агент. Без него запрос рисует чужой — другой шрифт, другие радиусы, другое
+представление о том, как выглядит диалог, — ровно в тот момент, когда у человека спрашивают, доверяет
+ли он тому, что на экране. Неверный пароль встряхивает карточку, а не просто печатает красную строку.
+
+### Файлы
+
+`Super` + `E` открывает yazi внутри kitty: превью картинок и видео идут честными пикселями через
+графический протокол kitty, а флейвор генерируется matugen вместе со всем остальным — проводник
+перекрашивается вслед за обоями. Thunar остался на `Super` + `Shift` + `Y` для перетаскивания файлов
+в другие программы, чего терминал не умеет.
+
+### Языки
+
+Интерфейс на английском и русском, переключается в настройках без перезапуска. Строки лежат в
+`config/quickshell/f/lang/*.json`; правило множественного числа принадлежит языку, поэтому английский
+отдаёт две формы, русский три. Названия месяцев и дней берутся оттуда же, а не из локали Qt: язык
+шелла — отдельная настройка и за `LANG` не следует.
+
 ### Горячие клавиши
 
 Модификатор — `Super`.
+
+**Шелл**
+
+| Клавиши | Действие |
+| --- | --- |
+| `Super` + `D` | лаунчер |
+| `Super` + `C` | лаунчер в режиме счёта |
+| `Super` + `Tab` | обзор окон с живыми превью |
+| `Super` + `V` | история буфера обмена |
+| `Super` + `Shift` + `V` | очистить буфер и историю |
+| `Super` + `W` | выбор обоев |
+| `Super` + `Shift` + `B` | медиабраузер (сетка миниатюр) |
+| `Super` + `N` | сети Wi-Fi |
+| `Super` + `B` | устройства Bluetooth |
+| `Super` + `A` | панель плеера |
+| `Super` + `Shift` + `M` | звук: вывод и микрофон |
+| `Super` + `Shift` + `D` | календарь с тепловой картой коммитов |
+| `Super` + `F1` | кольца системного монитора |
+| `Super` + `Shift` + `N` | центр уведомлений |
+| `Super` + `Ctrl` + `N` | не беспокоить |
+| `Super` + `P` | меню выключения |
+| `Super` + `Shift` + `L` | заблокировать экран |
+
+**Добавлено недавно**
+
+| Клавиши | Действие |
+| --- | --- |
+| `Super` + `Shift` + `P` | настройки — у каждой необязательной части свой тумблер |
+| `Super` + `Shift` + `W` | правка виджетов на столе |
+| `Super` + `Shift` + `Q` | эквалайзер на десять полос |
+| `Super` + `Shift` + `G` | рисовать поверх экрана |
+| `Super` + `Shift` + `A` | закрепить док |
+| `>` в лаунчере | выполнить остаток строки в шелле |
+| `=` в лаунчере | посчитать остаток строки |
+
+**Окна**
 
 | Клавиши | Действие |
 | --- | --- |
 | `Super` + `Return` | терминал (kitty) |
 | `Super` + `T` | выпадающий терминал |
-| `Super` + `D` | лаунчер приложений |
-| `Super` + `Tab` | обзор окон с живыми миниатюрами |
-| `Super` + `E` | файловый менеджер |
-| `Super` + `W` | выбор обоев |
-| `Super` + `N` | сети Wi-Fi |
-| `Super` + `B` | устройства Bluetooth |
-| `Super` + `V` | история буфера обмена |
-| `Super` + `Shift` + `V` | стереть буфер обмена и его историю |
-| `Super` + `P` | меню выключения |
+| `Super` + `E` | файловый менеджер (yazi в kitty) |
+| `Super` + `Shift` + `Y` | Thunar, для перетаскивания файлов |
 | `Super` + `Q` | закрыть окно |
-| `Super` + `F` | полный экран |
+| `Super` + `F` | на весь экран |
 | `Super` + `Shift` + `F` | плавающее окно |
-| `Super` + `H` / `J` / `K` / `L` | перемещение фокуса (vim-клавиши) |
+| `Super` + `H` / `J` / `K` / `L` | переход фокуса (vim) |
 | `Super` + стрелки | двигать плавающее окно |
 | `Super` + `Shift` + стрелки | менять размер окна |
 | `Super` + `1`…`9` | переключить рабочий стол |
-| `Super` + `Shift` + `1`…`9` | перенести окно на рабочий стол |
-| `Super` + `Shift` + `L` | блокировка экрана |
+| `Super` + `Shift` + `1`…`9` | перенести окно на стол |
+| `Super` + `Ctrl` + `F` | фокус-режим — светится только активное окно |
 | `Super` + `Shift` + `R` | перезагрузить Hyprland |
 | `Super` + `Shift` + `E` | выйти из Hyprland |
-| `Print` | скриншот выделенной области |
+
+**Снимки и запись**
+
+| Клавиши | Действие |
+| --- | --- |
+| `Print` | снимок выделенной области |
 | `Shift` + `Print` | выделить область и открыть редактор |
-| `Alt` + `Print` | скриншот окна |
-| `Super` + `Print` | скриншот текущего монитора |
-| `Ctrl` + `Print` | скриншот всех мониторов |
-| `Super` + `Shift` + `S` | скриншот выделенной области |
-| `Super` + `Shift` + `C` | пипетка, hex в буфер обмена |
-| `Super` + `Shift` + `T` | распознать текст в выделенной области, скопировать |
+| `Alt` + `Print` | снимок окна |
+| `Super` + `Print` | снимок текущего монитора |
+| `Ctrl` + `Print` | снимок всех мониторов |
+| `Super` + `Shift` + `S` | снимок выделенной области |
+| `Super` + `Shift` + `X` | замылить область на последнем снимке |
+| `Super` + `Shift` + `C` | пипетка, hex в буфер |
+| `Super` + `Shift` + `T` | распознать текст в области и скопировать |
 | `Super` + `Alt` + `R` | запись монитора со звуком системы |
 | `Super` + `Alt` + `Shift` + `R` | запись выделенной области |
-| `Super` + `A` | панель плеера |
-| `Super` + `Shift` + `D` | календарь |
-| `Super` + `G` | игровой режим |
+
+**Звук и экран**
+
+| Клавиши | Действие |
+| --- | --- |
 | мультимедийные клавиши | пауза, следующий и предыдущий трек |
-| `Super` + `Shift` + `M` | панель звука (микрофон и вывод) |
-| `Super` + `M` | выключить микрофон |
-| `Super` + `Shift` + `=` / `-` | громкость микрофона |
 | `Super` + `=` / `-` | громкость вывода |
-| клавиши яркости | яркость экрана, с индикатором |
-| `Super` + `F1` | кольца системного монитора |
-| `Super` + `Ctrl` + `F` | фокус-режим |
-| `Super` + `Shift` + `F5` | принудительный modeset внутренней панели |
-| `Super` + `Shift` + `N` | тестовое уведомление |
-| `Super` + `Shift` + `Alt` + `N` | тестовое критическое |
-| `Super` + `Ctrl` + `Shift` + `N` | четыре уведомления подряд |
-| `Super` + `Shift` + `F3` | очистка кэша |
+| `Super` + `Shift` + `=` / `-` | громкость микрофона |
+| `Super` + `M` | выключить микрофон |
+| клавиши яркости | яркость экрана с индикатором |
+
+**Обслуживание**
+
+| Клавиши | Действие |
+| --- | --- |
+| `Super` + `Shift` + `F3` | очистка кэшей |
 | `Super` + `Shift` + `F4` | обновление системы |
+| `Super` + `Shift` + `F5` | принудительный modeset внутренней матрицы |
+| `Super` + `Alt` + `N` | тестовое уведомление |
+| `Super` + `Shift` + `Alt` + `N` | тестовое критическое |
+| `Super` + `Ctrl` + `Shift` + `N` | четыре подряд |
 
 ### Структура
 
 ```
 config/
   hypr/          Hyprland, hyprlock, скрипты обоев и утилит
-  quickshell/f/  набор Quickshell (панель, лаунчер, буфер, индикаторы, уведомления)
+  quickshell/f/  сам шелл
+      design/      цвета, кривые движения, стекло и зерно
+      services/    синглтоны: звук, сеть, погода, экранное время, настройки, языки
+      reusables/   кнопки, переключатели, ползунки, поля, кольца, пластинка
+      bar/         панель
+      panels/      лаунчер, буфер, календарь, настройки, эквалайзер, тур
+      desk/        виджеты на слое обоев и их редактор
+      overlays/    уведомления, индикаторы, локскрин, док, рисование, polkit
+      lang/        en.json, ru.json
   matugen/       шаблоны цветовой схемы для всех приложений
+  pipewire/      граф эквалайзера
+  zed/           настройки редактора
   firejail/      общие правила песочницы для всех профилей
   cliphist/      ограничения истории буфера обмена
   kitty/         терминал
