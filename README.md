@@ -1,16 +1,28 @@
 <div align="center">
 
+<br>
+
 # Hyprland Desktop
 
 **A wallpaper-driven Wayland desktop for Arch and Artix Linux.**
 
-Pick a wallpaper — the bar, the terminal, the notifications, the launcher and the lock screen
-recolour themselves around it.
+Pick a wallpaper — the bar, the widgets, the terminal, the file manager, the editor
+and the lock screen recolour themselves around it.
 
-[English](#english) · [Русский](#русский) · [What changed](docs/UPDATE.md)
+<br>
 
-`Hyprland` `Quickshell` `matugen` `hyprlock` `kitty` `zsh`
+<a href="#english"><img src="https://img.shields.io/badge/docs-English-E4E3D8?style=flat-square&labelColor=13140E" alt="English"></a>
+<a href="#русский"><img src="https://img.shields.io/badge/docs-Русский-E4E3D8?style=flat-square&labelColor=13140E" alt="Русский"></a>
+<a href="docs/UPDATE.md"><img src="https://img.shields.io/badge/what's-new-C6C8B5?style=flat-square&labelColor=13140E" alt="What changed"></a>
+<a href="#license"><img src="https://img.shields.io/badge/license-MIT-909281?style=flat-square&labelColor=13140E" alt="License"></a>
 
+<img src="https://img.shields.io/badge/Hyprland-0.56-13140E?style=flat-square&labelColor=45483A" alt="Hyprland">
+<img src="https://img.shields.io/badge/Quickshell-0.3-13140E?style=flat-square&labelColor=45483A" alt="Quickshell">
+<img src="https://img.shields.io/badge/matugen-Material%20You-13140E?style=flat-square&labelColor=45483A" alt="matugen">
+<img src="https://img.shields.io/badge/kitty-yazi-13140E?style=flat-square&labelColor=45483A" alt="kitty and yazi">
+<img src="https://img.shields.io/badge/PipeWire-EQ-13140E?style=flat-square&labelColor=45483A" alt="PipeWire">
+
+<br>
 <br>
 
 <img src="assets/hero.jpg" alt="The desktop" width="100%">
@@ -19,12 +31,10 @@ recolour themselves around it.
 
 <table>
 <tr>
-<td><img src="assets/overview.jpg" alt="Window overview"></td>
-<td><img src="assets/launcher.jpg" alt="Application launcher"></td>
+<td colspan="2"><img src="assets/launcher.jpg" alt="Application launcher" width="100%"></td>
 </tr>
 <tr>
-<td align="center"><sub>overview — <code>Super</code> + <code>Tab</code></sub></td>
-<td align="center"><sub>launcher — <code>Super</code> + <code>D</code></sub></td>
+<td colspan="2" align="center"><sub>launcher — <code>Super</code> + <code>D</code></sub></td>
 </tr>
 <tr>
 <td><img src="assets/osd.png" alt="Volume OSD drawn as a wave"></td>
@@ -124,6 +134,82 @@ recolour themselves around it.
 
 </div>
 
+<br>
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**One palette, everywhere**
+
+matugen reads the wallpaper and the whole system follows: shell, kitty, yazi, Zed,
+GTK and Qt apps, even the mouse cursor. Colours ease into place rather than snapping.
+
+</td>
+<td width="33%" valign="top">
+
+**Widgets on the wallpaper**
+
+Clock, weather, load, screen time and the player as a turning record — under the
+windows, intangible until you ask to arrange them.
+
+</td>
+<td width="33%" valign="top">
+
+**One shell, one process**
+
+Bar, launcher, clipboard, notifications, OSD, lock screen, dock and panels are all
+Quickshell. ~6% CPU at idle on two monitors.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Sound that belongs to the interface**
+
+Every gesture has its own sample: clicks, panel stingers, a ratchet under a drag,
+connect and disconnect for the radios.
+
+</td>
+<td valign="top">
+
+**An equaliser without a daemon**
+
+Ten bands on PipeWire's own biquads. The band curve and the live spectrum share one
+grid, and the handles sit on the curve.
+
+</td>
+<td valign="top">
+
+**Everything is a switch**
+
+One settings card turns any optional part off — and anything switched off can be
+deleted with its files and one line.
+
+</td>
+</tr>
+</table>
+
+<br>
+
+
+<br>
+
+<div align="center">
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| **distro** | Arch · Artix (OpenRC) | **shell** | Quickshell 0.3 |
+| **wm** | Hyprland 0.56 | **colours** | matugen, from the wallpaper |
+| **terminal** | kitty | **files** | yazi, with real image previews |
+| **editor** | Zed | **audio** | PipeWire + a filter-chain EQ |
+| **fonts** | JetBrains Mono · Adwaita Sans | **prompt** | zsh + starship |
+
+</div>
+
+<br>
+
 ---
 
 ## English
@@ -169,7 +255,9 @@ cd hyprdots
 The installer requires `pacman`, must be run as a normal user (not root), and copies the previous
 configuration to `~/.config/dotfiles-backup-<timestamp>` before writing anything.
 
-### Updating
+<details>
+<summary><b>Updating</b> — <sub>one command, and what it will not overwrite</sub></summary>
+
 
 Already installed? Do not run the installer again — there is an update path that keeps your
 machine as it is and only brings the configuration forward:
@@ -191,7 +279,11 @@ cd hyprdots && ./install.sh --update
 
 `--dry-run` works here too and prints every step without touching anything.
 
-### Theming
+</details>
+
+<details>
+<summary><b>Theming</b> — <sub>how a wallpaper becomes a palette, and where each template lands</sub></summary>
+
 
 ```
 wallpaper ──▶ matugen ──┬──▶ hyprland   window borders
@@ -216,7 +308,11 @@ if the wallpaper has changed since the last run, so the lock screen always shows
 is on the desktop right now — blurred, dimmed, behind a frosted card with the clock, the date, the
 keyboard layout, uptime and battery.
 
-### Hardware video decoding
+</details>
+
+<details>
+<summary><b>Hardware video decoding</b> — <sub>NVIDIA, VA-API and the browser flags that actually matter</sub></summary>
+
 
 The session already exports `LIBVA_DRIVER_NAME=nvidia` and `NVD_BACKEND=direct`, which is only
 half the story: NVIDIA needs `libva-nvidia-driver` to map VA-API onto NVDEC, and each browser has
@@ -247,7 +343,11 @@ so accepting those streams quietly moves the work back to the CPU.
 Check the result in `chrome://gpu` and `about:support`, or watch `nvidia-smi dmon` while a video
 plays — the `dec` column stays at zero when decoding is still on the CPU.
 
-### Idle
+</details>
+
+<details>
+<summary><b>Idle</b> — <sub>timers in the shell, the decision in one guard script</sub></summary>
+
 
 The shell locks the session after 50 minutes without input and turns the panels off five minutes
 later. Both timers live in the shell's own settings rather than in a third config file with its own
@@ -265,7 +365,11 @@ That list is matched against process names with `pgrep -x`, one per line. Only
 `hypridle` is no longer started; the line is left commented in `config/hypr/config/startup.conf` for
 anyone who wants it back.
 
-### Power menu
+</details>
+
+<details>
+<summary><b>Power menu</b> — <sub>why it is a panel and not a script</sub></summary>
+
 
 `Super`+`P` opens a native Quickshell menu: the clock, uptime and battery over five tiles — lock,
 sleep, log out, reboot, shut down. Each tile carries its own letter, so `l`, `s`, `e`, `r` and `p`
@@ -276,7 +380,11 @@ never look like the others.
 It takes its colours from the wallpaper like everything else. `wlogout` is still themed from the
 same palette and stays available as a standalone power menu.
 
-### Screen capture
+</details>
+
+<details>
+<summary><b>Screen capture</b> — <sub>region, window, monitor, colour picker, OCR</sub></summary>
+
 
 `config/hypr/scripts/screenshot.sh` takes one argument and covers every case:
 
@@ -295,7 +403,11 @@ animations stay where they are. Every shot goes to `~/Pictures/Screenshots` **an
 clipboard, and the notification carries the image as its own thumbnail. Set `SCREENSHOT_DIR` to
 save somewhere else.
 
-### Screen recording
+</details>
+
+<details>
+<summary><b>Screen recording</b> — <sub>monitor or region, with system audio</sub></summary>
+
 
 `config/hypr/scripts/record-toggle.sh` toggles: the first call starts, the second stops, whatever
 mode started it.
@@ -314,7 +426,11 @@ and the path of the finished file lands in the clipboard.
 While something is being recorded the bar shows a pulsing red dot and the elapsed time — click it
 to stop.
 
-### The bar
+</details>
+
+<details>
+<summary><b>The bar</b> — <sub>what every island is and why it is there</sub></summary>
+
 
 Workspaces on the left, clock in the middle, and on the right three groups divided by hairlines:
 the recording indicator and the tray; Wi-Fi, microphone and volume; keyboard layout and battery.
@@ -379,8 +495,11 @@ the exit address is fetched when the tunnel state changes or the dot is clicked,
 At session start the islands drop in from above with a stagger, left to right, so the bar assembles
 instead of appearing all at once.
 
+</details>
 
-### Widgets
+<details>
+<summary><b>Widgets</b> — <sub>system rings, the commit heatmap, notifications, focus mode</sub></summary>
+
 
 **System rings** — `Super` + `F1` opens six thin arcs: CPU, RAM, temperature, GPU, VRAM and GPU
 temperature. Each arc walks from accent to red as its load rises, and a dot rides the head. The whole
@@ -406,8 +525,11 @@ re-run the script.
 inactive windows dim hard, blur drops a pass, and the animated border gradient stops. Toggling back
 restores the values by name rather than reloading the whole config, so unsaved experiments survive.
 
+</details>
 
-### Theming, at runtime
+<details>
+<summary><b>Theming, at runtime</b> — <sub>why the palette is not a QML file any more</sub></summary>
+
 
 matugen used to generate `Colors.qml` directly. Writing a QML file made Quickshell reload the entire
 configuration on every wallpaper change: every object was rebuilt, so the colours could only ever
@@ -422,8 +544,11 @@ outline in the background colour under a fill in the accent, so it stays readabl
 in a dark terminal alike. X11 aliases are declared, so GTK and Qt applications pick it up. XWayland
 still needs an Xcursor build of the same theme, which `hyprcursor-util` cannot produce.
 
+</details>
 
-### Desktop widgets
+<details>
+<summary><b>Desktop widgets</b> — <sub>the wallpaper layer, its editor, and the faces each widget has</sub></summary>
+
 
 `Super` + `Shift` + `W` lifts the wallpaper layer into an editable state: a grid appears, widgets can
 be dragged, the wheel resizes them, and a palette along the bottom adds more. Outside that mode the
@@ -444,7 +569,11 @@ panel lands in the same place on an external monitor. Each widget has faces to s
 Missing album art draws a record — grooves, a rotating highlight, a blank paper label — because "no
 cover" is the normal case for streams and radio, and a lone music glyph reads as a broken image.
 
-### Settings
+</details>
+
+<details>
+<summary><b>Settings</b> — <sub>one card, one flag per feature</sub></summary>
+
 
 `Super` + `Shift` + `P` opens one card of switches. Every optional surface of the shell — sounds,
 desktop widgets, dock, drawing, screen time, the authorisation agent, idle handling — is one row
@@ -454,7 +583,11 @@ runtime; removing it means deleting its files and one line.
 The same card carries the interface language, the bar's edge, the heading font and the notification
 tone, each previewed on selection.
 
-### Sounds
+</details>
+
+<details>
+<summary><b>Sounds</b> — <sub>a sample per gesture, and why they are fired and forgotten</sub></summary>
+
 
 Every gesture in the shell has a sound: a click for buttons, a heavier one for anything that commits,
 distinct stingers for a panel opening and closing, a ratchet under a dragging finger, connect and
@@ -464,7 +597,11 @@ first off mid-note.
 
 Volume and the notification tone are in the settings; the whole set is one switch away from silence.
 
-### Equaliser
+</details>
+
+<details>
+<summary><b>Equaliser</b> — <sub>PipeWire biquads, the curve, the spectrum behind it</sub></summary>
+
 
 `Super` + `Shift` + `Q` opens ten bands built on PipeWire's own biquad filters — no EasyEffects, no
 plugin packs, no second sound daemon. The graph is declared in
@@ -479,7 +616,11 @@ on the curve rather than on a separate strip, and a double click returns one ban
 Presets: flat, bass, treble, vocal, pop, rock, jazz, classic, and a night curve that lifts both ends
 for quiet listening.
 
-### Screen time
+</details>
+
+<details>
+<summary><b>Screen time</b> — <sub>counted in the shell, paused when locked, kept for two weeks</sub></summary>
+
 
 Counted in the shell rather than by a background daemon: the shell already knows which toplevel is
 focused, so a separate process would only duplicate that and then disagree with it. A coarse 15
@@ -488,26 +629,40 @@ second tick is enough for the shape of a day and cheap enough to leave running f
 Counting stops while the session is locked and while the screen is off. History is kept for two
 weeks, in `~/.local/state/quickshell/`, and never leaves the machine.
 
-### Authorisation
+</details>
+
+<details>
+<summary><b>Authorisation</b> — <sub>the shell's own polkit prompt</sub></summary>
+
 
 The shell draws its own polkit prompt. Without one, an unrelated agent draws it — a different font, a
 different radius, a different idea of what a dialog looks like — at exactly the moment the user is
 being asked to trust what is on screen. A wrong password shakes the card rather than only printing a
 line of red text.
 
-### Files
+</details>
+
+<details>
+<summary><b>Files</b> — <sub>yazi in kitty, recoloured with everything else</sub></summary>
+
 
 `Super` + `E` opens yazi inside kitty: image and video previews come through kitty's graphics
 protocol as real pixels rather than icons, and the flavour is generated by matugen alongside
 everything else, so the file manager recolours with the wallpaper. Thunar stays installed on
 `Super` + `Shift` + `Y` for dragging files into other applications, which a terminal cannot do.
 
-### Languages
+</details>
+
+<details>
+<summary><b>Languages</b> — <sub>English and Russian, switched without a restart</sub></summary>
+
 
 The interface ships in English and Russian, switchable in the settings without a restart. Strings
 live in `config/quickshell/f/lang/*.json`; plural rules belong to the language, so English supplies
 two forms and Russian three. Month and weekday names come from the same tables rather than from Qt's
 locale, because the shell's language is its own setting and does not follow `LANG`.
+
+</details>
 
 ### Keybindings
 
@@ -604,7 +759,9 @@ locale, because the shell's language is its own setting and does not follow `LAN
 | `Super` + `Shift` + `Alt` + `N` | test critical notification |
 | `Super` + `Ctrl` + `Shift` + `N` | four notifications in a row |
 
-### Layout
+<details>
+<summary><b>Layout</b> — <sub>where everything lives in the repository</sub></summary>
+
 
 ```
 config/
@@ -643,7 +800,11 @@ Files generated at runtime — `colors.conf`, `lock-colors.conf`, `colors.css`,
 first run. `Colors.qml` is tracked: it is now source rather than a build product, and reads the
 palette from `~/.cache/matugen/colors.json` at runtime.
 
-### Requirements
+</details>
+
+<details>
+<summary><b>Requirements</b> — <sub>the package list</sub></summary>
+
 
 Arch or Artix Linux with an AUR helper (the installer builds `yay` if none is present).
 
@@ -661,13 +822,19 @@ Also `hypridle` for the idle timer.
 On Artix, install the service packages for your init system (`-openrc`, `-runit`, `-s6`) instead of
 the systemd variants.
 
-### Notes
+</details>
+
+<details>
+<summary><b>Notes</b> — <sub>hardware, quirks and honest caveats</sub></summary>
+
 
 * NVIDIA-specific environment variables live in `config/hypr/config/env.conf` — remove them on AMD
   or Intel hardware.
 * Monitors are declared in `config/hypr/config/monitors.conf`; adjust it for your outputs.
 * Wallpapers are read from `~/Pictures/Wallpapers` and rotate every three hours; the interval is
   set in `config/hypr/scripts/wallpaper-rotate.sh`.
+
+</details>
 
 ### License
 
@@ -676,6 +843,21 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE).
 ---
 
 ## Русский
+
+<div align="center">
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| **дистрибутив** | Arch · Artix (OpenRC) | **шелл** | Quickshell 0.3 |
+| **оконный менеджер** | Hyprland 0.56 | **цвета** | matugen, из обоев |
+| **терминал** | kitty | **файлы** | yazi, превью настоящими пикселями |
+| **редактор** | Zed | **звук** | PipeWire + filter-chain эквалайзер |
+| **шрифты** | JetBrains Mono · Adwaita Sans | **приглашение** | zsh + starship |
+
+</div>
+
+<br>
+
 
 ### Что это
 
@@ -718,7 +900,9 @@ cd hyprdots
 Установщику нужен `pacman`, запускать нужно от обычного пользователя (не от root). Предыдущая
 конфигурация сохраняется в `~/.config/dotfiles-backup-<время>`.
 
-### Обновление
+<details>
+<summary><b>Обновление</b> — <sub>одна команда и что она не тронет</sub></summary>
+
 
 Если конфигурация уже стоит, установщик заново гонять не нужно — есть отдельный режим обновления,
 который не трогает систему и подтягивает только конфиги:
@@ -740,7 +924,11 @@ cd hyprdots && ./install.sh --update
 
 `--dry-run` работает и здесь: покажет каждый шаг, ничего не меняя.
 
-### Оформление
+</details>
+
+<details>
+<summary><b>Оформление</b> — <sub>как обои становятся палитрой и куда уходит каждый шаблон</sub></summary>
+
 
 ```
 обои ──▶ matugen ──┬──▶ hyprland   рамки окон
@@ -765,7 +953,11 @@ cd hyprdots && ./install.sh --update
 размытые и притемнённые, поверх них матовая карточка с часами, датой, раскладкой клавиатуры,
 аптаймом и зарядом батареи.
 
-### Аппаратное декодирование видео
+</details>
+
+<details>
+<summary><b>Аппаратное декодирование видео</b> — <sub>NVIDIA, VA-API и флаги браузера, которые правда важны</sub></summary>
+
 
 Сессия уже экспортирует `LIBVA_DRIVER_NAME=nvidia` и `NVD_BACKEND=direct`, но этого мало: нужен
 `libva-nvidia-driver`, который связывает VA-API с NVDEC, и каждому браузеру надо отдельно сказать
@@ -795,7 +987,11 @@ user_pref("media.av1.enabled", false);
 Проверять в `chrome://gpu` и `about:support` или через `nvidia-smi dmon` во время
 воспроизведения — колонка `dec` остаётся нулевой, пока декодирование идёт на процессоре.
 
-### Простой
+</details>
+
+<details>
+<summary><b>Простой</b> — <sub>таймеры в шелле, решение — в одном скрипте</sub></summary>
+
 
 Шелл блокирует сессию через 50 минут без ввода и гасит панели ещё через пять. Оба таймера лежат в
 настройках самого шелла, а не в третьем конфиге со своим синтаксисом, но решение «стоит ли» осталось
@@ -813,7 +1009,11 @@ QML, только спорило бы с ним.
 `hypridle` больше не запускается; строка оставлена закомментированной в
 `config/hypr/config/startup.conf`.
 
-### Меню выключения
+</details>
+
+<details>
+<summary><b>Меню выключения</b> — <sub>почему это панель, а не скрипт</sub></summary>
+
 
 `Super`+`P` открывает меню Quickshell: часы, аптайм и заряд батареи над пятью плитками —
 заблокировать, сон, выйти, перезагрузка, выключение. У каждой плитки своя буква, так что `l`, `s`,
@@ -824,7 +1024,11 @@ QML, только спорило бы с ним.
 Цвета берутся из обоев, как и везде. `wlogout` по-прежнему красится из той же палитры и остаётся
 отдельным меню выключения.
 
-### Скриншоты
+</details>
+
+<details>
+<summary><b>Скриншоты</b> — <sub>область, окно, монитор, пипетка, распознавание текста</sub></summary>
+
 
 `config/hypr/scripts/screenshot.sh` принимает один аргумент и закрывает все случаи:
 
@@ -842,7 +1046,11 @@ QML, только спорило бы с ним.
 снимок попадает в `~/Pictures/Screenshots` **и** в буфер обмена, а уведомление показывает его же
 миниатюрой. Другая папка задаётся переменной `SCREENSHOT_DIR`.
 
-### Запись экрана
+</details>
+
+<details>
+<summary><b>Запись экрана</b> — <sub>монитор или область, со звуком системы</sub></summary>
+
 
 `config/hypr/scripts/record-toggle.sh` работает переключателем: первый вызов запускает, второй
 останавливает — в каком бы режиме запись ни началась.
@@ -860,7 +1068,11 @@ QML, только спорило бы с ним.
 
 Пока идёт запись, в панели мигает красная точка с таймером — клик по ней останавливает запись.
 
-### Панель
+</details>
+
+<details>
+<summary><b>Панель</b> — <sub>что такое каждый островок и зачем он там</sub></summary>
+
 
 Слева рабочие столы, по центру часы, справа три группы, разделённые волосяными линиями: индикатор
 записи и трей; Wi-Fi, микрофон и громкость; раскладка и батарея. Контраст расставлен по частоте
@@ -923,8 +1135,11 @@ VPN, но только пока туннель поднят: определен�
 при смене состояния туннеля или по клику, не по таймеру. При старте сессии островки падают сверху
 со сдвигом слева направо — бар собирается, а не возникает целиком.
 
+</details>
 
-### Виджеты
+<details>
+<summary><b>Виджеты</b> — <sub>кольца системы, тепловая карта коммитов, уведомления, фокус-режим</sub></summary>
+
 
 **Кольца системы** — `Super`+`F1` открывает шесть тонких дуг: CPU, RAM, температура, GPU, VRAM и
 температура GPU. Цвет дуги идёт от акцента к красному по мере нагрузки, по её концу едет точка. Вся
@@ -948,8 +1163,11 @@ VPN, но только пока туннель поднят: определен�
 затемняются, блюр теряет проход, градиент рамки замирает. Обратное переключение возвращает значения
 поимённо, а не перечитывает весь конфиг, поэтому несохранённые эксперименты переживают его.
 
+</details>
 
-### Палитра в рантайме
+<details>
+<summary><b>Палитра в рантайме</b> — <sub>почему палитра больше не QML-файл</sub></summary>
+
 
 Раньше matugen генерировал `Colors.qml` напрямую. Запись QML-файла заставляла Quickshell перечитать
 весь конфиг при каждой смене обоев: все объекты пересоздавались, и цвета могли меняться только
@@ -964,8 +1182,11 @@ VPN, но только пока туннель поднят: определен�
 так что GTK- и Qt-приложения её подхватывают. Для XWayland нужна та же тема в формате Xcursor,
 которую `hyprcursor-util` собирать не умеет.
 
+</details>
 
-### Виджеты на столе
+<details>
+<summary><b>Виджеты на столе</b> — <sub>слой обоев, редактор и виды каждого виджета</sub></summary>
+
 
 `Super` + `Shift` + `W` поднимает слой обоев в режим правки: появляется сетка, виджеты таскаются
 мышью, колесо меняет размер, снизу выезжает палитра. Вне этого режима у слоя пустая маска ввода —
@@ -985,7 +1206,11 @@ VPN, но только пока туннель поднят: определен�
 Когда обложки нет, рисуется пластинка — дорожки, вращающийся блик, пустая бумажная этикетка. Для
 радио и потоков «без обложки» это норма, а одинокий значок ноты читается как битая картинка.
 
-### Настройки
+</details>
+
+<details>
+<summary><b>Настройки</b> — <sub>одна карточка, по флагу на функцию</sub></summary>
+
 
 `Super` + `Shift` + `P` открывает одну карточку с переключателями. Каждая необязательная часть шелла
 — звуки, виджеты, док, рисование, экранное время, агент прав, простой — это одна строка здесь, один
@@ -995,7 +1220,11 @@ VPN, но только пока туннель поднят: определен�
 Там же язык интерфейса, край для бара, шрифт заголовков и сигнал уведомлений — каждый с
 предпрослушкой или мгновенным применением.
 
-### Звук интерфейса
+</details>
+
+<details>
+<summary><b>Звук интерфейса</b> — <sub>по сэмплу на жест и почему они «выстрелил и забыл»</sub></summary>
+
 
 У каждого жеста свой звук: клик для кнопок, тяжелее — для действий, которые что-то подтверждают,
 разные стингеры на открытие и закрытие панели, храповик под тянущей рукой, подключение и отключение
@@ -1004,7 +1233,11 @@ VPN, но только пока туннель поднят: определен�
 
 Громкость и сигнал — в настройках, вся система выключается одним тумблером.
 
-### Эквалайзер
+</details>
+
+<details>
+<summary><b>Эквалайзер</b> — <sub>биквады PipeWire, кривая и спектр за ней</sub></summary>
+
 
 `Super` + `Shift` + `Q` — десять полос на штатных биквадах PipeWire: ни EasyEffects, ни наборов
 плагинов, ни второго звукового демона. Граф описан в
@@ -1018,7 +1251,11 @@ VPN, но только пока туннель поднят: определен�
 Пресеты: ровно, низы, верхи, голос, поп, рок, джаз, классика и ночная кривая, поднимающая оба края
 для тихого прослушивания.
 
-### Экранное время
+</details>
+
+<details>
+<summary><b>Экранное время</b> — <sub>считает шелл, пауза на локскрине, хранится две недели</sub></summary>
+
 
 Считает сам шелл, а не фоновый демон: он и так знает, какое окно в фокусе, и отдельный процесс лишь
 дублировал бы это, чтобы потом с ним не сойтись. Шаг в 15 секунд достаточно точен для формы дня и
@@ -1027,25 +1264,39 @@ VPN, но только пока туннель поднят: определен�
 Счёт останавливается на локскрине и при погашенном экране. История хранится две недели в
 `~/.local/state/quickshell/` и никуда не уходит с машины.
 
-### Запрос прав
+</details>
+
+<details>
+<summary><b>Запрос прав</b> — <sub>свой polkit-агент</sub></summary>
+
 
 Шелл рисует свой polkit-агент. Без него запрос рисует чужой — другой шрифт, другие радиусы, другое
 представление о том, как выглядит диалог, — ровно в тот момент, когда у человека спрашивают, доверяет
 ли он тому, что на экране. Неверный пароль встряхивает карточку, а не просто печатает красную строку.
 
-### Файлы
+</details>
+
+<details>
+<summary><b>Файлы</b> — <sub>yazi в kitty, перекрашенный вместе со всем</sub></summary>
+
 
 `Super` + `E` открывает yazi внутри kitty: превью картинок и видео идут честными пикселями через
 графический протокол kitty, а флейвор генерируется matugen вместе со всем остальным — проводник
 перекрашивается вслед за обоями. Thunar остался на `Super` + `Shift` + `Y` для перетаскивания файлов
 в другие программы, чего терминал не умеет.
 
-### Языки
+</details>
+
+<details>
+<summary><b>Языки</b> — <sub>английский и русский, без перезапуска</sub></summary>
+
 
 Интерфейс на английском и русском, переключается в настройках без перезапуска. Строки лежат в
 `config/quickshell/f/lang/*.json`; правило множественного числа принадлежит языку, поэтому английский
 отдаёт две формы, русский три. Названия месяцев и дней берутся оттуда же, а не из локали Qt: язык
 шелла — отдельная настройка и за `LANG` не следует.
+
+</details>
 
 ### Горячие клавиши
 
@@ -1142,7 +1393,9 @@ VPN, но только пока туннель поднят: определен�
 | `Super` + `Shift` + `Alt` + `N` | тестовое критическое |
 | `Super` + `Ctrl` + `Shift` + `N` | четыре подряд |
 
-### Структура
+<details>
+<summary><b>Структура</b> — <sub>где что лежит в репозитории</sub></summary>
+
 
 ```
 config/
@@ -1181,7 +1434,11 @@ IDEAS.md         список того, что можно сделать дал�
 первом запуске. `Colors.qml` теперь хранится: это исходник, а не продукт сборки, и палитру он читает
 из `~/.cache/matugen/colors.json` в рантайме.
 
-### Требования
+</details>
+
+<details>
+<summary><b>Требования</b> — <sub>список пакетов</sub></summary>
+
 
 Arch или Artix Linux, помощник AUR (если его нет, установщик соберёт `yay`).
 
@@ -1199,7 +1456,11 @@ Also `hypridle` for the idle timer.
 На Artix ставьте пакеты служб под свою систему инициализации (`-openrc`, `-runit`, `-s6`) вместо
 systemd-вариантов.
 
-### Замечания
+</details>
+
+<details>
+<summary><b>Замечания</b> — <sub>железо, особенности и честные оговорки</sub></summary>
+
 
 * Переменные окружения для NVIDIA лежат в `config/hypr/config/env.conf` — на AMD и Intel их нужно
   убрать.
@@ -1207,6 +1468,21 @@ systemd-вариантов.
 * Обои берутся из `~/Pictures/Wallpapers` и меняются раз в три часа; интервал задаётся в
   `config/hypr/scripts/wallpaper-rotate.sh`.
 
+</details>
+
 ### Лицензия
 
 GNU General Public License v3.0 — см. [LICENSE](LICENSE).
+
+
+---
+
+<div align="center">
+<br>
+
+**[Screenshots](#hyprland-desktop) · [Install](#install) · [Keybindings](#keybindings) · [What changed](docs/UPDATE.md)**
+
+<sub>MIT. Take any part of it — the shell, a single panel, the palette pipeline — and make it yours.</sub>
+
+<br>
+</div>
