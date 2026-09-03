@@ -55,7 +55,9 @@ Row {
             }
 
             onChChanged: {
-                if (incoming.text === cell.ch || outgoing.text === cell.ch)
+                if (roll.running)
+                    roll.complete();
+                if (outgoing.text === cell.ch)
                     return;
                 incoming.text = cell.ch;
                 roll.restart();

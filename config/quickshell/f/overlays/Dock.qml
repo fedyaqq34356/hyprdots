@@ -35,18 +35,17 @@ Scope {
                 right: true
             }
 
-            implicitHeight: win.open ? 128 : 4
+            implicitHeight: win.open ? 128 : 1
             exclusiveZone: 0
             color: "transparent"
 
-            readonly property bool open: hover.hovered || root.pinned
-            readonly property int strip: 3
+            readonly property bool open: root.pinned
 
             mask: Region {
                 x: 0
-                y: win.open ? win.height - 112 : win.height - win.strip
-                width: win.width
-                height: win.open ? 112 : win.strip
+                y: win.open ? win.height - 112 : 0
+                width: win.open ? win.width : 0
+                height: win.open ? 112 : 0
             }
 
             HoverHandler { id: hover }

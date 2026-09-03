@@ -1,8 +1,10 @@
 Glass Glass.qml
 Grain Grain.qml
+PhaseHold PhaseHold.qml
 Sheen Sheen.qml
 Spring Spring.qml
 singleton Colors Colors.qml
 singleton Fonts Fonts.qml
 singleton Motion Motion.qml
+singleton Phase Phase.qml
 singleton Shape Shape.qml

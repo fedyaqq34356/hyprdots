@@ -9,6 +9,7 @@ Item {
     property string variant: "full"
 
     readonly property bool bare: face.variant === "compact"
+                              || face.variant === "hero"
 
     readonly property string mono: "JetBrainsMono Nerd Font"
 
@@ -17,7 +18,47 @@ Item {
 
     Loader {
         id: loader
-        sourceComponent: face.variant === "compact" ? compact : full
+        sourceComponent: face.variant === "compact" ? compact
+                       : face.variant === "hero" ? hero
+                       : full
+    }
+
+    Component {
+        id: hero
+
+        Column {
+            spacing: -10
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Weather.glyph
+                color: Weather.tint
+                font.family: face.mono
+                font.pixelSize: 92
+                Behavior on color { ColorAnimation { duration: Colors.morph } }
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Weather.ready ? Math.round(Weather.temp) + "°" : "··"
+                color: Colors.fg
+                opacity: 0.94
+                font.family: face.mono
+                font.pixelSize: 76
+                font.weight: Font.Thin
+                font.letterSpacing: -2
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Weather.text
+                color: Colors.fgDim
+                opacity: 0.7
+                font.family: face.mono
+                font.pixelSize: 12
+                font.letterSpacing: 2
+            }
+        }
     }
 
     Component {

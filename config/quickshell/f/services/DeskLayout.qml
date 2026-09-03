@@ -15,31 +15,55 @@ Singleton {
         "clock": {
             title: I18n.t("bar.clock"),
             glyph: "󰥔",
-            faces: ["digital", "minimal", "hand"],
+            faces: ["digital", "minimal", "hand", "ring"],
             size: 1.0
         },
         "media": {
             title: I18n.t("bar.music"),
             glyph: "󰎈",
-            faces: ["cover", "round"],
+            faces: ["cover", "round", "wave", "line"],
             size: 1.0
         },
         "weather": {
             title: I18n.t("bar.weather"),
             glyph: "󰖐",
-            faces: ["full", "compact"],
+            faces: ["full", "compact", "hero"],
             size: 1.0
         },
         "usage": {
             title: I18n.t("bar.system"),
             glyph: "󰍛",
-            faces: ["rings", "bars"],
+            faces: ["rings", "bars", "digits"],
             size: 1.0
         },
         "screentime": {
             title: I18n.t("desk.screentime"),
             glyph: "󰔟",
-            faces: ["bars", "total"],
+            faces: ["bars", "total", "ring"],
+            size: 1.0
+        },
+        "visualizer": {
+            title: I18n.t("desk.visualizer"),
+            glyph: "󰗆",
+            faces: ["bars", "wave", "radial"],
+            size: 1.0
+        },
+        "timer": {
+            title: I18n.t("timer.title"),
+            glyph: "󰔛",
+            faces: ["ring", "list"],
+            size: 1.0
+        },
+        "calendar": {
+            title: I18n.t("bar.calendar"),
+            glyph: "󰃭",
+            faces: ["month", "day"],
+            size: 1.0
+        },
+        "battery": {
+            title: I18n.t("desk.battery"),
+            glyph: "󰁹",
+            faces: ["ring", "bar"],
             size: 1.0
         }
     })

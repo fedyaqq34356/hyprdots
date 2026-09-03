@@ -84,6 +84,7 @@ Item {
                 source: disc.art
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
+                sourceSize.width: 256
                 cache: false
                 visible: disc.art !== "" && status === Image.Ready
             }

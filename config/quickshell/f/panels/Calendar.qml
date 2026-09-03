@@ -351,12 +351,9 @@ Scope {
                             border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                                   Colors.accent.b, 0.45)
 
-                            SequentialAnimation on scale {
-                                running: root.shown && tick.today
-                                loops: Animation.Infinite
-                                NumberAnimation { to: 1.3; duration: 1900; easing.type: Easing.InOutQuad }
-                                NumberAnimation { to: 1.0; duration: 1900; easing.type: Easing.InOutQuad }
-                            }
+                            scale: 1.0 + Phase.wave(3.8) * 0.3
+
+                            PhaseHold { active: root.shown && tick.today }
                         }
 
                         HoverHandler {

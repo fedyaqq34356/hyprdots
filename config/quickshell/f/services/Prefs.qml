@@ -18,6 +18,9 @@ Singleton {
     readonly property string osdStyle: adapter.osdStyle
     readonly property bool barAtTop: adapter.barPosition !== "bottom"
 
+    readonly property real uiScale: adapter.uiScale === undefined ? 1.0 : adapter.uiScale
+    readonly property var monitorScales: adapter.monitorScales
+
     readonly property bool widgetsEnabled: adapter.widgetsEnabled
     readonly property bool quickActionsEnabled: adapter.quickActionsEnabled
     readonly property bool drawEnabled: adapter.drawEnabled
@@ -29,6 +32,17 @@ Singleton {
     readonly property bool idleEnabled: adapter.idleEnabled
     readonly property int idleLockSec: adapter.idleLockSec
     readonly property int idleScreenOffSec: adapter.idleScreenOffSec
+
+    readonly property string timerSound: adapter.timerSound
+    readonly property real timerVolume: Math.max(0, Math.min(1, adapter.timerVolume))
+    readonly property bool timerLoop: adapter.timerLoop
+    readonly property int timerRingSec: adapter.timerRingSec
+    readonly property bool timerTicking: adapter.timerTicking
+    readonly property int timerTickSec: adapter.timerTickSec
+    readonly property bool timerHalfway: adapter.timerHalfway
+    readonly property bool timerNotify: adapter.timerNotify
+    readonly property int timerSnoozeSec: adapter.timerSnoozeSec
+    readonly property string timerCommand: adapter.timerCommand
 
     readonly property bool loaded: view.loaded
 
@@ -71,6 +85,9 @@ Singleton {
             property string barPosition: "top"
             property string osdStyle: "island"
 
+            property real uiScale: 1.0
+            property var monitorScales: ({})
+
             property bool widgetsEnabled: true
             property bool quickActionsEnabled: true
             property bool drawEnabled: true
@@ -84,6 +101,17 @@ Singleton {
             property bool idleEnabled: true
             property int idleLockSec: 3000
             property int idleScreenOffSec: 3300
+
+            property string timerSound: "chime"
+            property real timerVolume: 0.8
+            property bool timerLoop: true
+            property int timerRingSec: 120
+            property bool timerTicking: true
+            property int timerTickSec: 5
+            property bool timerHalfway: false
+            property bool timerNotify: true
+            property int timerSnoozeSec: 300
+            property string timerCommand: ""
         }
     }
 }

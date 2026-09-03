@@ -128,6 +128,7 @@ Scope {
                     source: Media.art
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
+                    sourceSize.width: 480
                     visible: false
                 }
 
@@ -312,6 +313,7 @@ Scope {
                                     source: Media.art
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
+                                    sourceSize.width: 256
                                     visible: Media.art !== "" && status === Image.Ready
                                 }
 
