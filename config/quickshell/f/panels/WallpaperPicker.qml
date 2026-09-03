@@ -272,6 +272,7 @@ Scope {
                         : ""
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
+                    sourceSize.width: 960
                     visible: false
                     onStatusChanged: {
                         if (status === Image.Error && root.focused !== "")
@@ -632,6 +633,7 @@ Scope {
                     }
                 }
             }
+
         }
     }
 }

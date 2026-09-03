@@ -17,17 +17,21 @@ Rectangle {
         modelData.urgency === NotificationUrgency.Critical
     readonly property color edge: critical ? Colors.bad : Colors.accent
 
+    readonly property int entryTime: critical ? 300 : 560
+    readonly property real entryOvershoot: critical ? 1.7 : 0.45
+    readonly property real entryPeak: critical ? 1.07 : 1.02
+
     readonly property int lifetime:
         modelData.expireTimeout > 0 ? modelData.expireTimeout : 5000
 
     readonly property string kind: NotifKind.of(modelData)
     readonly property string shot: NotifKind.shotPath(modelData)
-    readonly property int headHeight: 54
+    readonly property int headHeight: 46
 
     property real remaining: 1
     property bool leaving: false
 
-    width: 270
+    width: 236
     height: card.headHeight + extra.height
     radius: Shape.chip
 
@@ -57,20 +61,26 @@ Rectangle {
 
         NumberAnimation {
             target: slide; property: "x"; from: 340; to: 0
-            duration: 520; easing.type: Easing.OutExpo
+            duration: card.entryTime
+            easing.type: Easing.OutBack
+            easing.overshoot: card.entryOvershoot
         }
         NumberAnimation {
             target: card; property: "opacity"; to: 1
-            duration: 260; easing.type: Easing.OutCubic
+            duration: card.critical ? 150 : 280
+            easing.type: Easing.OutCubic
         }
         SequentialAnimation {
             NumberAnimation {
-                target: card; property: "scale"; from: 0.92; to: 1.03
-                duration: 380; easing.type: Easing.OutCubic
+                target: card; property: "scale"
+                from: card.critical ? 0.88 : 0.94; to: card.entryPeak
+                duration: card.entryTime * 0.7
+                easing.type: Easing.OutCubic
             }
             NumberAnimation {
                 target: card; property: "scale"; to: 1
-                duration: 180; easing.type: Easing.OutCubic
+                duration: card.entryTime * 0.35
+                easing.type: Easing.OutCubic
             }
         }
     }
@@ -189,15 +199,15 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.leftMargin: 14
-        anchors.rightMargin: 14
+        anchors.leftMargin: 12
+        anchors.rightMargin: 12
         height: card.headHeight
-        spacing: 10
+        spacing: 9
 
         Rectangle {
-            width: 30
-            height: 30
-            radius: 9
+            width: 26
+            height: 26
+            radius: 8
             anchors.verticalCenter: parent.verticalCenter
             color: Qt.rgba(card.edge.r, card.edge.g, card.edge.b, 0.16)
 
@@ -207,12 +217,12 @@ Rectangle {
                         ? card.modelData.image
                         : Quickshell.iconPath(card.modelData.appIcon,
                                               "dialog-information")
-                implicitSize: 20
+                implicitSize: 17
             }
         }
 
         Column {
-            width: parent.width - 54
+            width: parent.width - 35
             spacing: 1
             anchors.verticalCenter: parent.verticalCenter
 
@@ -221,7 +231,7 @@ Rectangle {
                 text: card.modelData.summary
                 color: Colors.fg
                 font.family: Fonts.display
-                font.pixelSize: 12
+                font.pixelSize: 11
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -288,7 +298,7 @@ Rectangle {
         id: shotBody
 
         Item {
-            height: 128
+            height: 112
 
             ClippingRectangle {
                 anchors.fill: parent
@@ -300,6 +310,7 @@ Rectangle {
                     source: "file://" + card.shot
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
+                    sourceSize.width: 540
                     cache: false
                 }
             }
