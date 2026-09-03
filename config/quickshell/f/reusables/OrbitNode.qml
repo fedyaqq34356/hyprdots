@@ -1,5 +1,6 @@
 import QtQuick
 import "root:/design"
+import "root:/services"
 
 Item {
     id: node
@@ -15,8 +16,13 @@ Item {
     signal activated()
     signal scrolled(real delta)
     signal hoverToggled(bool on)
+    signal holdToggled(bool on)
+
+    property int holdTime: 620
 
     readonly property bool hovered: hover.hovered
+    readonly property bool holding: press.pressed
+    readonly property real charge: chargeState.value
     readonly property bool active: !!(node.item && node.item.active)
     readonly property bool working: !!(node.item && node.item.working)
     readonly property int bars: node.item && node.item.bars !== undefined
@@ -34,14 +40,67 @@ Item {
         id: hover
         onHoveredChanged: node.hoverToggled(hovered)
     }
-    TapHandler { id: tap; onTapped: node.activated() }
+    QtObject {
+        id: chargeState
+        property real value: 0
+        property int handle: -1
+    }
+
+    TapHandler {
+        id: press
+
+        onPressedChanged: {
+            node.holdToggled(press.pressed);
+            if (press.pressed) {
+                release.stop();
+                chargeState.handle = Sfx.loop(
+                    Sfx.serp + "reusables/fillbutton/charge_loop.wav", 0.32);
+                fill.restart();
+            } else if (fill.running) {
+                fill.stop();
+                Sfx.stop(chargeState.handle);
+                chargeState.handle = -1;
+                Sfx.toggleOff();
+                release.restart();
+            }
+        }
+    }
+
+    NumberAnimation {
+        id: fill
+        target: chargeState
+        property: "value"
+        to: 1
+        duration: node.holdTime
+        easing.type: Easing.Linear
+        onFinished: {
+            Sfx.stop(chargeState.handle);
+            chargeState.handle = -1;
+            Sfx.tapAlt();
+            node.activated();
+            release.restart();
+        }
+    }
+
+    NumberAnimation {
+        id: release
+        target: chargeState
+        property: "value"
+        to: 0
+        duration: Motion.base
+        easing.type: Easing.OutCubic
+    }
     WheelHandler {
         onWheel: event => {
             node.scrolled(event.angleDelta.y > 0 ? 1 : -1);
             event.accepted = true;
         }
     }
-    Component.onDestruction: if (hover.hovered) node.hoverToggled(false)
+    Component.onDestruction: {
+        if (hover.hovered) node.hoverToggled(false);
+        if (press.pressed) node.holdToggled(false);
+        Sfx.stop(chargeState.handle);
+    }
 
     Item {
         id: content
@@ -50,7 +109,8 @@ Item {
         opacity: hover.hovered ? 1.0 : 0.86
         Behavior on opacity { NumberAnimation { duration: 160 } }
 
-        scale: hover.hovered ? 1.12 : (tap.pressed ? 0.95 : 1.0)
+        scale: press.pressed ? 1.06 + node.charge * 0.06
+             : (hover.hovered ? 1.12 : 1.0)
         Behavior on scale { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
 
         Item {
@@ -60,6 +120,18 @@ Item {
                 running: true
                 PauseAnimation { duration: node.appearDelay }
                 NumberAnimation { from: 0; to: 1; duration: 340; easing.type: Easing.OutCubic }
+            }
+
+            RectRing {
+                anchors.fill: parent
+                anchors.margins: -3
+                radius: Shape.field
+                thickness: 2.5
+                inset: 0
+                value: node.charge
+                color: node.tint
+                visible: node.charge > 0.001
+                z: 5
             }
 
             Rectangle {

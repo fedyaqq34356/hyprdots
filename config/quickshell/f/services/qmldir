@@ -1,3 +1,4 @@
+singleton Beat Beat.qml
 singleton Brightness Brightness.qml
 singleton Bt Bt.qml
 singleton Bye Bye.qml
@@ -20,8 +21,10 @@ singleton Peripherals Peripherals.qml
 singleton Prefs Prefs.qml
 singleton Recorder Recorder.qml
 singleton Running Running.qml
+singleton Scaler Scaler.qml
 singleton Sfx Sfx.qml
 singleton Sys Sys.qml
+singleton Timers Timers.qml
 singleton Updates Updates.qml
 singleton Vpn Vpn.qml
 singleton Weather Weather.qml
