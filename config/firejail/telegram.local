@@ -26,7 +26,3 @@ whitelist ${PICTURES}
 whitelist ${VIDEOS}
 whitelist ${MUSIC}
 whitelist ${HOME}/Files
-
-# Screenshots and clips land here before they are sent anywhere.
-mkdir ${HOME}/Pictures/Screenshots
-whitelist ${HOME}/Pictures/Screenshots
