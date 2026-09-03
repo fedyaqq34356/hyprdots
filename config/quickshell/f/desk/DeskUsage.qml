@@ -10,6 +10,7 @@ Item {
     property string variant: "rings"
 
     readonly property bool bare: face.variant === "rings"
+                              || face.variant === "digits"
 
     readonly property string mono: "JetBrainsMono Nerd Font"
 
@@ -27,7 +28,9 @@ Item {
 
     Loader {
         id: loader
-        sourceComponent: face.variant === "bars" ? bars : rings
+        sourceComponent: face.variant === "bars" ? bars
+                       : face.variant === "digits" ? digits
+                       : rings
     }
 
     Component {
@@ -53,6 +56,48 @@ Item {
                         caption: modelData.label
                         thickness: 5
                         animationDuration: 700
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: digits
+
+        Row {
+            spacing: 26
+
+            Repeater {
+                model: face.metrics
+
+                Column {
+                    required property var modelData
+
+                    spacing: -6
+                    visible: modelData.value >= 0
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: Math.round(modelData.value)
+                        color: modelData.value > 85 ? Colors.bad
+                             : modelData.value > 60 ? Colors.warn
+                             : Colors.fg
+                        opacity: 0.92
+                        font.family: face.mono
+                        font.pixelSize: 56
+                        font.weight: Font.Thin
+                        Behavior on color { ColorAnimation { duration: Motion.base } }
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: modelData.label
+                        color: Colors.fgDim
+                        opacity: 0.55
+                        font.family: face.mono
+                        font.pixelSize: 11
+                        font.letterSpacing: 3
                     }
                 }
             }

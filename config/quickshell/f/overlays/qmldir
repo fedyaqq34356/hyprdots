@@ -10,3 +10,4 @@ Notifications Notifications.qml
 Osd Osd.qml
 Polkit Polkit.qml
 Quick Quick.qml
+RecordingBadge RecordingBadge.qml

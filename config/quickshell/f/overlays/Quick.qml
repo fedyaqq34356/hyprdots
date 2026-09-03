@@ -15,48 +15,19 @@ Scope {
     property bool open: false
     property real anchorY: 0.42
 
-    property int timerTotal: 0
-    property int timerLeft: 0
-    readonly property bool timerRunning: root.timerLeft > 0
-    readonly property real timerProgress:
-        root.timerTotal > 0 ? root.timerLeft / root.timerTotal : 0
+    property var timerPanel: null
 
-    readonly property var presets: [5, 10, 25]
-    property int presetIndex: 0
+    readonly property var soon: Timers.soonest
+    readonly property bool timerRunning: root.soon !== null && !root.soon.ringing
+    readonly property real timerProgress: Timers.progress(root.soon)
 
-    function startTimer() {
-        if (root.timerRunning) {
-            root.timerLeft = 0;
-            root.timerTotal = 0;
-            Sfx.toggleOff();
+    function openTimer() {
+        if (Timers.anyRinging) {
+            Timers.dismissAll();
             return;
         }
-        const minutes = root.presets[root.presetIndex % root.presets.length];
-        root.timerTotal = minutes * 60;
-        root.timerLeft = root.timerTotal;
-        root.presetIndex++;
-        Sfx.fill();
-    }
-
-    function clock(seconds) {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return m + ":" + String(s).padStart(2, "0");
-    }
-
-    Timer {
-        running: root.timerRunning
-        interval: 1000
-        repeat: true
-        onTriggered: {
-            root.timerLeft--;
-            if (root.timerLeft > 0)
-                return;
-            root.timerTotal = 0;
-            Sfx.critical();
-            Quickshell.execDetached(["notify-send", "-u", "critical",
-                                     I18n.t("quick.timer"), I18n.t("quick.timerDone")]);
-        }
+        if (root.timerPanel)
+            root.timerPanel.open("count");
     }
 
     PanelWindow {
@@ -127,16 +98,16 @@ Scope {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    visible: root.timerRunning
-                    text: root.clock(root.timerLeft)
-                    color: Colors.accent
+                    visible: root.soon !== null
+                    text: Timers.clock(Timers.left(root.soon))
+                    color: Timers.anyRinging ? Colors.bad : Colors.accent
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 9
                     rotation: 90
                 }
 
                 Repeater {
-                    model: root.timerRunning ? 0 : 3
+                    model: root.soon !== null ? 0 : 3
 
                     Rectangle {
                         width: 4
@@ -183,7 +154,7 @@ Scope {
                                 return;
                             ctx.lineWidth = 2;
                             ctx.lineCap = "round";
-                            ctx.strokeStyle = Colors.accentAlt;
+                            ctx.strokeStyle = Timers.anyRinging ? Colors.bad : Colors.accentAlt;
                             ctx.beginPath();
                             ctx.arc(width / 2, height / 2, width / 2 - 2,
                                     -Math.PI / 2,
@@ -194,12 +165,14 @@ Scope {
 
                     IconButton {
                         anchors.fill: parent
-                        glyph: root.timerRunning ? "󰔛" : "󰔟"
-                        tip: root.timerRunning
-                            ? root.clock(root.timerLeft)
-                            : root.presets[root.presetIndex % root.presets.length] + I18n.t("unit.min")
-                        tint: Colors.accentAlt
-                        onActivated: root.startTimer()
+                        glyph: Timers.anyRinging ? "󰂚"
+                             : (root.timerRunning ? "󰔛" : "󰔟")
+                        tip: Timers.anyRinging
+                            ? I18n.t("timer.dismiss")
+                            : (root.soon ? Timers.clock(Timers.left(root.soon))
+                                         : I18n.t("timer.title"))
+                        tint: Timers.anyRinging ? Colors.bad : Colors.accentAlt
+                        onActivated: root.openTimer()
                     }
                 }
 

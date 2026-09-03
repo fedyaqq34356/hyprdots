@@ -331,12 +331,9 @@ Scope {
                         ctx.fill();
                     }
 
-                    SequentialAnimation on scale {
-                        running: root.shown && root.graphMode
-                        loops: Animation.Infinite
-                        NumberAnimation { from: 0.92; to: 1.06; duration: 4200; easing.type: Easing.InOutSine }
-                        NumberAnimation { from: 1.06; to: 0.92; duration: 4200; easing.type: Easing.InOutSine }
-                    }
+                    scale: 0.92 + Phase.wave(8.4) * 0.14
+
+                    PhaseHold { active: root.shown && root.graphMode }
                 }
 
                 Item {
@@ -787,7 +784,7 @@ Scope {
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         horizontalAlignment: Text.AlignRight
-                        text: "tab · esc"
+                        text: I18n.t("net.keys")
                         color: Colors.fgDim
                         opacity: 0.3
                         font.family: root.mono

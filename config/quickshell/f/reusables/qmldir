@@ -12,5 +12,8 @@ RollText RollText.qml
 Segment Segment.qml
 Slider Slider.qml
 Switch Switch.qml
+TimerDial TimerDial.qml
 Vinyl Vinyl.qml
 WaveMeter WaveMeter.qml
+BeatRing BeatRing.qml
+Spectrum Spectrum.qml

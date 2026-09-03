@@ -1,6 +1,7 @@
 import Quickshell
 import QtQuick
 import "root:/design"
+import "root:/reusables"
 import "root:/services"
 
 Item {
@@ -9,6 +10,7 @@ Item {
     property string variant: "bars"
 
     readonly property bool bare: face.variant === "total"
+                              || face.variant === "ring"
 
     readonly property string mono: "JetBrainsMono Nerd Font"
 
@@ -21,7 +23,27 @@ Item {
 
     Loader {
         id: loader
-        sourceComponent: face.variant === "total" ? total : bars
+        sourceComponent: face.variant === "total" ? total
+                       : face.variant === "ring" ? ring
+                       : bars
+    }
+
+    Component {
+        id: ring
+
+        Item {
+            implicitWidth: 150
+            implicitHeight: 150
+
+            Ring {
+                anchors.fill: parent
+                value: Math.min(1, Wellbeing.total / 28800)
+                label: Wellbeing.human(Wellbeing.total)
+                caption: I18n.t("desk.screentime")
+                thickness: 6
+                animationDuration: 900
+            }
+        }
     }
 
     Component {

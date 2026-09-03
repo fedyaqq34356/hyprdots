@@ -5,3 +5,7 @@ DeskMedia DeskMedia.qml
 DeskTime DeskTime.qml
 DeskUsage DeskUsage.qml
 DeskWeather DeskWeather.qml
+DeskVisualizer DeskVisualizer.qml
+DeskTimer DeskTimer.qml
+DeskCalendar DeskCalendar.qml
+DeskBattery DeskBattery.qml

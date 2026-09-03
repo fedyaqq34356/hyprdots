@@ -11,6 +11,12 @@ import "root:/services"
 
 ShellRoot {
 
+    Connections {
+        target: Quickshell
+        function onReloadCompleted() { Quickshell.inhibitReloadPopup(); }
+        function onReloadFailed(error) { Quickshell.inhibitReloadPopup(); }
+    }
+
     PwObjectTracker {
         objects: {
             const list = [];
@@ -38,21 +44,50 @@ ShellRoot {
     Osd {}
     Notifications {}
     FullscreenFlash {}
+    RecordingBadge {}
 
-    Launcher { id: launcher }
-    Clipboard { id: clipboard }
-    WallpaperPicker { id: wallpapers }
-    AudioPanel { id: audioPanel }
-    PowerMenu { id: powerMenu }
-    NetPanel { id: net }
-    Overview { id: overview }
-    NotifCenter { id: notifCenter }
-    Files { id: files }
-    MediaPanel { id: media }
-    Calendar { id: calendar }
-    SysRings { id: sysRings }
+    LazyLoader { id: launcherL; loading: true; Launcher {} }
+    LazyLoader { id: clipboardL; loading: true; Clipboard {} }
+    LazyLoader { id: wallpapersL; WallpaperPicker {} }
+    LazyLoader { id: audioPanelL; loading: true; AudioPanel {} }
+    LazyLoader { id: powerMenuL; loading: true; PowerMenu {} }
+    LazyLoader { id: netL; loading: true; NetPanel {} }
+    LazyLoader { id: overviewL; loading: true; Overview {} }
+    LazyLoader { id: notifCenterL; loading: true; NotifCenter {} }
+    LazyLoader { id: filesL; Files {} }
+    LazyLoader { id: mediaL; loading: true; MediaPanel {} }
+    LazyLoader { id: calendarL; loading: true; Calendar {} }
+    LazyLoader { id: sysRingsL; loading: true; SysRings {} }
+    LazyLoader { id: timerL; loading: true; TimerPanel {} }
+    LazyLoader { id: settingsL; Settings {} }
+    LazyLoader { id: guideL; Guide {} }
+    LazyLoader { id: eqL; Eq {} }
+
+    readonly property var launcher: launcherL.item
+    readonly property var clipboard: clipboardL.item
+    readonly property var wallpapers: wallpapersL.item
+    readonly property var audioPanel: audioPanelL.item
+    readonly property var powerMenu: powerMenuL.item
+    readonly property var net: netL.item
+    readonly property var overview: overviewL.item
+    readonly property var notifCenter: notifCenterL.item
+    readonly property var files: filesL.item
+    readonly property var media: mediaL.item
+    readonly property var calendar: calendarL.item
+    readonly property var sysRings: sysRingsL.item
+    readonly property var timer: timerL.item
+    readonly property var settings: settingsL.item
+    readonly property var guide: guideL.item
+    readonly property var eq: eqL.item
+
     Lock { id: lock }
     Curtain { id: curtain }
+
+    function panel(loader) {
+        if (!loader.item)
+            loader.active = true;
+        return loader.item;
+    }
     FocusTrail {}
     Greeting {}
 
@@ -82,6 +117,7 @@ ShellRoot {
             draw: drawLoader.item
             dock: dockLoader.item
             desk: deskLoader.item
+            timerPanel: timerL.item
         }
     }
 
@@ -89,10 +125,6 @@ ShellRoot {
         active: Prefs.polkitEnabled
         Polkit {}
     }
-
-    Settings { id: settings }
-    Guide { id: guide }
-    Eq { id: eq }
 
     Binding {
         target: Wellbeing
@@ -103,7 +135,7 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "launcher"
-        onPressed: launcher.toggle()
+        onPressed: panel(launcherL).toggle()
     }
 
     GlobalShortcut {
@@ -119,31 +151,31 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "notifCenter"
-        onPressed: notifCenter.toggle()
+        onPressed: panel(notifCenterL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "files"
-        onPressed: files.toggle()
+        onPressed: panel(filesL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "launcherCalc"
-        onPressed: launcher.toggleCalc()
+        onPressed: panel(launcherL).toggleCalc()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "clipboard"
-        onPressed: clipboard.toggle()
+        onPressed: panel(clipboardL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "wallpapers"
-        onPressed: wallpapers.toggle()
+        onPressed: panel(wallpapersL).toggle()
     }
 
     GlobalShortcut {
@@ -191,25 +223,25 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "overview"
-        onPressed: overview.toggle()
+        onPressed: panel(overviewL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "media"
-        onPressed: media.toggle()
+        onPressed: panel(mediaL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "calendar"
-        onPressed: calendar.toggle()
+        onPressed: panel(calendarL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "sysRings"
-        onPressed: sysRings.toggle()
+        onPressed: panel(sysRingsL).toggle()
     }
 
     GlobalShortcut {
@@ -233,19 +265,19 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "wifi"
-        onPressed: net.toggle("wifi")
+        onPressed: panel(netL).toggle("wifi")
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "bluetooth"
-        onPressed: net.toggle("bt")
+        onPressed: panel(netL).toggle("bt")
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "powerMenu"
-        onPressed: powerMenu.toggle()
+        onPressed: panel(powerMenuL).toggle()
     }
 
     GlobalShortcut {
@@ -269,7 +301,7 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "audioPanel"
-        onPressed: audioPanel.toggle()
+        onPressed: panel(audioPanelL).toggle()
     }
 
     GlobalShortcut {
@@ -313,19 +345,38 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "settings"
-        onPressed: settings.toggle()
+        onPressed: panel(settingsL).toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "timer"
+        onPressed: panel(timerL).toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "timerDismiss"
+        onPressed: {
+            if (Timers.anyRinging)
+                Timers.dismissAll();
+            else if (Timers.soonest)
+                Timers.toggle(Timers.soonest.id);
+            else
+                panel(timerL).open("count");
+        }
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "eq"
-        onPressed: eq.toggle()
+        onPressed: panel(eqL).toggle()
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "guide"
-        onPressed: guide.open()
+        onPressed: panel(guideL).open()
     }
 
     GlobalShortcut {

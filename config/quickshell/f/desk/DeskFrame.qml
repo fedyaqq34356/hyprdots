@@ -45,6 +45,10 @@ Item {
                 case "weather": return weatherFace;
                 case "usage": return usageFace;
                 case "screentime": return timeFace;
+                case "visualizer": return vizFace;
+                case "timer": return timerFace;
+                case "calendar": return calFace;
+                case "battery": return battFace;
                 }
                 return null;
             }
@@ -55,6 +59,10 @@ Item {
         Component { id: weatherFace; DeskWeather { variant: frame.entry.face } }
         Component { id: usageFace;   DeskUsage   { variant: frame.entry.face } }
         Component { id: timeFace;    DeskTime    { variant: frame.entry.face } }
+        Component { id: vizFace;     DeskVisualizer { variant: frame.entry.face } }
+        Component { id: timerFace;   DeskTimer   { variant: frame.entry.face } }
+        Component { id: calFace;     DeskCalendar { variant: frame.entry.face } }
+        Component { id: battFace;    DeskBattery { variant: frame.entry.face } }
     }
 
     Rectangle {

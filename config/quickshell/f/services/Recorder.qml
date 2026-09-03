@@ -15,6 +15,8 @@ Singleton {
     property string file: ""
     property int elapsed: 0
 
+    property string monitor: ""
+
     readonly property string clock: {
         const m = Math.floor(elapsed / 60);
         const s = elapsed % 60;
@@ -30,9 +32,10 @@ Singleton {
 
         onFileChanged: reload()
         onLoaded: {
-            const parts = text().trim().split(" ");
+            const parts = text().trim().split("\t");
             root.startedAt = parseInt(parts[0]) || 0;
-            root.file = parts.slice(1).join(" ");
+            root.monitor = parts.length > 1 ? parts[1] : "";
+            root.file = parts.length > 2 ? parts.slice(2).join("\t") : "";
             root.active = root.startedAt > 0;
             root.tick();
         }
@@ -40,6 +43,7 @@ Singleton {
             root.active = false;
             root.startedAt = 0;
             root.file = "";
+            root.monitor = "";
         }
     }
 

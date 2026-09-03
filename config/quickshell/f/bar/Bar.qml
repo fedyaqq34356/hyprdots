@@ -337,6 +337,7 @@ Scope {
                                     source: Media.art
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
+                                    sourceSize.width: 96
                                     visible: Media.art !== "" && status === Image.Ready
                                 }
 
@@ -404,7 +405,7 @@ Scope {
                         z: -1
                         onClicked: function (mouse) {
                             if (mouse.button === Qt.RightButton) Media.next();
-                            else media.toggle();
+                            else media?.toggle();
                         }
                     }
 
@@ -441,7 +442,7 @@ Scope {
                     Tip {
                         text: clockIsland.feedback
                             ? Feedback.label
-                            : calendar.longDate + I18n.t("bar.clickCal")
+                            : (calendar ? calendar.longDate : "") + I18n.t("bar.clickCal")
                     }
 
                     RectRing {
@@ -590,7 +591,7 @@ Scope {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: calendar.toggle()
+                        onClicked: calendar?.toggle()
                     }
                 }
 
@@ -647,35 +648,44 @@ Scope {
 
                         Sep { visible: Outbound.active }
 
-                        Row {
+                        Rectangle {
                             id: recRow
-                            spacing: 6
                             visible: Recorder.active
+                            Layout.alignment: Qt.AlignVCenter
+
+                            width: recInner.implicitWidth + 16
+                            height: 20
+                            radius: Shape.detail + 4
+                            color: Qt.rgba(Colors.bad.r, Colors.bad.g,
+                                           Colors.bad.b, 0.14)
 
                             Tip { text: I18n.t("bar.recording") }
 
-                            Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: Colors.bad
-                                anchors.verticalCenter: parent.verticalCenter
+                            Row {
+                                id: recInner
+                                anchors.centerIn: parent
+                                spacing: 6
 
-                                SequentialAnimation on opacity {
-                                    running: Recorder.active
-                                    loops: Animation.Infinite
-                                    NumberAnimation { to: 0.25; duration: 700; easing.type: Easing.InOutQuad }
-                                    NumberAnimation { to: 1.0;  duration: 700; easing.type: Easing.InOutQuad }
+                                Rectangle {
+                                    width: 8
+                                    height: 8
+                                    radius: 4
+                                    color: Colors.bad
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    opacity: 0.25 + Phase.wave(1.4) * 0.75
+
+                                    PhaseHold { active: Recorder.active }
                                 }
-                            }
 
-                            Text {
-                                text: Recorder.clock
-                                color: Colors.bad
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                                anchors.verticalCenter: parent.verticalCenter
+                                Text {
+                                    text: Recorder.clock
+                                    color: Colors.bad
+                                    font.family: Fonts.mono
+                                    font.pixelSize: 11
+                                    font.weight: Font.DemiBold
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
                             }
 
                             TapHandler {
@@ -805,7 +815,7 @@ Scope {
                                     anchors.fill: parent
                                     anchors.margins: -4
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: net.toggle("wifi")
+                                    onClicked: net?.toggle("wifi")
                                 }
                             }
 
@@ -834,7 +844,7 @@ Scope {
                                     anchors.fill: parent
                                     anchors.margins: -4
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: net.toggle("bt")
+                                    onClicked: net?.toggle("bt")
                                 }
                             }
 

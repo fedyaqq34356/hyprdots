@@ -32,7 +32,9 @@ Item {
 
     property var hoveredItem: null
     property int hoverCount: 0
-    readonly property bool paused: graph.hoverCount > 0
+    property int holdCount: 0
+
+    readonly property bool paused: graph.holdCount > 0
 
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
 
@@ -62,11 +64,38 @@ Item {
         return out;
     }
 
-    property real spin: 0
-    NumberAnimation on spin {
-        running: graph.visible && !graph.paused
-        loops: Animation.Infinite
-        from: 0; to: 360; duration: 52000
+    readonly property int spinPeriod: 52
+
+    property real spinOffset: 0
+    property real spinFrozen: 0
+
+    readonly property real spinLive: Phase.angle(graph.spinPeriod)
+    readonly property real spin:
+        graph.paused ? graph.spinFrozen
+                     : (graph.spinLive + graph.spinOffset + 360) % 360
+
+    PhaseHold { active: graph.visible && !graph.paused }
+
+    onPausedChanged: {
+        if (graph.paused) {
+            graph.spinFrozen = (graph.spinLive + graph.spinOffset + 360) % 360;
+            rejoin.stop();
+        } else {
+            let delta = graph.spinFrozen - graph.spinLive;
+            delta = ((delta + 540) % 360) - 180;
+            graph.spinOffset = delta;
+            rejoin.restart();
+        }
+    }
+
+    NumberAnimation {
+        id: rejoin
+        target: graph
+        property: "spinOffset"
+        to: 0
+        duration: 1100
+        easing.type: Easing.Bezier
+        easing.bezierCurve: Motion.decel
     }
 
     readonly property var positions: {
@@ -309,17 +338,14 @@ Item {
                 border.color: graph.alpha(graph.tint, 0.45)
                 visible: graph.hubLive || graph.busy
 
-                SequentialAnimation on scale {
-                    running: graph.visible && (graph.hubLive || graph.busy)
-                    loops: Animation.Infinite
-                    PauseAnimation { duration: index * 700 }
-                    NumberAnimation { from: 0.94; to: 1.6; duration: 2100; easing.type: Easing.OutCubic }
-                }
-                SequentialAnimation on opacity {
-                    running: graph.visible && (graph.hubLive || graph.busy)
-                    loops: Animation.Infinite
-                    PauseAnimation { duration: index * 700 }
-                    NumberAnimation { from: 0.5; to: 0.0; duration: 2100; easing.type: Easing.OutCubic }
+                readonly property real ripple:
+                    Phase.outCubic(Phase.ramp(2.1, -index / 3))
+
+                scale: 0.94 + ripple * 0.66
+                opacity: 0.5 * (1 - ripple)
+
+                PhaseHold {
+                    active: graph.visible && (graph.hubLive || graph.busy)
                 }
             }
         }
@@ -388,6 +414,9 @@ Item {
                 graph.hoverCount = Math.max(0, graph.hoverCount + (on ? 1 : -1));
                 graph.hoveredItem = on ? modelData
                                        : (graph.hoverCount > 0 ? graph.hoveredItem : null);
+            }
+            onHoldToggled: on => {
+                graph.holdCount = Math.max(0, graph.holdCount + (on ? 1 : -1));
             }
         }
     }

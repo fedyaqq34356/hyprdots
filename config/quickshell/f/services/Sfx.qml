@@ -23,7 +23,16 @@ Singleton {
     function play(path, volume, minGapMs) {
         if (!Prefs.sfxEnabled)
             return;
+        root.spawn(path, (volume === undefined ? root.uiLevel : volume) * Prefs.sfxVolume,
+                   minGapMs);
+    }
 
+    function alert(path, volume) {
+        root.spawn(path, (volume === undefined ? root.alertLevel : volume)
+                          * Prefs.timerVolume, 0);
+    }
+
+    function spawn(path, level, minGapMs) {
         const now = Date.now();
         const gap = minGapMs === undefined ? 60 : minGapMs;
         if (now - (root.lastPlayed[path] || 0) < gap)
@@ -33,7 +42,6 @@ Singleton {
         stamps[path] = now;
         root.lastPlayed = stamps;
 
-        const level = (volume === undefined ? root.uiLevel : volume) * Prefs.sfxVolume;
         if (level <= 0)
             return;
 
@@ -43,8 +51,16 @@ Singleton {
     function loop(path, volume) {
         if (!Prefs.sfxEnabled)
             return -1;
+        return root.loopAt(path, (volume === undefined ? root.uiLevel : volume)
+                                  * Prefs.sfxVolume);
+    }
 
-        const level = (volume === undefined ? root.uiLevel : volume) * Prefs.sfxVolume;
+    function alertLoop(path, volume) {
+        return root.loopAt(path, (volume === undefined ? root.alertLevel : volume)
+                                  * Prefs.timerVolume);
+    }
+
+    function loopAt(path, level) {
         if (level <= 0)
             return -1;
 
@@ -111,6 +127,30 @@ Singleton {
         root.play(root.serp + "notifications/" + Prefs.notifySound + ".wav",
                   root.alertLevel, 350);
     }
+
+    readonly property string alarmDir: root.dir + "timer/"
+
+    readonly property var alarmNames:
+        ["chime", "bell", "gong", "arp", "wood", "dawn", "none"]
+
+    function alarmPath(name) { return root.alarmDir + name + ".wav"; }
+
+    function timerAlarm(name) {
+        if (name === "none")
+            return;
+        root.alert(root.alarmPath(name), 0.85);
+    }
+
+    function timerAlarmLoop(name) {
+        if (name === "none")
+            return -1;
+        return root.alertLoop(root.alarmPath(name), 0.85);
+    }
+
+    function timerPreview(name) { root.timerAlarm(name); }
+
+    function timerTick() { root.alert(root.alarmDir + "tick.wav", 0.35); }
+    function timerHalf() { root.alert(root.alarmDir + "half.wav", 0.45); }
 
     function critical() { root.play(root.dir + "critical.wav", 0.5, 350); }
     function limit()    { root.play(root.dir + "limit.wav", 0.45, 220); }

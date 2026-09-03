@@ -11,6 +11,8 @@ Item {
     property string variant: "cover"
 
     readonly property bool bare: face.variant === "round"
+                              || face.variant === "wave"
+                              || face.variant === "line"
 
     readonly property string mono: "JetBrainsMono Nerd Font"
 
@@ -23,7 +25,10 @@ Item {
 
     Loader {
         id: loader
-        sourceComponent: face.variant === "round" ? round : cover
+        sourceComponent: face.variant === "round" ? round
+                       : face.variant === "wave" ? wave
+                       : face.variant === "line" ? line
+                       : cover
     }
 
     Component {
@@ -59,6 +64,7 @@ Item {
                         fillMode: Image.PreserveAspectCrop
                         visible: Media.art !== "" && status === Image.Ready
                         asynchronous: true
+                        sourceSize.width: 240
                         cache: false
                     }
 
@@ -123,35 +129,10 @@ Item {
             implicitWidth: 168
             implicitHeight: 168
 
-            Canvas {
-                id: arc
+            BeatRing {
                 anchors.fill: parent
-                antialiasing: true
-
-                readonly property real p: Math.max(0, Math.min(1, Media.progress))
-                onPChanged: arc.requestPaint()
-
-                onPaint: {
-                    const ctx = getContext("2d");
-                    ctx.reset();
-                    const r = width / 2 - 4;
-                    ctx.lineWidth = 3;
-                    ctx.lineCap = "round";
-
-                    ctx.strokeStyle = Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                              Colors.outline.b, 0.2);
-                    ctx.beginPath();
-                    ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2);
-                    ctx.stroke();
-
-                    if (!Media.hasPosition)
-                        return;
-                    ctx.strokeStyle = Colors.accent;
-                    ctx.beginPath();
-                    ctx.arc(width / 2, height / 2, r,
-                            -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * arc.p);
-                    ctx.stroke();
-                }
+                progress: Media.progress
+                showProgress: Media.hasPosition
             }
 
             Vinyl {
@@ -160,6 +141,93 @@ Item {
                 height: width
                 art: Media.art
                 spinning: Media.playing
+                scale: (Media.playing ? 1 : 0.965) + Beat.bass * 0.05
+            }
+        }
+    }
+
+    Component {
+        id: wave
+
+        Item {
+            implicitWidth: 240
+            implicitHeight: 240
+
+            Spectrum {
+                anchors.fill: parent
+                mode: "radial"
+                tint: Colors.accent
+                hole: 0.62
+                resolution: 56
+                opacity: Media.playing ? 1 : 0.25
+                Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+            }
+
+            BeatRing {
+                anchors.centerIn: parent
+                width: parent.width * 0.6
+                height: width
+                progress: Media.progress
+                showProgress: Media.hasPosition
+                thickness: 2
+            }
+
+            Vinyl {
+                anchors.centerIn: parent
+                width: parent.width * 0.52
+                height: width
+                art: Media.art
+                spinning: Media.playing
+                grooves: 7
+                scale: (Media.playing ? 1 : 0.965) + Beat.bass * 0.05
+            }
+        }
+    }
+
+    Component {
+        id: line
+
+        Item {
+            implicitWidth: 320
+            implicitHeight: stack.implicitHeight
+
+            Column {
+                id: stack
+
+                width: parent.width
+                spacing: 8
+
+            Row {
+                spacing: 10
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Media.playing ? "󰐊" : "󰏤"
+                    color: Colors.accent
+                    opacity: 0.8
+                    font.family: face.mono
+                    font.pixelSize: 14
+                }
+
+                Marquee {
+                    width: 290
+                    height: 24
+                    text: Media.title + (Media.artist !== "" ? "  ·  " + Media.artist : "")
+                    color: Colors.fg
+                    family: face.mono
+                    pixelSize: 16
+                }
+            }
+
+                Spectrum {
+                    width: stack.width
+                    height: 26
+                    mode: "wave"
+                    mirror: true
+                    tint: Colors.accent
+                    opacity: Media.playing ? 0.9 : 0.2
+                    Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+                }
             }
         }
     }
