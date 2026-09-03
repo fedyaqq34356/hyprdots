@@ -1,0 +1,32 @@
+# let sandboxed Telegram reach xdg-desktop-portal (native file chooser) and file managers
+dbus-user.talk org.freedesktop.portal.*
+dbus-user.talk org.freedesktop.FileManager1
+
+# The stock profile whitelists only ${DOWNLOADS}, and a whitelist is the whole
+# home: inside the sandbox $HOME contained exactly one entry, so Telegram's file
+# chooser had nothing to offer and sending anything that was not already in
+# Downloads was impossible.
+#
+# These are the directories files are actually sent from. Everything else in
+# the home — Projects, .ssh, .config, the shell's own state — stays invisible,
+# which is the point of running it sandboxed at all.
+#
+# The noblacklist lines are not optional and have to come first: the profile
+# pulls in disable-xdg.inc, which blacklists exactly these four, and a
+# blacklist wins over a whitelist. Without them the directories appear inside
+# the sandbox as empty mounts that deny even a cd.
+noblacklist ${DOCUMENTS}
+noblacklist ${MUSIC}
+noblacklist ${PICTURES}
+noblacklist ${VIDEOS}
+
+whitelist ${DESKTOP}
+whitelist ${DOCUMENTS}
+whitelist ${PICTURES}
+whitelist ${VIDEOS}
+whitelist ${MUSIC}
+whitelist ${HOME}/Files
+
+# Screenshots and clips land here before they are sent anywhere.
+mkdir ${HOME}/Pictures/Screenshots
+whitelist ${HOME}/Pictures/Screenshots
