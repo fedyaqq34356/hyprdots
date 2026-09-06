@@ -13,6 +13,8 @@ Scope {
 
     property bool locked: false
 
+    signal unlocked()
+
     readonly property string shot:
         "file://" + Quickshell.env("XDG_RUNTIME_DIR") + "/lock-bg.png"
 
@@ -63,7 +65,7 @@ Scope {
 
                 onCompleted: function (result) {
                     if (result === PamResult.Success) {
-                        unlockFx.running = true;
+                        root.unlocked();
                         root.locked = false;
                         return;
                     }
@@ -91,11 +93,6 @@ Scope {
                 surface.notice = I18n.t("state.checking");
                 surface.failed = false;
                 pam.start();
-            }
-
-            Process {
-                id: unlockFx
-                command: ["qs", "-c", "f", "ipc", "call", "curtain", "up"]
             }
 
             Process {
@@ -218,57 +215,231 @@ Scope {
                     }
 
                     Rectangle {
-                        id: pulse
+                        id: box
+
                         anchors.top: parent.top
+                        anchors.horizontalCenter: parent.horizontalCenter
                         width: parent.width
-                        height: 46
-                        radius: 23
-                        color: "transparent"
-                        border.width: 1
-                        border.color: surface.failed ? Colors.bad : Colors.accent
-                        opacity: 0
-                        scale: 1.0
-                    }
+                        height: 52
+                        radius: 26
 
-                    ParallelAnimation {
-                        id: pulseBeat
-                        NumberAnimation {
-                            target: pulse; property: "opacity"
-                            from: 0.75; to: 0; duration: 420
-                            easing.type: Easing.OutCubic
+                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b,
+                                       0.55)
+                        border.width: 1.5
+                        border.color: surface.failed
+                            ? Colors.bad
+                            : (pam.active
+                               ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                         Colors.accent.b, 0.9)
+                               : Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                         Colors.accent.b,
+                                         0.30 + typedGlow * 0.55))
+
+                        property real typedGlow: 0
+                        Behavior on typedGlow {
+                            NumberAnimation { duration: 480; easing.type: Easing.OutCubic }
                         }
-                        NumberAnimation {
-                            target: pulse; property: "scale"
-                            from: 0.97; to: 1.06; duration: 420
-                            easing.type: Easing.OutCubic
+                        Behavior on border.color { ColorAnimation { duration: 180 } }
+
+                        Text {
+                            id: keyhole
+                            anchors.left: parent.left
+                            anchors.leftMargin: 20
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: surface.failed ? "󰍁" : (pam.active ? "󰦝" : "󰌾")
+                            color: surface.failed ? Colors.bad : Colors.accent
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 17
+                            opacity: 0.9
+                            Behavior on color { ColorAnimation { duration: 180 } }
+                        }
+
+                        Row {
+                            id: dots
+                            anchors.left: keyhole.right
+                            anchors.leftMargin: 14
+                            anchors.right: submit.left
+                            anchors.rightMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 7
+
+                            readonly property int shown:
+                                Math.min(14, surface.entry.length)
+
+                            Repeater {
+                                model: dots.shown
+
+                                Rectangle {
+                                    required property int index
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 8
+                                    height: 8
+                                    radius: 4
+                                    antialiasing: true
+                                    color: surface.failed ? Colors.bad : Colors.accent
+                                    scale: index === dots.shown - 1 ? 1.0 : 0.85
+                                    opacity: index === dots.shown - 1 ? 1.0 : 0.7
+
+                                    Component.onCompleted: pop.start()
+                                    NumberAnimation {
+                                        id: pop
+                                        target: parent
+                                        property: "scale"
+                                        from: 0.2; to: 1.0
+                                        duration: 220
+                                        easing.type: Easing.OutBack
+                                    }
+                                    Behavior on scale {
+                                        NumberAnimation { duration: 180 }
+                                    }
+                                    Behavior on color { ColorAnimation { duration: 180 } }
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: surface.entry.length > 14
+                                text: "+" + (surface.entry.length - 14)
+                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                               Colors.fgDim.b, 0.6)
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 10
+                            }
+                        }
+
+                        Text {
+                            anchors.left: keyhole.right
+                            anchors.leftMargin: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: surface.entry.length === 0 && !pam.active
+                            text: I18n.t("lock.prompt")
+                            color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                           Colors.fgDim.b, 0.45)
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 13
+                        }
+
+                        Item {
+                            id: submit
+                            anchors.right: parent.right
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 36
+                            height: 36
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: width / 2
+                                antialiasing: true
+                                color: surface.entry.length > 0 && !pam.active
+                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                              Colors.accent.b, 0.9)
+                                    : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                              Colors.fgDim.b, 0.10)
+                                Behavior on color { ColorAnimation { duration: 180 } }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: !pam.active
+                                    text: "󰌑"
+                                    color: surface.entry.length > 0
+                                        ? Colors.accentText
+                                        : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                                  Colors.fgDim.b, 0.5)
+                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.pixelSize: 14
+                                }
+
+                                Rectangle {
+                                    id: spinner
+                                    anchors.centerIn: parent
+                                    visible: pam.active
+                                    width: 20
+                                    height: 20
+                                    radius: 10
+                                    color: "transparent"
+                                    antialiasing: true
+                                    border.width: 2
+                                    border.color: Qt.rgba(Colors.accent.r,
+                                                          Colors.accent.g,
+                                                          Colors.accent.b, 0.35)
+
+                                    Rectangle {
+                                        anchors.top: parent.top
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        anchors.topMargin: -2
+                                        width: 4
+                                        height: 4
+                                        radius: 2
+                                        antialiasing: true
+                                        color: Colors.accent
+                                    }
+
+                                    RotationAnimator on rotation {
+                                        running: spinner.visible
+                                        loops: Animation.Infinite
+                                        from: 0
+                                        to: 360
+                                        duration: 900
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                enabled: !pam.active
+                                onClicked: surface.submit()
+                            }
                         }
                     }
 
-                    WaveMeter {
-                        anchors.top: parent.top
-                        width: parent.width
-                        height: 46
-
-                        value: Math.min(0.95, 0.18 + surface.entry.length * 0.09)
-                        animating: true
-                        spectrum: Cava.active ? Cava.levels : []
-
-                        fillColor: surface.failed ? Colors.bad : Colors.accent
-                        trackColor: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                            Colors.fgDim.b, 0.22)
-                    }
-
-                    Text {
+                    Row {
                         anchors.bottom: parent.bottom
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: surface.notice !== "" ? surface.notice
-                              : (pam.message !== "" ? pam.message : I18n.t("lock.prompt"))
-                        color: surface.failed ? Colors.bad
-                             : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                       Colors.fgDim.b, 0.65)
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 11
-                        Behavior on color { ColorAnimation { duration: 200 } }
+                        spacing: 8
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: sink.capsOn
+                            width: capsText.implicitWidth + 12
+                            height: 16
+                            radius: 8
+                            color: Qt.rgba(Colors.bad.r, Colors.bad.g, Colors.bad.b, 0.18)
+
+                            Text {
+                                id: capsText
+                                anchors.centerIn: parent
+                                text: "CAPS"
+                                color: Colors.bad
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 9
+                                font.weight: Font.Bold
+                            }
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: Keyboard.code !== ""
+                            text: Keyboard.code.toUpperCase()
+                            color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                           Colors.fgDim.b, 0.5)
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 10
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: text !== ""
+                            text: surface.notice !== "" ? surface.notice : pam.message
+                            color: surface.failed ? Colors.bad
+                                 : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                           Colors.fgDim.b, 0.65)
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 11
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                        }
                     }
 
                     TextInput {
@@ -279,17 +450,33 @@ Scope {
                         enabled: !pam.active
                         echoMode: TextInput.NoEcho
 
+                        property bool capsOn: false
+
                         onTextChanged: {
                             surface.entry = text;
                             if (text !== "")
                                 surface.failed = false;
-                            pulseBeat.restart();
+                            box.typedGlow = 1;
+                            glowOff.restart();
                         }
 
                         Keys.onReturnPressed: surface.submit()
                         Keys.onEnterPressed: surface.submit()
+                        Keys.onPressed: event => {
+                            sink.capsOn = (event.modifiers & Qt.KeypadModifier) === 0
+                                && event.text.length === 1
+                                && event.text === event.text.toUpperCase()
+                                && event.text !== event.text.toLowerCase()
+                                && (event.modifiers & Qt.ShiftModifier) === 0;
+                        }
 
                         Component.onCompleted: forceActiveFocus()
+                    }
+
+                    Timer {
+                        id: glowOff
+                        interval: 90
+                        onTriggered: box.typedGlow = 0
                     }
 
                     Connections {

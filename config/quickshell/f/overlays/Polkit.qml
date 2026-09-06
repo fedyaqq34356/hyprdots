@@ -247,5 +247,5 @@ Scope {
                 Keys.onEscapePressed: agent.flow && agent.flow.cancelAuthenticationRequest()
             }
         }
-    
+
 }

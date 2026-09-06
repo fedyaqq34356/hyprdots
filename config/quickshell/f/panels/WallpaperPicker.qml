@@ -496,6 +496,57 @@ Scope {
                         readonly property bool isCurrent: modelData === root.current
                         readonly property bool isFocused: index === grid.currentIndex
 
+                        opacity: 0
+                        transform: Scale {
+                            id: cellPop
+                            origin.x: cell.width / 2
+                            origin.y: cell.height / 2
+                            xScale: 0.92
+                            yScale: 0.92
+                        }
+
+                        SequentialAnimation {
+                            running: true
+                            PauseAnimation { duration: Motion.delay(index) }
+                            ParallelAnimation {
+                                NumberAnimation {
+                                    target: cell; property: "opacity"; to: 1
+                                    duration: 260
+                                }
+                                NumberAnimation {
+                                    target: cellPop; property: "xScale"; to: 1
+                                    duration: Motion.slow
+                                    easing.type: Easing.Bezier
+                                    easing.bezierCurve: Motion.snap
+                                }
+                                NumberAnimation {
+                                    target: cellPop; property: "yScale"; to: 1
+                                    duration: Motion.slow
+                                    easing.type: Easing.Bezier
+                                    easing.bezierCurve: Motion.snap
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            z: -1
+                            anchors.centerIn: parent
+                            width: parent.width - 6
+                            height: parent.height - 6
+                            radius: Shape.field + 4
+                            color: Colors.accent
+                            opacity: cell.isCurrent ? 0.34
+                                   : (tileArea.containsMouse ? 0.20 : 0)
+                            Behavior on opacity { NumberAnimation { duration: 220 } }
+
+                            layer.enabled: opacity > 0.01
+                            layer.effect: MultiEffect {
+                                blurEnabled: true
+                                blur: 1.0
+                                blurMax: 32
+                            }
+                        }
+
                         ClippingRectangle {
                             id: tile
                             anchors.fill: parent
@@ -569,17 +620,22 @@ Scope {
                                 anchors.top: parent.top
                                 anchors.right: parent.right
                                 anchors.margins: 8
-                                width: 22
-                                height: 22
-                                radius: Shape.chip
+                                width: 24
+                                height: 24
+                                radius: width / 2
+                                antialiasing: true
                                 color: Colors.accent
+                                border.width: 2
+                                border.color: Qt.rgba(Colors.bg.r, Colors.bg.g,
+                                                      Colors.bg.b, 0.55)
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: "󰄬"
-                                    color: Colors.bg
+                                    color: Colors.accentText
                                     font.family: "JetBrainsMono Nerd Font"
                                     font.pixelSize: 11
+                                    font.weight: Font.Bold
                                 }
                             }
                         }
