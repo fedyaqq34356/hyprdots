@@ -82,7 +82,7 @@ Singleton {
         repeat: true
         onTriggered: {
             root.pick();
-            if (root.has && root.player.positionSupported)
+            if (root.playing && root.player.positionSupported)
                 root.player.positionChanged();
         }
     }

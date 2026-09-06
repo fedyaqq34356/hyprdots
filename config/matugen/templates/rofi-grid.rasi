@@ -1,6 +1,3 @@
-/* Генерируется matugen — править шаблон, не этот файл.
-   @import здесь не используется: в rofi 2.0 импорт внутри -theme
-   молча роняет разбор и включается дефолтная светлая тема. */
 * {
     font:              "JetBrainsMono Nerd Font 11";
     background-color:  transparent;

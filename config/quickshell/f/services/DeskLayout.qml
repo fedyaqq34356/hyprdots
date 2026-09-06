@@ -33,7 +33,7 @@ Singleton {
         "usage": {
             title: I18n.t("bar.system"),
             glyph: "󰍛",
-            faces: ["rings", "bars", "digits"],
+            faces: ["rings", "bars", "digits", "full", "meters", "compact"],
             size: 1.0
         },
         "screentime": {
@@ -45,7 +45,7 @@ Singleton {
         "visualizer": {
             title: I18n.t("desk.visualizer"),
             glyph: "󰗆",
-            faces: ["bars", "wave", "radial"],
+            faces: ["bars", "wave", "radial", "mirror", "dots"],
             size: 1.0
         },
         "timer": {
@@ -64,6 +64,30 @@ Singleton {
             title: I18n.t("desk.battery"),
             glyph: "󰁹",
             faces: ["ring", "bar"],
+            size: 1.0
+        },
+        "disk": {
+            title: I18n.t("desk.disk"),
+            glyph: "󰋊",
+            faces: ["bars", "dots"],
+            size: 1.0
+        },
+        "net": {
+            title: I18n.t("desk.net"),
+            glyph: "󰤨",
+            faces: ["speed", "link"],
+            size: 1.0
+        },
+        "notifs": {
+            title: I18n.t("desk.notifs"),
+            glyph: "󰂚",
+            faces: ["list", "count"],
+            size: 1.0
+        },
+        "updates": {
+            title: I18n.t("desk.updates"),
+            glyph: "󰏗",
+            faces: ["count", "list"],
             size: 1.0
         }
     })

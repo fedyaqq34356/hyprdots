@@ -1,0 +1,25 @@
+#!/bin/sh
+
+me=$PPID
+[ -n "$me" ] || exit 0
+
+start_of() {
+    stat=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+    rest=${stat#*") "}
+    echo "$rest" | cut -d' ' -f20
+}
+
+mine=$(start_of "$me") || exit 0
+
+for p in $(pgrep -u "$(id -u)" -x 'quickshell|qs' 2>/dev/null); do
+    [ "$p" = "$me" ] && continue
+    [ "$p" = "$$" ] && continue
+    theirs=$(start_of "$p") || continue
+    [ -n "$theirs" ] || continue
+    if [ "$theirs" -lt "$mine" ] 2>/dev/null; then
+        kill "$me" 2>/dev/null
+        exit 0
+    fi
+done
+
+exit 0

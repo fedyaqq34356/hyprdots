@@ -2,10 +2,12 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.UPower
+import Quickshell.Widgets
 import QtQuick
 import QtQuick.Effects
 import Quickshell.Wayland
 import "root:/design"
+import "root:/reusables"
 import "root:/services"
 
 Scope {
@@ -52,6 +54,7 @@ Scope {
         if (shown) {
             selected = 0;
             uptime.running = true;
+            hostProbe.running = true;
             card.forceActiveFocus();
         }
     }
@@ -87,12 +90,21 @@ Scope {
     }
 
     property string uptimeText: ""
+    property string hostText: ""
 
     Process {
         id: uptime
         command: ["uptime", "-p"]
         stdout: StdioCollector {
             onStreamFinished: root.uptimeText = text.trim()
+        }
+    }
+
+    Process {
+        id: hostProbe
+        command: ["hostname"]
+        stdout: StdioCollector {
+            onStreamFinished: root.hostText = text.trim()
         }
     }
 
@@ -120,9 +132,14 @@ Scope {
 
         Rectangle {
             anchors.fill: parent
-            color: "#000000"
-            opacity: root.shown ? 0.62 : 0
-            Behavior on opacity { NumberAnimation { duration: 220 } }
+            opacity: root.shown ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.80) }
+                GradientStop { position: 0.5; color: Qt.rgba(0, 0, 0, 0.62) }
+                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.86) }
+            }
 
             MouseArea {
                 anchors.fill: parent
@@ -130,18 +147,39 @@ Scope {
             }
         }
 
+        Rectangle {
+            anchors.centerIn: card
+            width: card.width * 1.5
+            height: card.height * 1.7
+            radius: width / 2
+            color: {
+                const a = root.actions[root.selected];
+                return a && a.danger ? Colors.bad : Colors.accent;
+            }
+            opacity: root.shown ? 0.13 : 0
+            Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+            Behavior on color { ColorAnimation { duration: Motion.base } }
+
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: 1.0
+                blurMax: 64
+            }
+        }
+
         FocusScope {
             id: card
             anchors.centerIn: parent
-            width: column.implicitWidth + 76
-            height: column.implicitHeight + 56
+            width: column.implicitWidth + 92
+            height: column.implicitHeight + 72
             focus: true
 
             Glass {
                 anchors.fill: parent
                 radius: Shape.modal
                 elevation: 3
-                tintOpacity: 0.72
+                tintOpacity: 0.74
             }
 
             opacity: root.shown ? 1 : 0
@@ -167,10 +205,15 @@ Scope {
             }
 
             Keys.onEscapePressed: root.close()
-            Keys.onLeftPressed: root.selected =
-                (root.selected - 1 + root.actions.length) % root.actions.length
-            Keys.onRightPressed: root.selected =
-                (root.selected + 1) % root.actions.length
+            Keys.onLeftPressed: {
+                root.selected =
+                    (root.selected - 1 + root.actions.length) % root.actions.length;
+                Sfx.tick();
+            }
+            Keys.onRightPressed: {
+                root.selected = (root.selected + 1) % root.actions.length;
+                Sfx.tick();
+            }
             Keys.onReturnPressed: root.activate(root.selected)
             Keys.onEnterPressed: root.activate(root.selected)
             Keys.onPressed: event => {
@@ -180,169 +223,342 @@ Scope {
             Column {
                 id: column
                 anchors.centerIn: parent
-                spacing: 26
+                spacing: 24
 
-                Column {
+                Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 6
+                    spacing: 18
+
+                    Item {
+                        width: 62
+                        height: 62
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: width / 2
+                            antialiasing: true
+                            color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                           Colors.accent.b, 0.14)
+                        }
+
+                        ClippingRectangle {
+                            anchors.centerIn: parent
+                            width: 54
+                            height: 54
+                            radius: 27
+                            color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
+                                           Colors.bgAlt.b, 0.6)
+                            border.width: 2
+                            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                  Colors.accent.b, 0.7)
+
+                            Image {
+                                id: avatar
+                                anchors.fill: parent
+                                anchors.margins: 2
+                                source: "file://" + Quickshell.env("HOME")
+                                        + "/.local/share/avatar/avatar.png"
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                sourceSize.width: 128
+                                visible: status === Image.Ready
+                            }
+
+                            Text {
+                                anchors.centerIn: parent
+                                visible: !avatar.visible
+                                text: "󰀄"
+                                color: Colors.accent
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 24
+                            }
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 3
+
+                        Text {
+                            text: Quickshell.env("USER")
+                                + (root.hostText !== "" ? "@" + root.hostText : "")
+                            color: Colors.fg
+                            font.family: Fonts.display
+                            font.pixelSize: 17
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: {
+                                const parts = [];
+                                if (root.uptimeText !== "") parts.push(root.uptimeText);
+                                const dev = UPower.displayDevice;
+                                if (dev && dev.isLaptopBattery)
+                                    parts.push(Math.round(dev.percentage * 100) + "%");
+                                return parts.join("  ·  ");
+                            }
+                            color: Colors.fgDim
+                            opacity: 0.65
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 11
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 1
+                        height: 42
+                        color: Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                       Colors.outline.b, 0.22)
+                    }
 
                     Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
                         text: Qt.formatDateTime(clock.date, "HH:mm")
                         color: Colors.fg
                         font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 46
+                        font.pixelSize: 40
                         font.weight: Font.Light
                     }
+                }
+
+                Item {
+                    id: rack
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    implicitWidth: row.implicitWidth
+                    implicitHeight: row.implicitHeight
+
+                    readonly property real tileW: 128
+                    readonly property real tileStep: tileW + 14
+
+                    readonly property color tint: {
+                        const a = root.actions[root.selected];
+                        return a && a.danger ? Colors.bad : Colors.accent;
+                    }
+
+                    Rectangle {
+                        z: -2
+                        y: -10
+                        x: root.selected * rack.tileStep - 10
+                        width: rack.tileW + 20
+                        height: rack.tileW + 20
+                        radius: Shape.modal + 10
+                        color: rack.tint
+                        opacity: 0.32
+
+                        Behavior on x {
+                            NumberAnimation {
+                                duration: Motion.base
+                                easing.type: Easing.Bezier
+                                easing.bezierCurve: Motion.expo
+                            }
+                        }
+                        Behavior on color { ColorAnimation { duration: Motion.base } }
+
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            blurEnabled: true
+                            blur: 1.0
+                            blurMax: 40
+                        }
+                    }
+
+                    Rectangle {
+                        z: -1
+                        x: root.selected * rack.tileStep
+                        width: rack.tileW
+                        height: rack.tileW
+                        radius: Shape.modal
+                        antialiasing: true
+                        color: Qt.rgba(rack.tint.r, rack.tint.g, rack.tint.b, 0.16)
+                        border.width: 1.5
+                        border.color: Qt.rgba(rack.tint.r, rack.tint.g, rack.tint.b, 0.75)
+
+                        Behavior on x {
+                            SpringAnimation {
+                                spring: 4.0
+                                damping: 0.55
+                                mass: 0.8
+                                epsilon: 0.25
+                            }
+                        }
+                        Behavior on color { ColorAnimation { duration: Motion.base } }
+                        Behavior on border.color { ColorAnimation { duration: Motion.base } }
+                    }
+
+                    Row {
+                        id: row
+                        spacing: 14
+
+                        Repeater {
+                            model: root.actions
+
+                            Rectangle {
+                                id: tile
+                                required property var modelData
+                                required property int index
+
+                                readonly property bool current: root.selected === index
+                                readonly property color tint:
+                                    modelData.danger ? Colors.bad : Colors.accent
+
+                                width: rack.tileW
+                                height: rack.tileW
+                                radius: Shape.modal
+                                antialiasing: true
+                                color: current
+                                    ? "transparent"
+                                    : Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.55)
+                                border.width: 1
+                                border.color: current
+                                    ? "transparent"
+                                    : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                              Colors.outline.b, 0.20)
+
+                                scale: current ? 1.05 : 1.0
+
+                                Behavior on color { ColorAnimation { duration: Motion.fast } }
+                                Behavior on border.color { ColorAnimation { duration: Motion.fast } }
+                                Behavior on scale { Spring {} }
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 12
+
+                                    Item {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        width: 54
+                                        height: 54
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            radius: width / 2
+                                            antialiasing: true
+                                            color: tile.current
+                                                ? Qt.rgba(tile.tint.r, tile.tint.g,
+                                                          tile.tint.b, 0.22)
+                                                : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                                          Colors.fgDim.b, 0.07)
+                                            Behavior on color {
+                                                ColorAnimation { duration: Motion.fast }
+                                            }
+                                        }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: tile.modelData.glyph
+                                            color: tile.current ? tile.tint : Colors.fgDim
+                                            opacity: tile.current ? 1 : 0.75
+                                            font.family: "JetBrainsMono Nerd Font"
+                                            font.pixelSize: 27
+                                            Behavior on color {
+                                                ColorAnimation { duration: Motion.fast }
+                                            }
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: tile.modelData.label
+                                        color: tile.current ? Colors.fg : Colors.fgDim
+                                        opacity: tile.current ? 1 : 0.7
+                                        font.family: Fonts.display
+                                        font.pixelSize: 12
+                                        font.weight: tile.current ? Font.DemiBold : Font.Normal
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.top: parent.top
+                                    anchors.right: parent.right
+                                    anchors.margins: 10
+                                    width: 17
+                                    height: 17
+                                    radius: 6
+                                    antialiasing: true
+                                    color: tile.current
+                                        ? tile.tint
+                                        : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                                  Colors.outline.b, 0.18)
+                                    Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: tile.modelData.key
+                                        color: tile.current ? Colors.accentText : Colors.fgDim
+                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.pixelSize: 9
+                                        font.weight: Font.Bold
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onEntered: {
+                                        if (root.selected !== tile.index) {
+                                            root.selected = tile.index;
+                                            Sfx.tick();
+                                        }
+                                    }
+                                    onClicked: root.activate(tile.index)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Column {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 12
 
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: {
-                            const parts = [];
-                            if (root.uptimeText !== "") parts.push(root.uptimeText);
-                            const dev = UPower.displayDevice;
-                            if (dev && dev.isLaptopBattery)
-                                parts.push(Math.round(dev.percentage * 100) + "% battery");
-                            return parts.join("  ·  ");
-                        }
-                        color: Colors.fgDim
+                        height: 15
+                        text: root.actions[root.selected]
+                            ? root.actions[root.selected].hint : ""
+                        color: root.actions[root.selected]
+                               && root.actions[root.selected].danger
+                            ? Colors.bad : Colors.fgDim
                         opacity: 0.7
                         font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 12
+                        font.pixelSize: 11
+                        Behavior on color { ColorAnimation { duration: Motion.fast } }
                     }
-                }
 
-                Row {
-                    id: row
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 14
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 8
 
-                    Repeater {
-                        model: root.actions
-
-                        Rectangle {
-                            id: tile
-                            required property var modelData
-                            required property int index
-
-                            readonly property bool current: root.selected === index
-                            readonly property color tint:
-                                modelData.danger ? Colors.bad : Colors.accent
-
-                            width: 132
-                            height: 132
-                            radius: Shape.modal
-                            color: current
-                                ? Qt.rgba(tile.tint.r, tile.tint.g, tile.tint.b, 0.16)
-                                : Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.85)
+                        component Cap: Rectangle {
+                            property string label: ""
+                            width: capText.implicitWidth + 14
+                            height: 20
+                            radius: Shape.detail
+                            antialiasing: true
+                            color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                           Colors.fgDim.b, 0.07)
                             border.width: 1
-                            border.color: current
-                                ? Qt.rgba(tile.tint.r, tile.tint.g, tile.tint.b, 0.65)
-                                : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.25)
+                            border.color: Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                                  Colors.outline.b, 0.18)
 
-                            scale: current ? 1.06 : 1.0
-
-                            Behavior on color { ColorAnimation { duration: Motion.fast } }
-                            Behavior on border.color { ColorAnimation { duration: Motion.fast } }
-                            Behavior on scale { Spring {} }
-
-                            Rectangle {
-                                z: -2
+                            Text {
+                                id: capText
                                 anchors.centerIn: parent
-                                width: parent.width + 16
-                                height: parent.height + 16
-                                radius: parent.radius + 8
-                                color: tile.tint
-                                opacity: tile.current ? 0.30 : 0
-                                Behavior on opacity { NumberAnimation { duration: Motion.slow } }
-
-                                layer.enabled: true
-                                layer.effect: MultiEffect {
-                                    blurEnabled: true
-                                    blur: 1.0
-                                    blurMax: 40
-                                }
-                            }
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: parent.width
-                                height: parent.height
-                                radius: parent.radius
-                                color: "transparent"
-                                border.width: 2
-                                border.color: tile.tint
-                                opacity: tile.current ? 0.35 : 0
-                                scale: tile.current ? 1.12 : 1
-                                z: -1
-                                Behavior on opacity { NumberAnimation { duration: 260 } }
-                                Behavior on scale { NumberAnimation { duration: 260 } }
-                            }
-
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: 10
-
-                                Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: tile.modelData.glyph
-                                    color: tile.current ? tile.tint : Colors.fgDim
-                                    font.family: "JetBrainsMono Nerd Font"
-                                    font.pixelSize: 34
-                                    Behavior on color { ColorAnimation { duration: 180 } }
-                                }
-
-                                Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: tile.modelData.label
-                                    color: tile.current ? Colors.fg : Colors.fgDim
-                                    font.family: Fonts.display
-                                    font.pixelSize: 12
-                                    font.weight: tile.current ? Font.DemiBold : Font.Normal
-                                }
-                            }
-
-                            Rectangle {
-                                anchors.top: parent.top
-                                anchors.right: parent.right
-                                anchors.margins: 9
-                                width: 16
-                                height: 16
-                                radius: 5
-                                color: tile.current
-                                    ? tile.tint
-                                    : Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                              Colors.outline.b, 0.22)
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: tile.modelData.key
-                                    color: tile.current ? Colors.accentText : Colors.fgDim
-                                    font.family: "JetBrainsMono Nerd Font"
-                                    font.pixelSize: 9
-                                    font.weight: Font.Bold
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onEntered: root.selected = tile.index
-                                onClicked: root.activate(tile.index)
+                                text: parent.label
+                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                               Colors.fgDim.b, 0.65)
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 9
                             }
                         }
-                    }
-                }
 
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    height: 14
-                    text: root.actions[root.selected] ? root.actions[root.selected].hint : ""
-                    color: Colors.fgDim
-                    opacity: 0.55
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 11
+                        Cap { label: "󰌍 󰌏  " + I18n.t("power.keyPick") }
+                        Cap { label: "󰌑  " + I18n.t("power.keyRun") }
+                        Cap { label: "esc  " + I18n.t("power.keyClose") }
+                    }
                 }
             }
         }

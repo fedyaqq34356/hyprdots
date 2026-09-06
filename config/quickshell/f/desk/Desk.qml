@@ -56,6 +56,8 @@ Scope {
             exclusiveZone: 0
             color: "transparent"
 
+            visible: DeskLayout.editing || Stage.free(win.modelData.name)
+
             mask: DeskLayout.editing ? full : nothing
 
             Region { id: nothing }
@@ -125,8 +127,8 @@ Scope {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: DeskLayout.editing ? 48 : -120
-                width: paletteRow.implicitWidth + 36
-                height: 74
+                width: paletteRow.implicitWidth + 32
+                height: paletteRow.implicitHeight + 22
                 radius: Shape.card
                 color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
                 antialiasing: true
@@ -152,30 +154,42 @@ Scope {
                 Row {
                     id: paletteRow
                     anchors.centerIn: parent
-                    spacing: 10
+                    spacing: 12
 
-                    Repeater {
-                        model: DeskLayout.types
+                    Grid {
+                        id: paletteGrid
+                        anchors.verticalCenter: parent.verticalCenter
 
-                        IconButton {
-                            required property var modelData
+                        columns: Math.ceil(DeskLayout.types.length / 2)
+                        columnSpacing: 6
+                        rowSpacing: 6
 
-                            glyph: DeskLayout.registry[modelData].glyph
-                            tip: DeskLayout.registry[modelData].title
-                            tint: Colors.accent
-                            onActivated: DeskLayout.add(modelData, win.modelData.name)
+                        Repeater {
+                            model: DeskLayout.types
+
+                            IconButton {
+                                required property var modelData
+
+                                width: 30
+                                height: 30
+                                glyph: DeskLayout.registry[modelData].glyph
+                                tip: DeskLayout.registry[modelData].title
+                                tint: Colors.accent
+                                onActivated: DeskLayout.add(modelData, win.modelData.name)
+                            }
                         }
                     }
 
                     Rectangle {
                         width: 1
-                        height: 26
+                        height: paletteGrid.implicitHeight
                         anchors.verticalCenter: parent.verticalCenter
                         color: Qt.rgba(Colors.outline.r, Colors.outline.g,
                                        Colors.outline.b, 0.25)
                     }
 
                     IconButton {
+                        anchors.verticalCenter: parent.verticalCenter
                         glyph: "󰄬"
                         tip: I18n.t("act.done")
                         tint: Colors.good

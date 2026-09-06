@@ -72,3 +72,21 @@ output_path = "~/.config/yazi/flavors/matugen.yazi/flavor.toml"
 [templates.zed]
 input_path  = "~/.config/matugen/templates/zed-theme.json"
 output_path = "~/.config/zed/themes/matugen.json"
+
+[templates.kvantum]
+input_path  = "~/.config/matugen/templates/kvantum-source.json"
+output_path = "~/.config/matugen/out/kvantum-source.json"
+post_hook   = "python3 $HOME/.config/hypr/scripts/gen-kvantum-theme.py --reload"
+
+[templates.qt6ct]
+input_path  = "~/.config/matugen/templates/qtct-colors.conf"
+output_path = "~/.config/qt6ct/colors/matugen.conf"
+
+[templates.qt5ct]
+input_path  = "~/.config/matugen/templates/qtct-colors.conf"
+output_path = "~/.config/qt5ct/colors/matugen.conf"
+
+[templates.libreoffice]
+input_path  = "~/.config/matugen/templates/libreoffice-source.json"
+output_path = "~/.config/matugen/out/libreoffice-source.json"
+post_hook   = "python3 $HOME/.config/hypr/scripts/gen-libreoffice-theme.py"

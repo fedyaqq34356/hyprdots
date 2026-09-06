@@ -3,6 +3,8 @@
 exec 9>"$HOME/.cache/shell-watchdog.lock"
 flock -n 9 || exit 0
 
+ulimit -n "$(ulimit -Hn)" 2>/dev/null || true
+
 CHECK_INTERVAL=5
 FAIL_LIMIT=3
 FAIL_WINDOW=120

@@ -11,6 +11,8 @@ if ! command -v quickshell >/dev/null; then
     exit 1
 fi
 
+ulimit -n "$(ulimit -Hn)" 2>/dev/null || true
+
 pkill -x dunst 2>/dev/null
 QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
 

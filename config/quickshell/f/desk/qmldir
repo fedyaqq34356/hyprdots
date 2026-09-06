@@ -9,3 +9,7 @@ DeskVisualizer DeskVisualizer.qml
 DeskTimer DeskTimer.qml
 DeskCalendar DeskCalendar.qml
 DeskBattery DeskBattery.qml
+DeskDisk DeskDisk.qml
+DeskNet DeskNet.qml
+DeskNotifs DeskNotifs.qml
+DeskUpdates DeskUpdates.qml

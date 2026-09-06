@@ -54,9 +54,21 @@ Item {
     }
 
     Item {
+        id: blobHost
+
         anchors.fill: body
         clip: true
-        visible: glass.specular
+        property bool armed: false
+        visible: glass.specular && armed
+
+        Connections {
+            target: pointer
+            enabled: glass.specular && !blobHost.armed
+            function onHoveredChanged() {
+                if (pointer.hovered)
+                    blobHost.armed = true;
+            }
+        }
 
         Canvas {
             id: blob

@@ -49,6 +49,10 @@ Item {
                 case "timer": return timerFace;
                 case "calendar": return calFace;
                 case "battery": return battFace;
+                case "disk": return diskFace;
+                case "net": return netFace;
+                case "notifs": return notifsFace;
+                case "updates": return updatesFace;
                 }
                 return null;
             }
@@ -63,6 +67,10 @@ Item {
         Component { id: timerFace;   DeskTimer   { variant: frame.entry.face } }
         Component { id: calFace;     DeskCalendar { variant: frame.entry.face } }
         Component { id: battFace;    DeskBattery { variant: frame.entry.face } }
+        Component { id: diskFace;    DeskDisk    { variant: frame.entry.face } }
+        Component { id: netFace;     DeskNet     { variant: frame.entry.face } }
+        Component { id: notifsFace;  DeskNotifs  { variant: frame.entry.face } }
+        Component { id: updatesFace; DeskUpdates { variant: frame.entry.face } }
     }
 
     Rectangle {

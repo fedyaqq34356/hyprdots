@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import QtQuick
 import "root:/bar"
+import "root:/design"
 import "root:/desk"
 import "root:/overlays"
 import "root:/panels"
@@ -40,7 +41,16 @@ ShellRoot {
         micTarget.running = true;
     }
 
-    Bar {}
+    Bar {
+        panels: ({
+            media: mediaL,
+            calendar: calendarL,
+            net: netL,
+            notifCenter: notifCenterL,
+            timer: timerL,
+            audio: audioPanelL
+        })
+    }
     Osd {}
     Notifications {}
     FullscreenFlash {}
@@ -49,19 +59,20 @@ ShellRoot {
     LazyLoader { id: launcherL; loading: true; Launcher {} }
     LazyLoader { id: clipboardL; loading: true; Clipboard {} }
     LazyLoader { id: wallpapersL; WallpaperPicker {} }
-    LazyLoader { id: audioPanelL; loading: true; AudioPanel {} }
-    LazyLoader { id: powerMenuL; loading: true; PowerMenu {} }
-    LazyLoader { id: netL; loading: true; NetPanel {} }
-    LazyLoader { id: overviewL; loading: true; Overview {} }
+    LazyLoader { id: audioPanelL; AudioPanel {} }
+    LazyLoader { id: powerMenuL; PowerMenu {} }
+    LazyLoader { id: netL; NetPanel {} }
+    LazyLoader { id: overviewL; Overview {} }
     LazyLoader { id: notifCenterL; loading: true; NotifCenter {} }
     LazyLoader { id: filesL; Files {} }
-    LazyLoader { id: mediaL; loading: true; MediaPanel {} }
+    LazyLoader { id: mediaL; MediaPanel {} }
     LazyLoader { id: calendarL; loading: true; Calendar {} }
-    LazyLoader { id: sysRingsL; loading: true; SysRings {} }
-    LazyLoader { id: timerL; loading: true; TimerPanel {} }
+    LazyLoader { id: sysRingsL; SysRings {} }
+    LazyLoader { id: timerL; TimerPanel {} }
     LazyLoader { id: settingsL; Settings {} }
     LazyLoader { id: guideL; Guide {} }
     LazyLoader { id: eqL; Eq {} }
+    LazyLoader { id: barBuilderL; BarBuilder {} }
 
     readonly property var launcher: launcherL.item
     readonly property var clipboard: clipboardL.item
@@ -79,9 +90,26 @@ ShellRoot {
     readonly property var settings: settingsL.item
     readonly property var guide: guideL.item
     readonly property var eq: eqL.item
+    readonly property var barBuilder: barBuilderL.item
 
-    Lock { id: lock }
+    Lock {
+        id: lock
+        onUnlocked: curtain.up()
+    }
     Curtain { id: curtain }
+
+    IpcHandler {
+        target: "diag"
+        function phase(): string { return "holders=" + Phase.holders; }
+        function cava(): string {
+            return "watchers=" + Cava.watchers + " active=" + Cava.active;
+        }
+    }
+
+    Process {
+        running: true
+        command: [Quickshell.env("HOME") + "/.local/bin/qs-solo"]
+    }
 
     function panel(loader) {
         if (!loader.item)
@@ -117,7 +145,7 @@ ShellRoot {
             draw: drawLoader.item
             dock: dockLoader.item
             desk: deskLoader.item
-            timerPanel: timerL.item
+            timerLoader: timerL
         }
     }
 
@@ -383,6 +411,12 @@ ShellRoot {
         appid: "quickshell"
         name: "deskEdit"
         onPressed: if (deskLoader.item) deskLoader.item.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "barBuilder"
+        onPressed: panel(barBuilderL).toggle()
     }
 
     GlobalShortcut {

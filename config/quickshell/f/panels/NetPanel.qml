@@ -11,7 +11,7 @@ Scope {
     id: root
 
     property bool shown: false
-    property string tab: "wifi"          // "wifi" | "bt"
+    property string tab: "wifi"
     property bool graphMode: true
     property string pendingSsid: ""
 
@@ -71,7 +71,7 @@ Scope {
         for (let i = 0; i < src.length && out.length < root.slotCount; i++) {
             const e = src[i];
             const isHub = root.wifiTab ? !!e.active : !!e.connected;
-            if (isHub && root.live) continue;   // the hub is drawn separately
+            if (isHub && root.live) continue;
             out.push(e);
         }
         return out;

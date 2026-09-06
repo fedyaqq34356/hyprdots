@@ -6,10 +6,21 @@ OUTDIR="${RECORD_DIR:-$HOME/Videos}"
 NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
 STATE="${XDG_RUNTIME_DIR:-/tmp}/recording.state"
 
+TAB=$'\t'
+
 notify() { bash "$NOTIFY" "$@" >/dev/null 2>&1; }
 
+if [ -f "$STATE" ] && ! pgrep -x wf-recorder >/dev/null; then
+    rm -f "$STATE"
+    case "${1:-}" in
+        screen|region) : ;;
+        *) notify "Recording" "Stopped unexpectedly" -t 3000 -a record -r 9993
+           exit 0 ;;
+    esac
+fi
+
 if pgrep -x wf-recorder >/dev/null; then
-    FILE=$(cut -d' ' -f2- < "$STATE" 2>/dev/null)
+    FILE=$(cut -d"$TAB" -f3- < "$STATE" 2>/dev/null)
     pkill -INT -x wf-recorder
     rm -f "$STATE"
     for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -42,13 +53,15 @@ FILE="$OUTDIR/recording-$(date +%Y-%m-%d_%H-%M-%S).mp4"
 
 ARGS=(-f "$FILE" -c libx264 -p preset=veryfast -p crf=22 --pixel-format yuv420p)
 
+MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
+MONITOR="${MONITOR:-eDP-1}"
+
 if [ "$MODE" = region ]; then
     GEOM=$(slurp -d -b 00000055 -c efbd90ff -s efbd9022 -w 2) || exit 1
     [ -z "$GEOM" ] && exit 1
     ARGS+=(-g "$GEOM")
 else
-    MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
-    ARGS+=(-o "${MONITOR:-eDP-1}")
+    ARGS+=(-o "$MONITOR")
 fi
 
 case "$AUDIO" in
@@ -66,7 +79,7 @@ if ! pgrep -x wf-recorder >/dev/null; then
     exit 1
 fi
 
-printf '%s %s\n' "$(date +%s)" "$FILE" > "$STATE"
+printf '%s%s%s%s%s\n' "$(date +%s)" "$TAB" "$MONITOR" "$TAB" "$FILE" > "$STATE"
 case "$AUDIO" in
     1) SOUND=" + sound" ;;
     2) SOUND=" + microphone" ;;

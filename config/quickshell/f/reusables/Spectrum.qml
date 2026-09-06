@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import "root:/design"
 import "root:/services"
 
@@ -15,9 +16,33 @@ Canvas {
     renderStrategy: Canvas.Cooperative
     antialiasing: true
 
+    readonly property bool onScreen:
+        view.visible && view.Window.window !== null && view.Window.window.visible
+
     Connections {
         target: Cava
+        enabled: view.onScreen
         function onLevelsChanged() { view.requestPaint(); }
+    }
+
+    property bool holding: false
+
+    function sync() {
+        const want = view.onScreen;
+        if (want === view.holding)
+            return;
+        view.holding = want;
+        if (want) Cava.hold();
+        else Cava.release();
+    }
+
+    Component.onCompleted: view.sync()
+    Component.onDestruction: if (view.holding) Cava.release()
+
+    onOnScreenChanged: {
+        view.sync();
+        if (view.onScreen)
+            view.requestPaint();
     }
 
     Connections {
@@ -28,10 +53,9 @@ Canvas {
     onModeChanged: view.requestPaint()
     onWidthChanged: view.requestPaint()
     onHeightChanged: view.requestPaint()
+    onTintChanged: view.requestPaint()
 
-    function sample(pos) {
-        const l = Cava.levels;
-        const n = l.length;
+    function sampleFrom(l, n, pos) {
         if (n === 0)
             return 0;
 
@@ -39,88 +63,107 @@ Canvas {
         const i = Math.floor(x);
         const t = x - i;
 
-        const p0 = l[Math.max(0, i - 1)];
+        const p0 = l[i > 0 ? i - 1 : 0];
         const p1 = l[i];
-        const p2 = l[Math.min(n - 1, i + 1)];
-        const p3 = l[Math.min(n - 1, i + 2)];
+        const p2 = l[i + 1 < n ? i + 1 : n - 1];
+        const p3 = l[i + 2 < n ? i + 2 : n - 1];
 
         const v = 0.5 * ((2 * p1)
             + (-p0 + p2) * t
             + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t
             + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
-        return Math.max(0, Math.min(1, v));
+        return v < 0 ? 0 : (v > 1 ? 1 : v);
     }
 
     onPaint: {
+        if (width <= 0 || height <= 0)
+            return;
+
         const ctx = getContext("2d");
-        ctx.reset();
+        ctx.clearRect(0, 0, width, height);
+        ctx.globalAlpha = 1;
 
-        if (view.mode === "radial")
-            view.paintRadial(ctx);
-        else if (view.mode === "wave")
-            view.paintWave(ctx);
-        else
-            view.paintBars(ctx);
-    }
+        const src = Cava.levels;
+        const n = src ? src.length : 0;
+        if (n === 0)
+            return;
 
-    function paintBars(ctx) {
-        const n = Math.max(4, Math.round(view.resolution / 2));
-        const step = width / n;
-        const w = step * (1 - view.gap);
+        const l = new Array(n);
+        for (let i = 0; i < n; i++)
+            l[i] = src[i];
+
         const c = view.tint;
 
-        for (let i = 0; i < n; i++) {
-            const v = view.sample(i / (n - 1));
-            const h = Math.max(2, v * height);
-            const x = i * step + (step - w) / 2;
+        if (view.mode === "radial")
+            view.paintRadial(ctx, l, n, c);
+        else if (view.mode === "wave")
+            view.paintWave(ctx, l, n, c);
+        else
+            view.paintBars(ctx, l, n, c);
+    }
 
-            const grad = ctx.createLinearGradient(0, height - h, 0, height);
-            grad.addColorStop(0.0, Qt.rgba(c.r, c.g, c.b, 0.95));
-            grad.addColorStop(1.0, Qt.rgba(c.r, c.g, c.b, 0.35));
+    function paintBars(ctx, l, n, c) {
+        const w = view.width;
+        const h = view.height;
+        const count = Math.max(4, Math.round(view.resolution / 2));
+        const step = w / count;
+        const bw = step * (1 - view.gap);
+
+        const top = Qt.rgba(c.r, c.g, c.b, 0.95);
+        const bottom = Qt.rgba(c.r, c.g, c.b, 0.35);
+        const r = Math.min(bw / 2, 3);
+
+        for (let i = 0; i < count; i++) {
+            const v = view.sampleFrom(l, n, i / (count - 1));
+            const bh = Math.max(2, v * h);
+            const x = i * step + (step - bw) / 2;
+            const y = h - bh;
+
+            const grad = ctx.createLinearGradient(0, y, 0, h);
+            grad.addColorStop(0.0, top);
+            grad.addColorStop(1.0, bottom);
             ctx.fillStyle = grad;
 
-            const r = Math.min(w / 2, 3);
             ctx.beginPath();
-            ctx.moveTo(x, height);
-            ctx.lineTo(x, height - h + r);
-            ctx.quadraticCurveTo(x, height - h, x + r, height - h);
-            ctx.lineTo(x + w - r, height - h);
-            ctx.quadraticCurveTo(x + w, height - h, x + w, height - h + r);
-            ctx.lineTo(x + w, height);
+            ctx.moveTo(x, h);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.lineTo(x + bw - r, y);
+            ctx.quadraticCurveTo(x + bw, y, x + bw, y + r);
+            ctx.lineTo(x + bw, h);
             ctx.closePath();
             ctx.fill();
         }
     }
 
-    function paintWave(ctx) {
-        const n = view.resolution;
-        const mid = height / 2;
-        const c = view.tint;
-        const amp = view.mirror ? mid : height;
+    function paintWave(ctx, l, n, c) {
+        const w = view.width;
+        const h = view.height;
+        const count = view.resolution;
+        const mid = h / 2;
+        const amp = (view.mirror ? mid : h) * 0.92;
 
-        const pts = [];
-        for (let i = 0; i <= n; i++) {
-            const v = view.sample(i / n);
-            pts.push({
-                x: (i / n) * width,
-                y: view.mirror ? mid - v * amp * 0.92
-                               : height - v * amp * 0.92
-            });
+        const xs = new Array(count + 1);
+        const ys = new Array(count + 1);
+        for (let i = 0; i <= count; i++) {
+            const v = view.sampleFrom(l, n, i / count);
+            xs[i] = (i / count) * w;
+            ys[i] = view.mirror ? mid - v * amp : h - v * amp;
         }
 
         ctx.beginPath();
-        ctx.moveTo(pts[0].x, view.mirror ? mid : height);
-        for (const p of pts)
-            ctx.lineTo(p.x, p.y);
+        ctx.moveTo(xs[0], view.mirror ? mid : h);
+        for (let i = 0; i <= count; i++)
+            ctx.lineTo(xs[i], ys[i]);
         if (view.mirror) {
-            for (let i = pts.length - 1; i >= 0; i--)
-                ctx.lineTo(pts[i].x, mid + (mid - pts[i].y));
+            for (let i = count; i >= 0; i--)
+                ctx.lineTo(xs[i], mid + (mid - ys[i]));
         } else {
-            ctx.lineTo(width, height);
+            ctx.lineTo(w, h);
         }
         ctx.closePath();
 
-        const grad = ctx.createLinearGradient(0, 0, 0, height);
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
         grad.addColorStop(0.0, Qt.rgba(c.r, c.g, c.b, 0.45));
         grad.addColorStop(0.5, Qt.rgba(c.r, c.g, c.b, 0.14));
         grad.addColorStop(1.0, Qt.rgba(c.r, c.g, c.b, 0.45));
@@ -128,37 +171,50 @@ Canvas {
         ctx.fill();
 
         ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        for (const p of pts)
-            ctx.lineTo(p.x, p.y);
+        ctx.moveTo(xs[0], ys[0]);
+        for (let i = 0; i <= count; i++)
+            ctx.lineTo(xs[i], ys[i]);
         ctx.lineWidth = 2;
         ctx.lineJoin = "round";
+        ctx.lineCap = "butt";
         ctx.strokeStyle = Qt.rgba(c.r, c.g, c.b, 0.95);
         ctx.stroke();
     }
 
-    function paintRadial(ctx) {
-        const cx = width / 2;
-        const cy = height / 2;
+    function paintRadial(ctx, l, n, c) {
+        const w = view.width;
+        const h = view.height;
+        const cx = w / 2;
+        const cy = h / 2;
         const outer = Math.min(cx, cy);
         const inner = outer * view.hole;
-        const n = view.resolution;
-        const c = view.tint;
+        const span = outer - inner;
+        const count = view.resolution;
+        const half = count / 2;
+
+        const cr = c.r;
+        const cg = c.g;
+        const cb = c.b;
 
         ctx.lineCap = "round";
-        ctx.lineWidth = Math.max(1.5, (Math.PI * 2 * inner) / n * (1 - view.gap));
+        ctx.lineJoin = "miter";
+        ctx.lineWidth = Math.max(1.5, (Math.PI * 2 * inner) / count * (1 - view.gap));
 
-        for (let i = 0; i < n; i++) {
-            const half = i < n / 2 ? i / (n / 2) : (n - i) / (n / 2);
-            const v = view.sample(half);
-            const a = -Math.PI / 2 + (Math.PI * 2 * i) / n;
-            const len = (outer - inner) * v;
+        const start = -Math.PI / 2;
+        const stepA = (Math.PI * 2) / count;
+
+        for (let i = 0; i < count; i++) {
+            const pos = i < half ? i / half : (count - i) / half;
+            const v = view.sampleFrom(l, n, pos);
+            const a = start + stepA * i;
+            const ca = Math.cos(a);
+            const sa = Math.sin(a);
+            const len = span * v;
 
             ctx.beginPath();
-            ctx.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
-            ctx.lineTo(cx + Math.cos(a) * (inner + len),
-                       cy + Math.sin(a) * (inner + len));
-            ctx.strokeStyle = Qt.rgba(c.r, c.g, c.b, 0.35 + v * 0.6);
+            ctx.moveTo(cx + ca * inner, cy + sa * inner);
+            ctx.lineTo(cx + ca * (inner + len), cy + sa * (inner + len));
+            ctx.strokeStyle = Qt.rgba(cr, cg, cb, 0.35 + v * 0.6);
             ctx.stroke();
         }
     }

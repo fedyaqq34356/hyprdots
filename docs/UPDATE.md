@@ -7,7 +7,7 @@
 **Everything added in this round, and every key that now does something.**
 
 <a href="../README.md"><img src="https://img.shields.io/badge/back%20to-README-E4E3D8?style=flat-square&labelColor=13140E" alt="README"></a>
-<img src="https://img.shields.io/badge/idle%20CPU-43%25%20→%206%25-C6C8B5?style=flat-square&labelColor=13140E" alt="idle CPU">
+<img src="https://img.shields.io/badge/idle%20CPU-32%25%20→%203%25-C6C8B5?style=flat-square&labelColor=13140E" alt="idle CPU">
 
 <br>
 
@@ -54,6 +54,61 @@
 </td>
 </tr>
 </table>
+
+---
+
+## This round
+
+### The bar is now data
+
+Everything about the bar — which modules, in which island, in which zone, and
+what each of them looks like — moved out of `Bar.qml` and into a JSON file that
+[the builder](../README.md#keybindings) writes. `Super` + `Shift` + `J`.
+
+Thirty-three modules, including six machine meters (CPU, RAM, GPU, VRAM and both
+temperatures), a disk gauge, network throughput, uptime, a custom label and a
+custom command that runs on an interval. Seventeen style settings on a second
+tab. The defaults reproduce the previous hand-written bar module for module.
+
+### A password field on the lock screen
+
+The wave that used to sit where the password goes was showing the music
+spectrum, not what had been typed. It is now a pill with a lock glyph, one dot
+per character, a submit button that becomes a spinner while PAM answers, and a
+Caps Lock warning next to the keyboard layout.
+
+### Four more desktop widgets, eleven more faces
+
+Disks, network, notifications and updates join the wallpaper layer; the system
+widget grew three faces that include video memory, and the visualiser two.
+
+### Three crashes that were one bug
+
+`qs -c f ipc call …` does not talk to the running shell — the flag lands on the
+root command and a second shell starts, with its own bar, dock and desktop on
+top of the real ones. The lock screen ran that on every unlock. Three instances
+then shared a 1024 descriptor limit until glib aborted inside thread creation.
+
+Every call site is fixed, the unlock path no longer spawns anything at all, the
+descriptor limit is raised to the hard cap, and `bin/qs-solo` stands a shell
+down if an older one is already running.
+
+### Idle CPU: 32% → 3%
+
+The second ring around the clock carried a one-second `Behavior` on its value.
+While any animation runs, Qt Quick repaints the whole window every frame — at
+144 Hz, on two monitors, for a sweep that moved two hundredths of a pixel per
+frame. It is a timer now, stepping at the same half-pixel the canvas was already
+quantising to.
+
+The bar's spectrum bars each carried their own 90 ms `Behavior`, restarted sixty
+times a second: 1440 animation restarts per second. The same easing is computed
+once in the cava service instead.
+
+`visible` does not know whether a window is shown, so a panel built in the
+background kept the shared phase clock running and the cava stream open. Both
+ask the window directly now, and the desktop layer stops existing entirely while
+a tiled window covers it.
 
 ---
 

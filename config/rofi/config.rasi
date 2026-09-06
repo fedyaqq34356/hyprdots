@@ -1,5 +1,5 @@
 configuration {
-	
+
 	modi: "drun,run,filebrowser,window";
 	case-sensitive: false;
 	cycle: true;
@@ -27,9 +27,9 @@ configuration {
 	drun-use-desktop-cache: false;
 	drun-reload-desktop-cache: false;
 	drun {
-		
+
 		parse-user:   true;
-		
+
 		parse-system: true;
     }
 

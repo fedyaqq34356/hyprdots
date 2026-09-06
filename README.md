@@ -77,12 +77,16 @@ and the lock screen recolour themselves around it.
 <td align="center"><sub>wallpapers — <code>Super</code> + <code>W</code></sub></td>
 </tr>
 <tr>
-<td><img src="assets/focus.jpg" alt="Focus mode"></td>
-<td><img src="assets/power.jpg" alt="Power menu"></td>
+<td colspan="2"><img src="assets/power.jpg" alt="Power menu" width="100%"></td>
 </tr>
 <tr>
-<td align="center"><sub>focus mode — <code>Super</code> + <code>Ctrl</code> + <code>F</code></sub></td>
-<td align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
+<td colspan="2" align="center"><sub>power — <code>Super</code> + <code>P</code></sub></td>
+</tr>
+<tr>
+<td colspan="2"><img src="assets/bar-builder.jpg" alt="Bar builder" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub>bar builder — <code>Super</code> + <code>Shift</code> + <code>J</code> — three zones, any number of islands, thirty-three modules</sub></td>
 </tr>
 <tr>
 <td><img src="assets/desk-edit.jpg" alt="Arranging the desktop widgets"></td>
@@ -93,36 +97,44 @@ and the lock screen recolour themselves around it.
 <td align="center"><sub>settings — <code>Super</code> + <code>Shift</code> + <code>P</code></sub></td>
 </tr>
 <tr>
+<td><img src="assets/timer.jpg" alt="Timers and alarms"></td>
 <td><img src="assets/equalizer.jpg" alt="Ten band equaliser"></td>
-<td><img src="assets/notification-center.jpg" alt="Notification centre"></td>
 </tr>
 <tr>
+<td align="center"><sub>timers — <code>Super</code> + <code>T</code></sub></td>
 <td align="center"><sub>equaliser — <code>Super</code> + <code>Shift</code> + <code>Q</code></sub></td>
-<td align="center"><sub>notification centre — <code>Super</code> + <code>Shift</code> + <code>N</code></sub></td>
 </tr>
 <tr>
-<td><img src="assets/draw.jpg" alt="Drawing over the screen"></td>
-<td><img src="assets/polkit.jpg" alt="Authorisation prompt"></td>
-</tr>
-<tr>
-<td align="center"><sub>draw over the screen — <code>Super</code> + <code>Shift</code> + <code>G</code></sub></td>
-<td align="center"><sub>authorisation — the shell's own polkit agent</sub></td>
-</tr>
-<tr>
+<td><img src="assets/notification-center.jpg" alt="Notification centre"></td>
 <td><img src="assets/files.jpg" alt="Media browser"></td>
-<td><img src="assets/dock.jpg" alt="Dock"></td>
 </tr>
 <tr>
+<td align="center"><sub>notification centre — <code>Super</code> + <code>Shift</code> + <code>N</code></sub></td>
 <td align="center"><sub>media browser — <code>Super</code> + <code>Shift</code> + <code>B</code></sub></td>
-<td align="center"><sub>dock — hidden until the pointer reaches the edge</sub></td>
 </tr>
 <tr>
+<td><img src="assets/polkit.jpg" alt="Authorisation prompt"></td>
 <td><img src="assets/guide.jpg" alt="First run tour"></td>
-<td><img src="assets/calc.jpg" alt="Calculator inside the launcher"></td>
 </tr>
 <tr>
+<td align="center"><sub>authorisation — the shell's own polkit agent</sub></td>
 <td align="center"><sub>the tour, once, on first login</sub></td>
+</tr>
+<tr>
+<td><img src="assets/dock.jpg" alt="Dock"></td>
+<td><img src="assets/draw.jpg" alt="Drawing over the screen"></td>
+</tr>
+<tr>
+<td align="center"><sub>dock — hidden until the pointer reaches the edge</sub></td>
+<td align="center"><sub>draw over the screen — <code>Super</code> + <code>Shift</code> + <code>G</code></sub></td>
+</tr>
+<tr>
+<td><img src="assets/calc.jpg" alt="Calculator inside the launcher"></td>
+<td><img src="assets/focus.jpg" alt="Focus mode"></td>
+</tr>
+<tr>
 <td align="center"><sub>calculator — <code>Super</code> + <code>C</code></sub></td>
+<td align="center"><sub>focus mode — <code>Super</code> + <code>Ctrl</code> + <code>F</code></sub></td>
 </tr>
 <tr>
 <td colspan="2"><img src="assets/yazi.jpg" alt="yazi themed from the wallpaper" width="100%"></td>
@@ -305,8 +317,13 @@ live in `~/.config/matugen/templates` — add a file there plus one block in
 
 The lock screen reads the same source. `Super+Shift+L` runs a wrapper that regenerates the palette
 if the wallpaper has changed since the last run, so the lock screen always shows the wallpaper that
-is on the desktop right now — blurred, dimmed, behind a frosted card with the clock, the date, the
-keyboard layout, uptime and battery.
+is on the desktop right now — blurred and dimmed, with the avatar, the clock in handwritten strokes
+and the date above the password field.
+
+The field is a field: a pill with a lock glyph, one dot per character typed, a submit arrow that
+becomes a spinner while PAM is thinking, and the keyboard layout and a Caps Lock warning underneath.
+A wrong password fades the field out and back rather than shaking it, and says what was wrong. What
+is playing sits in one corner, missed notifications in another.
 
 </details>
 
@@ -566,11 +583,45 @@ panel lands in the same place on an external monitor. Each widget has faces to s
 | clock | two stacked numerals, a line with the date, or handwritten strokes |
 | music | sleeve with title and seek line, or the record itself, turning while it plays |
 | weather | a card with a three day strip, or just a glyph and a number |
-| system | rings, or labelled bars |
+| system | rings, labelled bars, bare digits, all six meters as a card, vertical gauges, or two columns |
+| visualiser | bars, wave, wreath, a mirrored row, or a dot matrix |
 | screen time | today's applications as bars, or the total alone |
+| disks | mount points with fill bars, or free space in figures |
+| network | download and upload, or a card with the network and its link rate |
+| notifications | the last few, or the unread count |
+| updates | the count, or the first six package names |
 
 Missing album art draws a record — grooves, a rotating highlight, a blank paper label — because "no
 cover" is the normal case for streams and radio, and a lone music glyph reads as a broken image.
+
+The layer stops existing while a window covers it. A tiled or fullscreen window hides the wallpaper
+entirely, and a widget nobody can see still costs frames: the visualiser repaints sixty times a
+second behind someone else's window, and cava keeps streaming for it. Floating windows do not count
+— they are exactly the case the desktop is kept visible for.
+
+</details>
+
+<details>
+<summary><b>Bar builder</b> — <sub>the bar as data, not as a file</sub></summary>
+
+
+`Super` + `Shift` + `J` opens the bar's own editor. Three zones, any number of islands per zone, any
+number of modules per island — dragged into order, moved between zones, switched off, configured.
+Nothing about the layout lives in QML any more; it is a JSON file the builder writes.
+
+Thirty-three modules ship: workspaces, music, clock, date, tray, Wi-Fi, Bluetooth, VPN, network
+speed, volume, microphone, battery, keyboard layout, brightness, peripherals, screen recording,
+outbound connections, updates, notifications, do-not-disturb, CPU, RAM, GPU, VRAM, both
+temperatures, disk, weather, uptime, timer, separator, spacer, custom text and a custom command
+— the last one runs on an interval and can act on a click.
+
+A second tab holds the look: bar and island height, margins, gaps, padding, corner radius, font and
+glyph size, fill and hover opacity, border alpha, shadow, border, the entrance animation, hover
+growth and tooltips. The defaults reproduce the previous hand-written bar module for module, so
+opening the builder and changing nothing changes nothing.
+
+Adding a module to the shell means one component in `Modules.qml` and one line in the registry; the
+builder picks it up on its own, options and all.
 
 </details>
 
@@ -699,6 +750,7 @@ locale, because the shell's language is its own setting and does not follow `LAN
 | --- | --- |
 | `Super` + `Shift` + `P` | settings — every optional part has a switch here |
 | `Super` + `Shift` + `W` | arrange the desktop widgets |
+| `Super` + `Shift` + `J` | bar builder |
 | `Super` + `Shift` + `Q` | ten band equaliser |
 | `Super` + `Shift` + `G` | draw over the screen |
 | `Super` + `Shift` + `A` | pin the dock |
@@ -953,8 +1005,12 @@ cd hyprdots && ./install.sh --update
 
 Экран блокировки берёт те же обои. `Super+Shift+L` запускает обёртку, которая пересобирает палитру,
 если обои сменились с прошлого раза, — на локскрине всегда те обои, что стоят на рабочем столе:
-размытые и притемнённые, поверх них матовая карточка с часами, датой, раскладкой клавиатуры,
-аптаймом и зарядом батареи.
+размытые и притемнённые, поверх них аватар, часы рукописными штрихами и дата над полем пароля.
+
+Поле — это поле: пилюля с замком, по точке на набранный символ, кнопка отправки, которая на время
+раздумий PAM превращается в кольцо ожидания, и раскладка с предупреждением о Caps Lock под ней.
+Неверный пароль не трясёт поле, а растворяет и возвращает, объясняя, что не так. То, что играет,
+стоит в одном углу, пропущенные уведомления — в другом.
 
 </details>
 
@@ -1203,11 +1259,45 @@ VPN, но только пока туннель поднят: определен�
 | часы | две цифры друг под другом, строка с датой или рукописные штрихи |
 | музыка | конверт с названием и полосой позиции либо сама пластинка, вращающаяся при игре |
 | погода | карточка с прогнозом на три дня или только глиф и число |
-| система | кольца или подписанные полосы |
+| система | кольца, подписанные полосы, голые цифры, все шесть счётчиков карточкой, вертикальные шкалы или две колонки |
+| визуализатор | полосы, волна, венок, зеркальный ряд или матрица точек |
 | экранное время | приложения за сегодня полосами или один итог |
+| диски | разделы с полосами заполнения или свободное место цифрами |
+| сеть | приём и передача или карточка с сетью и скоростью линка |
+| уведомления | последние несколько или число непрочитанных |
+| обновления | число или первые шесть имён пакетов |
 
 Когда обложки нет, рисуется пластинка — дорожки, вращающийся блик, пустая бумажная этикетка. Для
 радио и потоков «без обложки» это норма, а одинокий значок ноты читается как битая картинка.
+
+Пока стол закрыт окном, слоя не существует вовсе. Окно в раскладке или на весь экран прячет обои
+целиком, а невидимый виджет всё равно стоит кадров: визуализатор перекрашивает холст шестьдесят раз
+в секунду за чужим окном, и cava гонит для него поток. Плавающие окна не в счёт — ради них стол и
+держат открытым.
+
+</details>
+
+<details>
+<summary><b>Конструктор бара</b> — <sub>бар как данные, а не как файл</sub></summary>
+
+
+`Super` + `Shift` + `J` открывает редактор самого бара. Три зоны, в каждой сколько угодно островков,
+в островке сколько угодно модулей — переставляются, переезжают между зонами, выключаются,
+настраиваются. Раскладка больше не живёт в QML: её пишет конструктор в JSON.
+
+Модулей тридцать три: рабочие столы, музыка, часы, дата, трей, Wi-Fi, Bluetooth, VPN, скорость сети,
+громкость, микрофон, батарея, раскладка, яркость, периферия, запись экрана, исходящие соединения,
+обновления, уведомления, «не беспокоить», CPU, RAM, GPU, VRAM, обе температуры, диск, погода,
+аптайм, таймер, разделитель, отступ, своя надпись и своя команда — последняя крутится по таймеру и
+умеет что-то делать по щелчку.
+
+Вторая вкладка — вид: высота бара и плитки, отступы, промежутки, поля, скругление, размер шрифта и
+глифов, заливка и заливка под курсором, прозрачность обводки, тень, обводка, анимация появления,
+рост под курсором и подсказки. Умолчания повторяют прежний рукописный бар модуль в модуль: кто
+открыл конструктор и ничего не тронул, разницы не увидит.
+
+Добавить в шелл новый модуль — это один компонент в `Modules.qml` и одна строка в реестре;
+конструктор подхватит его сам, вместе с настройками.
 
 </details>
 
@@ -1333,6 +1423,7 @@ VPN, но только пока туннель поднят: определен�
 | --- | --- |
 | `Super` + `Shift` + `P` | настройки — у каждой необязательной части свой тумблер |
 | `Super` + `Shift` + `W` | правка виджетов на столе |
+| `Super` + `Shift` + `J` | конструктор бара |
 | `Super` + `Shift` + `Q` | эквалайзер на десять полос |
 | `Super` + `Shift` + `G` | рисовать поверх экрана |
 | `Super` + `Shift` + `A` | закрепить док |
