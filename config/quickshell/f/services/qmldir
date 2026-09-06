@@ -1,9 +1,11 @@
+singleton BarConfig BarConfig.qml
 singleton Beat Beat.qml
 singleton Brightness Brightness.qml
 singleton Bt Bt.qml
 singleton Bye Bye.qml
 singleton Cava Cava.qml
 singleton DeskLayout DeskLayout.qml
+singleton Disk Disk.qml
 singleton Dnd Dnd.qml
 singleton Equalizer Equalizer.qml
 singleton Feedback Feedback.qml
@@ -23,6 +25,7 @@ singleton Recorder Recorder.qml
 singleton Running Running.qml
 singleton Scaler Scaler.qml
 singleton Sfx Sfx.qml
+singleton Stage Stage.qml
 singleton Sys Sys.qml
 singleton Timers Timers.qml
 singleton Updates Updates.qml

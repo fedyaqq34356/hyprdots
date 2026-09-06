@@ -22,3 +22,11 @@ config/yazi/plugins/
 config/zed/themes/
 config/matugen/out/
 config/hypr/outbound-ignore.list
+*.bak-*
+config/qt5ct/colors/
+config/qt6ct/colors/
+config/rofi/applets/
+config/rofi/launchers/
+config/rofi/powermenu/
+config/rofi/scripts/
+config/rofi/images/

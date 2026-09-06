@@ -15,7 +15,15 @@ Scope {
     property bool open: false
     property real anchorY: 0.42
 
-    property var timerPanel: null
+    property var timerLoader: null
+
+    function timerPanel() {
+        if (!root.timerLoader)
+            return null;
+        if (!root.timerLoader.item)
+            root.timerLoader.active = true;
+        return root.timerLoader.item;
+    }
 
     readonly property var soon: Timers.soonest
     readonly property bool timerRunning: root.soon !== null && !root.soon.ringing
@@ -26,8 +34,9 @@ Scope {
             Timers.dismissAll();
             return;
         }
-        if (root.timerPanel)
-            root.timerPanel.open("count");
+        const panel = root.timerPanel();
+        if (panel)
+            panel.open("count");
     }
 
     PanelWindow {

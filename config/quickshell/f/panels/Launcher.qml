@@ -571,7 +571,7 @@ Scope {
                 ListView {
                     id: list
                     width: parent.width
-                    height: parent.height - 60
+                    height: parent.height - 60 - (foot.visible ? foot.height + 14 : 0)
                     clip: true
                     visible: !root.calcMode && !root.runMode
                     model: root.calcMode || root.runMode ? [] : root.results
@@ -613,22 +613,57 @@ Scope {
                             }
                         }
 
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 3
+                            radius: 1.5
+                            antialiasing: true
+                            color: Colors.accent
+                            height: index === list.currentIndex ? 24 : 0
+                            opacity: index === list.currentIndex ? 1 : 0
+
+                            Behavior on height {
+                                NumberAnimation {
+                                    duration: Motion.base
+                                    easing.type: Easing.Bezier
+                                    easing.bezierCurve: Motion.snap
+                                }
+                            }
+                            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+                        }
+
                         Row {
                             anchors.fill: parent
-                            anchors.leftMargin: 12
+                            anchors.leftMargin: 14
                             anchors.rightMargin: 12
                             spacing: 13
 
-                            IconImage {
-                                source: Quickshell.iconPath(modelData.icon,
-                                                            "application-x-executable")
-                                implicitSize: 30
+                            Rectangle {
+                                width: 36
+                                height: 36
+                                radius: Shape.field - 4
+                                antialiasing: true
                                 anchors.verticalCenter: parent.verticalCenter
+                                color: index === list.currentIndex
+                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                              Colors.accent.b, 0.16)
+                                    : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                              Colors.fgDim.b, 0.06)
+                                Behavior on color { ColorAnimation { duration: 130 } }
+
+                                IconImage {
+                                    anchors.centerIn: parent
+                                    source: Quickshell.iconPath(modelData.icon,
+                                                                "application-x-executable")
+                                    implicitSize: 24
+                                }
                             }
 
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 60
+                                width: parent.width - 92
                                 spacing: 1
 
                                 Text {
@@ -655,12 +690,90 @@ Scope {
                             }
                         }
 
+                        Text {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "\u{f0311}"
+                            color: Colors.accent
+                            font.family: "JetBrainsMono Nerd Font"
+                            font.pixelSize: 13
+                            opacity: index === list.currentIndex ? 0.8 : 0
+                            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+                        }
+
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onEntered: list.currentIndex = index
                             onClicked: root.launch(modelData)
+                        }
+                    }
+                }
+
+                Item {
+                    id: foot
+                    width: parent.width
+                    height: 16
+                    visible: !root.calcMode && !root.runMode
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.results.length + " " + I18n.t("launcher.matches")
+                        color: Colors.fgDim
+                        opacity: 0.42
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                    }
+
+                    Row {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 12
+
+                        Repeater {
+                            model: [
+                                { k: "\u{f0360}\u{f035d}", v: I18n.t("launcher.keyMove") },
+                                { k: "=", v: I18n.t("launcher.keyCalc") },
+                                { k: ">", v: I18n.t("launcher.keyRun") }
+                            ]
+
+                            Row {
+                                required property var modelData
+                                spacing: 5
+
+                                Rectangle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: keyCap.implicitWidth + 10
+                                    height: 15
+                                    radius: Shape.detail - 2
+                                    antialiasing: true
+                                    color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                                   Colors.fgDim.b, 0.08)
+
+                                    Text {
+                                        id: keyCap
+                                        anchors.centerIn: parent
+                                        text: modelData.k
+                                        color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                                       Colors.fgDim.b, 0.7)
+                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.pixelSize: 9
+                                    }
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: modelData.v
+                                    color: Colors.fgDim
+                                    opacity: 0.4
+                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.pixelSize: 9
+                                }
+                            }
                         }
                     }
                 }

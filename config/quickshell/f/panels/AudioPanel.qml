@@ -13,7 +13,7 @@ Scope {
     id: root
 
     property bool shown: false
-    property string tab: "out"           // "out" | "in"
+    property string tab: "out"
 
     readonly property string mono: "JetBrainsMono Nerd Font"
 
@@ -121,7 +121,7 @@ Scope {
     readonly property var orbitModel: {
         const out = [];
         for (const d of root.devices) {
-            if (root.isDefault(d)) continue;      // the hub is drawn separately
+            if (root.isDefault(d)) continue;
             out.push({
                 title: root.shortLabel(d),
                 detail: Math.round(root.volumeOf(d) * 100) + "%",

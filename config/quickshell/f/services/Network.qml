@@ -37,6 +37,12 @@ Singleton {
 
     property string iface: ""
     property bool sampling: false
+    property int holders: 0
+
+    function hold()    { root.holders++; }
+    function release() { root.holders = Math.max(0, root.holders - 1); }
+
+    readonly property bool counting: root.sampling || root.holders > 0
     property real rxRate: 0
     property real txRate: 0
 
@@ -168,7 +174,7 @@ Singleton {
     }
 
     Timer {
-        running: root.sampling && root.iface !== ""
+        running: root.counting && root.iface !== ""
         interval: 1000
         repeat: true
         triggeredOnStart: true
@@ -180,8 +186,8 @@ Singleton {
         }
     }
 
-    onSamplingChanged: {
-        if (!sampling) {
+    onCountingChanged: {
+        if (!counting) {
             lastRx = -1;
             lastTx = -1;
             rxRate = 0;

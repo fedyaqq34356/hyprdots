@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import "root:/design"
 
 Item {
@@ -74,7 +75,11 @@ Item {
         graph.paused ? graph.spinFrozen
                      : (graph.spinLive + graph.spinOffset + 360) % 360
 
-    PhaseHold { active: graph.visible && !graph.paused }
+    readonly property bool onScreen:
+        graph.visible && graph.Window.window !== null
+        && graph.Window.window.visible
+
+    PhaseHold { active: graph.onScreen && !graph.paused }
 
     onPausedChanged: {
         if (graph.paused) {
@@ -109,7 +114,7 @@ Item {
             out.push({
                 x: graph.cx + Math.cos(a) * r,
                 y: graph.cy + sin * r * graph.tiltY,
-                depth: (sin + 1) / 2           // sin > 0 is the near side
+                depth: (sin + 1) / 2
             });
         }
         return out;
@@ -345,7 +350,7 @@ Item {
                 opacity: 0.5 * (1 - ripple)
 
                 PhaseHold {
-                    active: graph.visible && (graph.hubLive || graph.busy)
+                    active: graph.onScreen && (graph.hubLive || graph.busy)
                 }
             }
         }
