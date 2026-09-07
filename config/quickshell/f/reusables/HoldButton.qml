@@ -9,7 +9,7 @@ Rectangle {
     property string tip: ""
     property color tint: Colors.bad
     property int holdTime: 850
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
 
     signal confirmed()
 

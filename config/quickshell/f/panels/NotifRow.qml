@@ -8,7 +8,7 @@ Rectangle {
     id: row
 
     required property var entry
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
     property bool fresh: false
 
     signal dismissed()

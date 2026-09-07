@@ -6,7 +6,7 @@ Rectangle {
     id: badge
 
     property var entry: null
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
 
     readonly property var faces: badge.entry && DeskLayout.registry[badge.entry.type]
         ? DeskLayout.registry[badge.entry.type].faces : []

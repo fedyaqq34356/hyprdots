@@ -81,7 +81,7 @@ Scope {
                         text: "system"
                         color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                        Colors.fgDim.b, 0.55)
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
                         font.letterSpacing: 3

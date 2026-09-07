@@ -8,7 +8,7 @@ Item {
     property var item: null
 
     property color tint: "#ffffff"
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
     property int appearDelay: 0
 
     property real depth: 1.0

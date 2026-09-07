@@ -20,7 +20,7 @@ Scope {
     property var tones: ({})
     property var history: []
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     readonly property string dir: Quickshell.env("HOME") + "/Pictures/Wallpapers"
     readonly property string thumbDir: Quickshell.env("HOME") + "/.cache/wallpaper-thumbs"
@@ -260,22 +260,11 @@ Scope {
             }
         }
 
-        Rectangle {
-            anchors.centerIn: card
-            width: card.width - 48
-            height: card.height - 48
-            radius: Shape.modal
-            color: Colors.accent
-            opacity: root.shown ? 0.22 : 0
-            visible: opacity > 0.01
-            Behavior on opacity { NumberAnimation { duration: Motion.slow } }
-
-            layer.enabled: visible
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 64
-            }
+        Bloom {
+            target: card
+            amount: root.shown ? 0.22 : 0
+            inset: 48
+            blurMax: 64
         }
 
         ClippingRectangle {

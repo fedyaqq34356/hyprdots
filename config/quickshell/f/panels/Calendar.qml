@@ -146,7 +146,7 @@ Scope {
         exclusiveZone: 0
         color: "transparent"
 
-        readonly property string mono: "JetBrainsMono Nerd Font"
+        readonly property string mono: Fonts.mono
 
         Rectangle {
             anchors.fill: parent
@@ -161,24 +161,28 @@ Scope {
             }
         }
 
+        Bloom { target: card }
+
         Glass {
             id: card
 
             anchors.centerIn: parent
-            width: 460
-            height: 500
+            width: 500
+            height: 552
             radius: Shape.modal
             elevation: 3
+            edge: Colors.accent
             focus: true
 
             opacity: root.shown ? 1 : 0
             scale: root.shown ? 1 : 0.94
             Behavior on opacity { NumberAnimation { duration: Motion.base } }
             Behavior on scale {
-                NumberAnimation {
-                    duration: Motion.slow
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Motion.snap
+                SpringAnimation {
+                    spring: Motion.panelSpring
+                    damping: Motion.panelDamping
+                    mass: Motion.panelMass
+                    epsilon: 0.001
                 }
             }
 
@@ -187,17 +191,41 @@ Scope {
 
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
-                anchors.topMargin: 22
-                width: 400
-                height: 400
+                anchors.topMargin: 26
+                width: 430
+                height: 430
 
                 readonly property real cx: width / 2
                 readonly property real cy: height / 2
-                readonly property real dayRing: 148
-                readonly property real monthRing: 186
+                readonly property real dayRing: 158
+                readonly property real monthRing: 199
 
                 function angleFor(day) {
                     return (day - 1) / root.daysInMonth * 2 * Math.PI - Math.PI / 2;
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: dial.dayRing * 2
+                    height: width
+                    radius: width / 2
+                    color: "transparent"
+                    antialiasing: true
+                    border.width: 1
+                    border.color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                          Colors.fgDim.b, 0.10)
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: dial.monthRing * 2 - 26
+                    height: width
+                    radius: width / 2
+                    color: "transparent"
+                    antialiasing: true
+                    border.width: 1
+                    border.color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                          Colors.fgDim.b, 0.05)
                 }
 
                 Repeater {
@@ -217,6 +245,20 @@ Scope {
                         y: dial.cy + Math.sin(angle) * dial.monthRing - height / 2
                         width: 46
                         height: 18
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            visible: monthMark.current
+                            width: 42
+                            height: 20
+                            radius: Shape.detail
+                            antialiasing: true
+                            color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                           Colors.accent.b, 0.18)
+                            border.width: 1
+                            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                  Colors.accent.b, 0.35)
+                        }
 
                         Text {
                             anchors.centerIn: parent
@@ -267,15 +309,30 @@ Scope {
                         ctx.reset();
                         if (spent.done <= 0)
                             return;
-                        ctx.lineWidth = 2;
+                        const r = dial.dayRing + 20;
+                        const end = -Math.PI / 2 + Math.PI * 2 * spent.done;
+
                         ctx.lineCap = "round";
+
+                        ctx.lineWidth = 6;
                         ctx.strokeStyle = Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                                  Colors.accent.b, 0.30);
+                                                  Colors.accent.b, 0.12);
                         ctx.beginPath();
-                        ctx.arc(dial.cx, dial.cy, dial.dayRing + 18,
-                                -Math.PI / 2,
-                                -Math.PI / 2 + Math.PI * 2 * spent.done);
+                        ctx.arc(dial.cx, dial.cy, r, -Math.PI / 2, end);
                         ctx.stroke();
+
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                  Colors.accent.b, 0.45);
+                        ctx.beginPath();
+                        ctx.arc(dial.cx, dial.cy, r, -Math.PI / 2, end);
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(dial.cx + Math.cos(end) * r,
+                                dial.cy + Math.sin(end) * r, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = Colors.accent;
+                        ctx.fill();
                     }
                 }
 
@@ -315,10 +372,14 @@ Scope {
 
                         Rectangle {
                             anchors.centerIn: parent
-                            width: 3
-                            height: 9 + tick.heat * 15
-                            radius: 1.5
+                            width: tick.today || tick.active ? 4 : 3
+                            height: 10 + tick.heat * 18
+                            radius: 2
                             antialiasing: true
+
+                            Behavior on width {
+                                NumberAnimation { duration: Motion.fast }
+                            }
 
                             color: tick.today ? Colors.accent
                                  : tick.heat > 0 ? Colors.accentAlt
@@ -412,8 +473,9 @@ Scope {
                         text: String(root.focusDay)
                         color: Colors.fg
                         family: Fonts.display
-                        pixelSize: 54
+                        pixelSize: 64
                         weight: Font.Light
+                        rollDuration: 360
                     }
 
                     Text {
@@ -429,17 +491,29 @@ Scope {
                         font.pixelSize: 11
                     }
 
-                    Text {
+                    Rectangle {
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         readonly property int commits: root.commitsForDay(root.focusDay)
 
                         visible: commits > 0
-                        text: I18n.count("plural.commit", commits)
-                        color: Colors.accentAlt
-                        opacity: 0.8
-                        font.family: win.mono
-                        font.pixelSize: 10
+                        width: commitLabel.implicitWidth + 18
+                        height: 20
+                        radius: Shape.detail
+                        antialiasing: true
+                        color: Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
+                                       Colors.accentAlt.b, 0.16)
+
+                        Text {
+                            id: commitLabel
+                            anchors.centerIn: parent
+                            text: I18n.count("plural.commit", parent.commits)
+                            color: Colors.accentAlt
+                            opacity: 0.9
+                            font.family: win.mono
+                            font.pixelSize: 9
+                            font.letterSpacing: 1
+                        }
                     }
                 }
             }
@@ -453,14 +527,26 @@ Scope {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.longDate.toLowerCase()
-                    color: Colors.fgDim
-                    opacity: 0.7
+                    color: Colors.fg
+                    opacity: 0.8
                     font.family: Fonts.display
-                    font.pixelSize: 13
+                    font.pixelSize: 15
                 }
 
-                Row {
+                Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
+                    width: navRow.implicitWidth + 24
+                    height: 52
+                    radius: Shape.field
+                    antialiasing: true
+                    color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.35)
+                    border.width: 1
+                    border.color: Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                          Colors.outline.b, 0.12)
+
+                Row {
+                    id: navRow
+                    anchors.centerIn: parent
                     spacing: 10
 
                     IconButton {
@@ -487,6 +573,7 @@ Scope {
                         tint: Colors.fgDim
                         onActivated: root.step(1)
                     }
+                }
                 }
             }
 

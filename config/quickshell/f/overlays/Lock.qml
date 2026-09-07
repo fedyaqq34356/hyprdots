@@ -20,7 +20,7 @@ Scope {
     readonly property string shot:
         "file://" + Quickshell.env("XDG_RUNTIME_DIR") + "/lock-bg.png"
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     function lock() {
         if (root.locked) return;
@@ -358,23 +358,11 @@ Scope {
                     NumberAnimation { target: nudge; property: "x"; to: 0;   duration: 70 }
                 }
 
-                Rectangle {
-                    z: -2
-                    anchors.centerIn: card
-                    width: card.width - 30
-                    height: card.height - 24
-                    radius: Shape.modal
-                    color: surface.failed ? Colors.bad : Colors.accent
-                    opacity: surface.failed ? 0.34 : (pam.active ? 0.28 : 0.18)
-                    Behavior on color { ColorAnimation { duration: Motion.base } }
-                    Behavior on opacity { NumberAnimation { duration: Motion.slow } }
-
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        blurEnabled: true
-                        blur: 1.0
-                        blurMax: 56
-                    }
+                Bloom {
+                    target: card
+                    tint: surface.failed ? Colors.bad : Colors.accent
+                    amount: surface.failed ? 0.34 : (pam.active ? 0.28 : 0.18)
+                    inset: 28
                 }
 
                 Glass {

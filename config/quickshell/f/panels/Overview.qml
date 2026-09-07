@@ -14,7 +14,7 @@ Scope {
     property int selected: 0
     property string filter: ""
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     readonly property var windows: {
         const all = ToplevelManager.toplevels.values.filter(t => t && t.title !== undefined);

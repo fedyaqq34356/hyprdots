@@ -16,7 +16,7 @@ Item {
                               || face.variant === "pulse"
                               || face.variant === "stack"
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     implicitWidth: loader.implicitWidth
     implicitHeight: loader.implicitHeight

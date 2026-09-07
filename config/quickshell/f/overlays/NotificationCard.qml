@@ -220,7 +220,7 @@ Rectangle {
                 visible: badge.icon === ""
                 text: NotifHistory.appLetter(card.modelData.appName)
                 color: card.appTint
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: Fonts.mono
                 font.pixelSize: 14
                 font.weight: Font.Bold
             }
@@ -250,7 +250,7 @@ Rectangle {
                       : card.modelData.appName
                 color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                Colors.fgDim.b, 0.68)
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: Fonts.mono
                 font.pixelSize: 10
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -367,7 +367,7 @@ Rectangle {
                     anchors.centerIn: parent
                     text: Updates.count > 0 ? Updates.count + I18n.t("notif.packages") : I18n.t("state.checking")
                     color: Colors.accent
-                    font.family: "JetBrainsMono Nerd Font"
+                    font.family: Fonts.mono
                     font.pixelSize: 10
                 }
             }
@@ -379,7 +379,7 @@ Rectangle {
                 color: Colors.fgDim
                 opacity: 0.6
                 elide: Text.ElideRight
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: Fonts.mono
                 font.pixelSize: 9
             }
         }
@@ -396,7 +396,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: Weather.glyph
                 color: Weather.tint
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: Fonts.mono
                 font.pixelSize: 26
             }
 
@@ -404,7 +404,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 text: Math.round(Weather.temp) + "°  " + Weather.text.toLowerCase()
                 color: Colors.fgDim
-                font.family: "JetBrainsMono Nerd Font"
+                font.family: Fonts.mono
                 font.pixelSize: 11
             }
         }

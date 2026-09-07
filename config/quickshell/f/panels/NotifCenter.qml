@@ -13,7 +13,7 @@ Scope {
 
     property bool shown: false
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
     readonly property color tint: Dnd.active ? Colors.fgDim : Colors.accent
 
     property var collapsed: ({})

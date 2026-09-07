@@ -15,7 +15,7 @@ Scope {
     property bool shown: false
     property string tab: "out"
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     function toggle() { root.shown = !root.shown; }
     function close()   { root.shown = false; }
@@ -206,7 +206,7 @@ Scope {
             anchors.fill: parent
             color: "#000000"
             opacity: root.shown ? 0.38 : 0
-            Behavior on opacity { NumberAnimation { duration: 220 } }
+            Behavior on opacity { NumberAnimation { duration: Motion.base } }
 
             MouseArea {
                 anchors.fill: parent
@@ -243,21 +243,10 @@ Scope {
                 }
             }
 
-            Rectangle {
-                z: -2
-                anchors.centerIn: parent
-                width: parent.width - 44
-                height: parent.height - 44
-                radius: Shape.modal
-                color: Colors.accent
-                opacity: 0.20
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    blurEnabled: true
-                    blur: 1.0
-                    blurMax: 56
-                }
+            Bloom {
+                target: card
+                amount: 0.20
+                inset: 44
             }
 
             Item {
@@ -345,7 +334,7 @@ Scope {
                         border.width: 1
                         border.color: root.muted ? root.alpha(Colors.outline, 0.18)
                                                  : root.alpha(Colors.accent, 0.42)
-                        Behavior on color { ColorAnimation { duration: 220 } }
+                        Behavior on color { ColorAnimation { duration: Motion.base } }
 
                         Row {
                             id: muteRow

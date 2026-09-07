@@ -15,7 +15,7 @@ Item {
 
     property var tipHost: null
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
     readonly property int fontSize: BarConfig.s("fontSize")
     readonly property int glyphSize: BarConfig.s("glyphSize")
 
@@ -193,7 +193,7 @@ Item {
                             easing.type: Easing.OutCubic
                         }
                         SequentialAnimation {
-                            PauseAnimation { duration: 140 }
+                            PauseAnimation { duration: Motion.fast }
                             NumberAnimation {
                                 target: trail; property: "opacity"; to: 0
                                 duration: 240
@@ -1039,7 +1039,7 @@ Item {
             anchors.verticalCenter: parent ? parent.verticalCenter : undefined
 
             Behavior on opacity {
-                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: Motion.base; easing.type: Easing.OutCubic }
             }
 
             Tip { text: Outbound.tooltip }

@@ -13,7 +13,7 @@ Scope {
 
     property bool shown: false
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
     readonly property string home: Quickshell.env("HOME")
     readonly property string lister: home + "/.config/hypr/scripts/files-list.sh"
 

@@ -140,7 +140,7 @@ Scope {
                     ParallelAnimation {
                         NumberAnimation { target: dot; property: "width"; from: 6; to: 86; duration: 340; easing.type: Easing.OutCubic }
                         SequentialAnimation {
-                            NumberAnimation { target: dot; property: "opacity"; from: 0; to: 0.7; duration: 90 }
+                            NumberAnimation { target: dot; property: "opacity"; from: 0; to: 0.7; duration: Motion.instant }
                             NumberAnimation { target: dot; property: "opacity"; to: 0; duration: 250 }
                         }
                     }

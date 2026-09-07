@@ -270,7 +270,7 @@ Scope {
                                 visible: !avatar.visible
                                 text: "󰀄"
                                 color: Colors.accent
-                                font.family: "JetBrainsMono Nerd Font"
+                                font.family: Fonts.mono
                                 font.pixelSize: 24
                             }
                         }
@@ -300,7 +300,7 @@ Scope {
                             }
                             color: Colors.fgDim
                             opacity: 0.65
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 11
                         }
                     }
@@ -317,7 +317,7 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         text: Qt.formatDateTime(clock.date, "HH:mm")
                         color: Colors.fg
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 40
                         font.weight: Font.Light
                     }
@@ -450,7 +450,7 @@ Scope {
                                             text: tile.modelData.glyph
                                             color: tile.current ? tile.tint : Colors.fgDim
                                             opacity: tile.current ? 1 : 0.75
-                                            font.family: "JetBrainsMono Nerd Font"
+                                            font.family: Fonts.mono
                                             font.pixelSize: 27
                                             Behavior on color {
                                                 ColorAnimation { duration: Motion.fast }
@@ -487,7 +487,7 @@ Scope {
                                         anchors.centerIn: parent
                                         text: tile.modelData.key
                                         color: tile.current ? Colors.accentText : Colors.fgDim
-                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.family: Fonts.mono
                                         font.pixelSize: 9
                                         font.weight: Font.Bold
                                     }
@@ -523,7 +523,7 @@ Scope {
                                && root.actions[root.selected].danger
                             ? Colors.bad : Colors.fgDim
                         opacity: 0.7
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 11
                         Behavior on color { ColorAnimation { duration: Motion.fast } }
                     }
@@ -550,7 +550,7 @@ Scope {
                                 text: parent.label
                                 color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                                Colors.fgDim.b, 0.65)
-                                font.family: "JetBrainsMono Nerd Font"
+                                font.family: Fonts.mono
                                 font.pixelSize: 9
                             }
                         }

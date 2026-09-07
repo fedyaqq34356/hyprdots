@@ -12,7 +12,7 @@ Scope {
     property bool shown: false
     property int step: 0
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     readonly property var steps: [
         {
