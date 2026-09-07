@@ -8,7 +8,7 @@ Column {
     property string label: ""
     property var options: []
     property string current: ""
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
 
     signal picked(string value)
 

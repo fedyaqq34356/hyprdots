@@ -64,7 +64,7 @@ Scope {
             exclusiveZone: 0
             color: "transparent"
 
-            readonly property string mono: "JetBrainsMono Nerd Font"
+            readonly property string mono: Fonts.mono
 
             Rectangle {
                 id: dim

@@ -8,7 +8,7 @@ Row {
     property var options: []
     property string current: ""
     property color tint: Colors.accent
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
     property bool auto: true
 
     signal picked(string value)

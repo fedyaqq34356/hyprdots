@@ -6,7 +6,7 @@ Column {
 
     property string glyph: ""
     property string title: ""
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
 
     default property alias rows: inner.data
 

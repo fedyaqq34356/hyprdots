@@ -106,23 +106,31 @@ Scope {
             }
         }
 
+        Bloom {
+            target: card
+            tint: Timers.anyRinging ? Colors.bad : Colors.accent
+            amount: Timers.anyRinging ? 0.34 : 0.20
+        }
+
         Glass {
             id: card
 
             anchors.centerIn: parent
-            width: 812
-            height: 560
+            width: 850
+            height: 600
             radius: Shape.modal
             elevation: 3
+            edge: Timers.anyRinging ? Colors.bad : Colors.accent
 
             opacity: root.shown ? 1 : 0
             scale: root.shown ? 1 : 0.95
             Behavior on opacity { NumberAnimation { duration: Motion.base } }
             Behavior on scale {
-                NumberAnimation {
-                    duration: Motion.slow
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Motion.snap
+                SpringAnimation {
+                    spring: Motion.panelSpring
+                    damping: Motion.panelDamping
+                    mass: Motion.panelMass
+                    epsilon: 0.001
                 }
             }
 
@@ -428,8 +436,8 @@ Scope {
 
                                     required property int modelData
 
-                                    width: chipText.implicitWidth + 24
-                                    height: 30
+                                    width: chipText.implicitWidth + 26
+                                    height: 32
                                     radius: Shape.chip
                                     antialiasing: true
                                     color: chipHover.hovered
@@ -740,14 +748,28 @@ Scope {
                                 font.pixelSize: Fonts.smallSize
                             }
 
-                            Text {
+                            Column {
                                 anchors.centerIn: parent
                                 visible: Timers.items.length === 0
-                                text: I18n.t("timer.empty")
-                                color: Colors.fgDim
-                                opacity: 0.3
-                                font.family: root.mono
-                                font.pixelSize: 11
+                                spacing: 10
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "󰔛"
+                                    color: Colors.fgDim
+                                    opacity: 0.18
+                                    font.family: root.mono
+                                    font.pixelSize: 44
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: I18n.t("timer.empty")
+                                    color: Colors.fgDim
+                                    opacity: 0.4
+                                    font.family: root.mono
+                                    font.pixelSize: 11
+                                }
                             }
 
                             ListView {
@@ -766,8 +788,9 @@ Scope {
                                         root.focused && root.focused.id === modelData.id
 
                                     width: ListView.view.width
-                                    height: 40
-                                    radius: Shape.chip
+                                    height: 44
+                                    radius: Shape.field
+                                    antialiasing: true
                                     color: row.isFocus
                                         ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.12)
                                         : (rowHover.hovered

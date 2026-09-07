@@ -8,7 +8,7 @@ Item {
     property var model: []
 
     property color tint: "#ffffff"
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
 
     property string hubGlyph: ""
     property bool hubLive: false

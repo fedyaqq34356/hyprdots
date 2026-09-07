@@ -102,7 +102,7 @@ Item {
             color: gauge.available ? Colors.fg
                                    : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                              Colors.fgDim.b, 0.4)
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: Fonts.mono
             font.pixelSize: gauge.available ? 17 : 11
             font.weight: Font.DemiBold
         }
@@ -111,7 +111,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: gauge.caption
             color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.6)
-            font.family: "JetBrainsMono Nerd Font"
+            font.family: Fonts.mono
             font.pixelSize: 8
             font.weight: Font.Medium
         }

@@ -9,7 +9,7 @@ Rectangle {
     property var entry: null
     property bool wifi: true
     property color tint: "#ffffff"
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
     property bool expanded: false
 
     signal activated()
@@ -57,7 +57,7 @@ Rectangle {
         height: row.active ? parent.height - 18 : 0
         radius: 2
         color: row.tint
-        Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: Motion.base; easing.type: Easing.OutCubic } }
     }
 
     Row {
@@ -264,7 +264,7 @@ Rectangle {
         radius: 1
         color: row.tint
         opacity: 0.6
-        Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: Motion.base; easing.type: Easing.OutCubic } }
     }
 
     TapHandler {

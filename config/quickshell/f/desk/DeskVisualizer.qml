@@ -149,7 +149,7 @@ Item {
                         }
 
                         Behavior on height {
-                            NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: Motion.instant; easing.type: Easing.OutQuad }
                         }
                     }
                 }
@@ -234,7 +234,7 @@ Item {
                                           0.42 - index * 0.09 + Beat.level * 0.25)
 
                     scale: 1 + Beat.bass * (0.06 + index * 0.04)
-                    Behavior on scale { NumberAnimation { duration: 90 } }
+                    Behavior on scale { NumberAnimation { duration: Motion.instant } }
                 }
             }
 
@@ -247,7 +247,7 @@ Item {
                 color: Colors.accent
                 opacity: 0.35 + Beat.level * 0.5
                 scale: 1 + Beat.pulse * 0.18
-                Behavior on scale { NumberAnimation { duration: 90 } }
+                Behavior on scale { NumberAnimation { duration: Motion.instant } }
             }
 
             Rectangle {
@@ -416,7 +416,7 @@ Item {
                         }
 
                         Behavior on height {
-                            NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: Motion.instant; easing.type: Easing.OutQuad }
                         }
                     }
                 }
@@ -466,7 +466,7 @@ Item {
                         }
 
                         Behavior on width {
-                            NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+                            NumberAnimation { duration: Motion.instant; easing.type: Easing.OutQuad }
                         }
                     }
                 }

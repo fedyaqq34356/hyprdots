@@ -183,7 +183,7 @@ Scope {
                                     anchors.centerIn: parent
                                     text: slot.modelData.appId
                                     color: Colors.fgDim
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 10
                                 }
                             }

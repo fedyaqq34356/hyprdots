@@ -52,8 +52,8 @@ Scope {
 
                 scale: hovered && BarConfig.s("hoverGrow") ? 1.04 : 1.0
 
-                Behavior on color { ColorAnimation { duration: 220 } }
-                Behavior on borderColor { ColorAnimation { duration: 220 } }
+                Behavior on color { ColorAnimation { duration: Motion.base } }
+                Behavior on borderColor { ColorAnimation { duration: Motion.base } }
                 Behavior on scale {
                     SpringAnimation {
                         spring: Motion.tapSpring
@@ -381,7 +381,7 @@ Scope {
                     id: bubble
                     visible: opacity > 0.01
                     opacity: tips.current ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: 140 } }
+                    Behavior on opacity { NumberAnimation { duration: Motion.fast } }
 
                     x: Math.max(6, Math.min(tips.width - width - 6,
                                             tips.at.x - width / 2))
@@ -410,7 +410,7 @@ Scope {
                         text: tips.text
                         color: Colors.fgDim
                         horizontalAlignment: Text.AlignHCenter
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 10
                         lineHeight: 1.25
                     }

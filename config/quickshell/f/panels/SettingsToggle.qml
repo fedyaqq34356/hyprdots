@@ -8,7 +8,7 @@ Item {
     property string title: ""
     property string hint: ""
     property bool checked: false
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
 
     signal toggled(bool value)
 

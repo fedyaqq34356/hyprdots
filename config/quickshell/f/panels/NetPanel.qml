@@ -15,7 +15,7 @@ Scope {
     property bool graphMode: true
     property string pendingSsid: ""
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
     readonly property int slotCount: 8
 
     function open(which) {
@@ -202,7 +202,7 @@ Scope {
             anchors.fill: parent
             color: "#000000"
             opacity: root.shown ? 0.38 : 0
-            Behavior on opacity { NumberAnimation { duration: 220 } }
+            Behavior on opacity { NumberAnimation { duration: Motion.base } }
 
             MouseArea {
                 anchors.fill: parent
@@ -239,23 +239,11 @@ Scope {
                 }
             }
 
-            Rectangle {
-                z: -2
-                anchors.centerIn: parent
-                width: parent.width - 44
-                height: parent.height - 44
-                radius: Shape.modal
-                color: root.tint
-                opacity: root.live ? 0.24 : 0.14
-                Behavior on color { ColorAnimation { duration: Motion.slow } }
-                Behavior on opacity { NumberAnimation { duration: Motion.slow } }
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    blurEnabled: true
-                    blur: 1.0
-                    blurMax: 56
-                }
+            Bloom {
+                target: card
+                tint: root.tint
+                amount: root.live ? 0.24 : 0.14
+                inset: 44
             }
 
             Item {
@@ -372,7 +360,7 @@ Scope {
                         border.width: 1
                         border.color: root.radioOn ? root.alpha(root.tint, 0.42)
                                                    : root.alpha(Colors.outline, 0.18)
-                        Behavior on color { ColorAnimation { duration: 220 } }
+                        Behavior on color { ColorAnimation { duration: Motion.base } }
 
                         Row {
                             id: powerRow
@@ -542,7 +530,7 @@ Scope {
                         anchors.margins: 6
                         visible: opacity > 0.01
                         opacity: root.graphMode && root.radioOn ? 1 : 0
-                        Behavior on opacity { NumberAnimation { duration: 220 } }
+                        Behavior on opacity { NumberAnimation { duration: Motion.base } }
 
                         model: root.orbitModel
                         tint: root.tint
@@ -565,7 +553,7 @@ Scope {
                         boundsBehavior: Flickable.StopAtBounds
                         visible: opacity > 0.01
                         opacity: !root.graphMode && root.radioOn ? 1 : 0
-                        Behavior on opacity { NumberAnimation { duration: 220 } }
+                        Behavior on opacity { NumberAnimation { duration: Motion.base } }
 
                         model: root.allEntries
 
@@ -753,7 +741,7 @@ Scope {
                         font.pixelSize: 18
                         font.weight: Font.DemiBold
 
-                        Behavior on opacity { NumberAnimation { duration: 140 } }
+                        Behavior on opacity { NumberAnimation { duration: Motion.fast } }
                     }
 
                     Text {

@@ -1,11 +1,12 @@
 import QtQuick
+import "root:/design"
 
 Row {
     id: root
 
     property string text: ""
     property color color: "white"
-    property string family: "JetBrainsMono Nerd Font"
+    property string family: Fonts.mono
     property int pixelSize: 12
     property int weight: Font.DemiBold
     property int rollDuration: 320

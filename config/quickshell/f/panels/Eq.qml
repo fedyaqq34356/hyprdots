@@ -20,7 +20,7 @@ Scope {
             Equalizer.rescan();
     }
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     HyprlandFocusGrab {
         active: root.shown
@@ -54,23 +54,27 @@ Scope {
             }
         }
 
+        Bloom { target: card }
+
         Glass {
             id: card
 
             anchors.centerIn: parent
-            width: 620
-            height: 372
+            width: 680
+            height: 420
             radius: Shape.modal
             elevation: 3
+            edge: Colors.accent
 
             opacity: root.shown ? 1 : 0
             scale: root.shown ? 1 : 0.95
             Behavior on opacity { NumberAnimation { duration: Motion.base } }
             Behavior on scale {
-                NumberAnimation {
-                    duration: Motion.slow
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Motion.snap
+                SpringAnimation {
+                    spring: Motion.panelSpring
+                    damping: Motion.panelDamping
+                    mass: Motion.panelMass
+                    epsilon: 0.001
                 }
             }
 
@@ -91,15 +95,28 @@ Scope {
 
                     Item { width: parent.width - 260; height: 1 }
 
-                    Text {
+                    Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: Equalizer.available
-                            ? I18n.t("eq." + Equalizer.preset) || Equalizer.preset
-                            : I18n.t("eq.inactive")
-                        color: Equalizer.available ? Colors.accent : Colors.warn
-                        opacity: 0.85
-                        font.family: root.mono
-                        font.pixelSize: 11
+                        width: presetLabel.implicitWidth + 20
+                        height: 24
+                        radius: Shape.detail
+                        antialiasing: true
+                        color: Equalizer.available
+                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+                            : Qt.rgba(Colors.warn.r, Colors.warn.g, Colors.warn.b, 0.16)
+                        Behavior on color { ColorAnimation { duration: Motion.base } }
+
+                        Text {
+                            id: presetLabel
+                            anchors.centerIn: parent
+                            text: Equalizer.available
+                                ? I18n.t("eq." + Equalizer.preset) || Equalizer.preset
+                                : I18n.t("eq.inactive")
+                            color: Equalizer.available ? Colors.accent : Colors.warn
+                            font.family: root.mono
+                            font.pixelSize: 10
+                            font.letterSpacing: 1
+                        }
                     }
                 }
 
@@ -107,7 +124,7 @@ Scope {
                     id: graph
 
                     width: parent.width
-                    height: 190
+                    height: 216
 
                     readonly property real bandStep: width / Equalizer.bands
                     readonly property real mid: height / 2
@@ -115,21 +132,49 @@ Scope {
                     Rectangle {
                         anchors.fill: parent
                         radius: Shape.field
+                        antialiasing: true
                         color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.35)
+                    }
+
+                    Sheen {
+                        anchors.fill: parent
+                        radius: Shape.field
+                        edgeOpacity: 0.12
+                        grainOpacity: 0.02
                     }
 
                     Repeater {
                         model: [-6, 0, 6]
 
-                        Rectangle {
+                        Item {
                             required property int modelData
 
+                            readonly property real line:
+                                graph.mid - modelData / Equalizer.range * (graph.height / 2 - 16)
+
+                            x: 12
+                            y: line
                             width: graph.width - 24
                             height: 1
-                            x: 12
-                            y: graph.mid - modelData / Equalizer.range * (graph.height / 2 - 16)
-                            color: Colors.outline
-                            opacity: modelData === 0 ? 0.35 : 0.15
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: Colors.outline
+                                opacity: parent.modelData === 0 ? 0.35 : 0.15
+                            }
+
+                            Text {
+                                anchors.right: parent.right
+                                anchors.rightMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: parent.modelData === 0
+                                    ? "0"
+                                    : (parent.modelData > 0 ? "+" : "") + parent.modelData
+                                color: Colors.fgDim
+                                opacity: parent.modelData === 0 ? 0.6 : 0.4
+                                font.family: root.mono
+                                font.pixelSize: 9
+                            }
                         }
                     }
 
@@ -235,14 +280,18 @@ Scope {
                             ctx.fill();
                             ctx.restore();
 
-                            ctx.beginPath();
-                            ctx.moveTo(points[0].x, points[0].y);
-                            for (let i = 1; i < points.length; i++)
-                                ctx.lineTo(points[i].x, points[i].y);
-                            ctx.strokeStyle = Colors.accent;
-                            ctx.lineWidth = 2;
-                            ctx.lineJoin = "round";
-                            ctx.stroke();
+                            for (const pass of [{ w: 7, a: 0.16 }, { w: 2, a: 1.0 }]) {
+                                ctx.beginPath();
+                                ctx.moveTo(points[0].x, points[0].y);
+                                for (let i = 1; i < points.length; i++)
+                                    ctx.lineTo(points[i].x, points[i].y);
+                                ctx.strokeStyle = Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                          Colors.accent.b, pass.a);
+                                ctx.lineWidth = pass.w;
+                                ctx.lineJoin = "round";
+                                ctx.lineCap = "round";
+                                ctx.stroke();
+                            }
                         }
                     }
 
@@ -276,6 +325,24 @@ Scope {
                             }
 
                             Rectangle {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                y: band.knobY - height / 2
+                                width: 34
+                                height: width
+                                radius: width / 2
+                                antialiasing: true
+                                color: "transparent"
+                                border.width: 2
+                                border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                      Colors.accent.b, 0.35)
+                                opacity: drag.active ? 1 : 0
+                                scale: drag.active ? 1 : 0.6
+
+                                Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+                                Behavior on scale { Spring {} }
+                            }
+
+                            Rectangle {
                                 id: knob
 
                                 anchors.horizontalCenter: parent.horizontalCenter
@@ -299,15 +366,28 @@ Scope {
                                 }
                             }
 
-                            Text {
+                            Rectangle {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                y: band.knobY - 30
-                                text: (band.gain > 0 ? "+" : "") + band.gain.toFixed(1)
-                                color: Colors.accent
+                                y: band.knobY - 34
+                                width: gainLabel.implicitWidth + 14
+                                height: 18
+                                radius: Shape.detail - 2
+                                antialiasing: true
+                                color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.85)
+                                border.width: 1
+                                border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                      Colors.accent.b, 0.4)
                                 opacity: drag.active || hover.hovered ? 1 : 0
-                                font.family: root.mono
-                                font.pixelSize: 9
                                 Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+
+                                Text {
+                                    id: gainLabel
+                                    anchors.centerIn: parent
+                                    text: (band.gain > 0 ? "+" : "") + band.gain.toFixed(1)
+                                    color: Colors.accent
+                                    font.family: root.mono
+                                    font.pixelSize: 9
+                                }
                             }
 
                             HoverHandler { id: hover }
@@ -380,9 +460,10 @@ Scope {
 
                             readonly property bool active: Equalizer.preset === modelData
 
-                            width: pillText.implicitWidth + 20
-                            height: 26
+                            width: pillText.implicitWidth + 24
+                            height: 30
                             radius: Shape.chip
+                            antialiasing: true
                             color: pill.active
                                 ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.2)
                                 : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.5)
