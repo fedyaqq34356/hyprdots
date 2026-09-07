@@ -103,7 +103,9 @@ SKIP_EXACT = {
 }
 
 # Comments are removed from these; everything else is copied byte for byte.
-CLIKE = {".qml", ".js", ".css", ".rasi", ".qss"}
+# .jsonc — это json, в который waybar разрешает писать // комментарии, и по
+# части комментариев он ведёт себя как C, а не как конфиг с решётками.
+CLIKE = {".qml", ".js", ".jsonc", ".css", ".rasi", ".qss"}
 HASHLIKE = {".conf", ".sh", ".py", ".toml", ".ini", ".yaml", ".yml", ".inc",
             ".profile", ".local"}
 
@@ -269,12 +271,23 @@ def clean(path: Path) -> bytes | None:
     # прочие хвосты: в репозитории им делать нечего.
     if ".bak" in path.name or path.name.endswith("~"):
         return None
+    # Оригиналы тем, отложенные на время «Серёжа мода». Это копии рабочих
+    # файлов под другим именем, и запреты по имени их не ловят: qt6ct.conf
+    # публиковать нельзя, а qt6ct.conf.pre-serezha — то же самое с хвостом.
+    if path.name.endswith(".pre-serezha"):
+        return None
 
     raw = path.read_bytes()
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError:
         return raw
+
+    # Домашний каталог этой машины в публикуемой копии заменяется меткой:
+    # у читателя он другой, а файлы вроде qt6ct и fuzzel абсолютный путь
+    # требуют — тильду они не разворачивают. Обратно метку подставляет
+    # install.sh при установке.
+    text = text.replace(str(HOME), "@HOME@")
 
     if path.suffix in CLIKE:
         stripped = strip_clike(text)

@@ -159,11 +159,23 @@ deploy_tree() {
     done < <(find "$src" -type f -print0)
 }
 
+# Files that need the real home directory rather than a tilde: qt6ct and
+# fuzzel do not expand ~, so the published copies carry an @HOME@ marker that
+# is filled in here.
+expand_home() {
+    local file
+    while IFS= read -r -d '' file; do
+        grep -q '@HOME@' "$file" 2>/dev/null || continue
+        run sed -i "s|@HOME@|$HOME|g" "$file"
+    done < <(find "$HOME/.config/serezha" "$HOME/.local/bin" -type f -print0 2>/dev/null)
+}
+
 deploy_config() {
     log "Deploying the configuration"
     deploy_tree "$SRC_DIR/config" "$HOME/.config"
     deploy_tree "$SRC_DIR/home" "$HOME"
     deploy_tree "$SRC_DIR/bin" "$HOME/.local/bin"
+    expand_home
     ok "files installed (backup: ${BACKUP_DIR/#$HOME/\~})"
 }
 
