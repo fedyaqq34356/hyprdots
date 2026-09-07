@@ -142,6 +142,25 @@ and the lock screen recolour themselves around it.
 <tr>
 <td colspan="2" align="center"><sub>the file manager takes the same palette — <code>Super</code> + <code>E</code></sub></td>
 </tr>
+<tr>
+<td colspan="2" align="center"><sub><b>Serezha mode</b> — the same session with the shell shut down: black, waybar, 532 MB</sub></td>
+</tr>
+<tr>
+<td><img src="assets/serezha-desktop.jpg" alt="The black desktop with waybar"></td>
+<td><img src="assets/serezha-launcher.jpg" alt="fuzzel as the launcher"></td>
+</tr>
+<tr>
+<td align="center"><sub>the desktop — no wallpaper, no rounding, no animation</sub></td>
+<td align="center"><sub>launcher — <code>Super</code> + <code>D</code>, fuzzel instead of the shell</sub></td>
+</tr>
+<tr>
+<td><img src="assets/serezha-menu.jpg" alt="The mode menu, which replaces the settings panel"></td>
+<td><img src="assets/serezha-memory.jpg" alt="Session memory, measured in PSS"></td>
+</tr>
+<tr>
+<td align="center"><sub>mode menu — <code>Super</code> + <code>Shift</code> + <code>P</code>, and the way back</sub></td>
+<td align="center"><sub>the whole session, measured in PSS</sub></td>
+</tr>
 </table>
 
 </div>
