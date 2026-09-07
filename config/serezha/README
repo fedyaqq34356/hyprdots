@@ -1,0 +1,122 @@
+СЕРЁЖА МОД
+==========
+
+Чёрный режим сессии. Включается из настроек Quickshell (Super+Shift+P →
+раздел «режим сессии» → держать кнопку), выключается изнутри режима
+(Super+Shift+P → «обычный режим») или командой:
+
+    serezha-mode off
+
+Перелогин не нужен ни в одну сторону. Переключение — это симлинк
+~/.config/hypr/config/mode.conf плюс hyprctl reload; демоны гасит и
+поднимает сам скрипт, потому что exec-once при reload не выполняются.
+
+ЧТО ПЕРЕСТАЁТ РАБОТАТЬ И ЧЕМ ЗАМЕНЕНО
+-------------------------------------
+
+  бар шелла (Bar.qml)         → waybar: столы, окно, звук, сеть, батарея, часы
+  лаунчер Super+D             → fuzzel
+  калькулятор Super+C         → нет замены; хоткей снят
+  буфер Super+V               → serezha-clip: cliphist в fuzzel --dmenu
+  обзор окон Super+Tab        → нет замены; хоткей снят. Переключение —
+                                Super+1..9 и Super+H/J/K/L
+  выбор обоев Super+W         → нет обоев вообще: фон чёрный средствами
+                                компоситора, awww-daemon не запущен
+  виджеты стола Super+Shift+W → нет замены; хоткей снят
+  док Super+Shift+A           → нет замены; хоткей снят
+  рисование Super+Shift+G     → нет замены; хоткей снят
+  конструктор бара S+Shift+J  → нет: waybar правится файлом config.jsonc
+  эквалайзер Super+Shift+Q    → нет замены; хоткей снят
+  таймер Super+Ctrl+T         → нет замены; хоткей снят
+  кольца системы Super+F1     → нет замены; хоткей снят. Память — пункт
+                                «память» в меню режима (serezha-mem)
+  календарь Super+Shift+D     → нет замены; дата в баре
+  панель звука Super+Shift+M  → serezha-menu audio: выбор выхода списком
+  панель сети Super+N         → nmtui в kitty
+  bluetooth Super+B           → bluetoothctl в kitty
+  медиа-панель Super+A        → нет панели; playerctl на медиа-клавишах
+  центр уведомл. Super+Shift+N→ makoctl restore (вернуть последнее)
+  «не беспокоить» Super+Ctrl+N→ serezha-dnd (режим dnd у mako)
+  локскрин (Lock.qml)         → hyprlock на Super+Shift+L
+  OSD громкости и яркости     → нет; уровень виден в баре
+  настройки шелла S+Shift+P   → serezha-menu + этот config
+  matugen и перекраска        → не работают: перекрашивать нечего
+  экранное время (Wellbeing)  → не считается, пока режим включён
+  идл-таймер шелла (Idle.qml) → нет; экран не гаснет и не блокируется сам
+
+Всё остальное — скриншоты, запись экрана, power-menu, yazi, раскладка,
+переключение столов, движение и размер окон — работает как раньше:
+это не шелл, а Hyprland и скрипты в ~/.config/hypr/scripts.
+
+ПРОЦЕССЫ
+--------
+
+Гасятся всегда:
+  quickshell        шелл целиком
+  shell-watchdog    сторож; без его остановки шелл вернётся через 5 секунд
+  awww-daemon       демон обоев
+  startup-wallpaper.sh, wallpaper-rotate.sh   обои и их ротация с matugen
+  notify-trace.sh, notif-missed.sh            журнал уведомлений для шелла
+  downloads-sort.py раскладка ~/Downloads по inotify
+
+Гасятся по настройке в config:
+  wl-paste ×2       CLIPBOARD=no
+  clipboard-guard   CLIPBOARD=no
+  wl-clip-persist   CLIP_PERSIST=no
+  udiskie           AUTOMOUNT=no
+  xdg-desktop-portal-hyprland  PORTAL=no    (ломает скриншоты)
+  xdg-desktop-portal-gtk       PORTAL_GTK=no (ломает диалог выбора файла)
+
+Остаются всегда:
+  Hyprland          компоситор
+  pipewire, pipewire-pulse, wireplumber   звук
+  mic-lock.sh       держит уровень микрофона; без него он уезжает
+  hyprpolkitagent   запрос пароля при повышении прав; без него графические
+                    приложения не смогут спросить root
+
+Появляются:
+  waybar            бар
+  mako              демон уведомлений
+
+НАСТРОЙКИ
+---------
+
+Файл ~/.config/serezha/config, формат KEY=value. Ключи описаны в самом
+файле. Три способа править:
+
+    serezha-mode edit                  открыть в редакторе
+    serezha-mode set BAR no            один ключ из командной строки
+    $EDITOR ~/.config/serezha/config   руками
+
+После правки: serezha-mode reload
+
+ЗАМЕР ПАМЯТИ
+------------
+
+    serezha-mem          сессия без прикладных программ
+    serezha-mem --all    все процессы пользователя
+
+Считается PSS, а не RSS: сумма RSS считает общие библиотеки столько раз,
+сколько процессов их держит, и завышает результат на сотни мегабайт.
+
+ФАЙЛЫ
+-----
+
+  ~/.config/hypr/config/mode.conf          симлинк — какой режим активен
+  ~/.config/hypr/config/mode-normal.conf   пустой, обычный режим
+  ~/.config/hypr/config/mode-serezha.conf  чёрный режим: вид и хоткеи
+  ~/.config/serezha/config                 настройки режима
+  ~/.config/serezha/waybar/                бар
+  ~/.config/serezha/fuzzel.ini             лаунчер
+  ~/.config/serezha/mako.conf              уведомления
+  ~/.config/serezha/gtk-3.0/, gtk-4.0/     чёрные GTK
+  ~/.config/serezha/qt/                    чёрные qt5ct/qt6ct
+  ~/.local/bin/serezha-mode                переключатель
+  ~/.local/bin/serezha-menu                меню режима
+  ~/.local/bin/serezha-clip                буфер обмена
+  ~/.local/bin/serezha-dnd                 не беспокоить
+  ~/.local/bin/serezha-env                 обёртка запуска приложений
+  ~/.local/bin/serezha-mem                 замер памяти
+
+Оригиналы подменённых тем лежат рядом с суффиксом .pre-serezha и
+возвращаются на место при выключении режима. Ничего не удаляется.

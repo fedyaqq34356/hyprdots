@@ -36,6 +36,19 @@ Singleton {
     property bool ready: false
     property string error: ""
 
+    function glyphFor(code, daylight) {
+        const c = code;
+        if (c === 113) return daylight ? "󰖙" : "󰖔";
+        if (c === 116 || c === 119) return daylight ? "󰖕" : "󰼱";
+        if (c === 122 || c === 143) return "󰖐";
+        if (c >= 176 && c <= 293) return "󰖗";
+        if (c >= 296 && c <= 314) return "󰖖";
+        if (c >= 317 && c <= 377) return "󰖘";
+        if (c >= 386 && c <= 395) return "󰙾";
+        if (c === 248 || c === 260) return "󰖑";
+        return "󰖐";
+    }
+
     readonly property string glyph: {
         const c = root.code;
         if (c === 113) return root.day ? "󰖙" : "󰖔";

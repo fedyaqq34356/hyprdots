@@ -28,6 +28,7 @@ REPO = Path(__file__).resolve().parent.parent
 MANIFEST = [
     (".config/quickshell/f", "config/quickshell/f"),
     (".config/hypr", "config/hypr"),
+    (".config/serezha", "config/serezha"),
     (".config/cava", "config/cava"),
     (".config/kitty", "config/kitty"),
     (".config/matugen", "config/matugen"),
@@ -47,7 +48,32 @@ MANIFEST = [
     (".local/bin/shell-watchdog", "bin/shell-watchdog"),
     (".local/bin/shell-switch", "bin/shell-switch"),
     (".local/bin/qs-solo", "bin/qs-solo"),
+    (".local/bin/serezha-mode", "bin/serezha-mode"),
+    (".local/bin/serezha-menu", "bin/serezha-menu"),
+    (".local/bin/serezha-clip", "bin/serezha-clip"),
+    (".local/bin/serezha-dnd", "bin/serezha-dnd"),
+    (".local/bin/serezha-env", "bin/serezha-env"),
+    (".local/bin/serezha-mem", "bin/serezha-mem"),
 ]
+
+# Имена из SKIP_EXACT, которые по этим путям всё-таки публикуются. Запрет там
+# стоит из-за сгенерированных файлов: ~/.config/gtk-3.0/gtk.css пишет matugen,
+# а «config» — это имя доброй половины машинных файлов. В дереве serezha те же
+# имена носят написанные руками статичные файлы, и без них режим не собрать.
+# Состояние машины, а не конфигурация: в какой режим сессия переключена
+# сейчас. Публиковать нечего — у чужой машины оно своё.
+SKIP_PATHS = {
+    ".config/serezha/state",
+    # Симлинк, которым переключается режим. У чужой машины он свой, и
+    # опубликованная копия сделала бы вид, что режим прибит гвоздями.
+    ".config/hypr/config/mode.conf",
+}
+
+KEEP_PATHS = {
+    ".config/serezha/config",
+    ".config/serezha/gtk-3.0/gtk.css",
+    ".config/serezha/gtk-4.0/gtk.css",
+}
 
 # Never published: machine state, generated palettes, caches, private lists.
 SKIP_NAMES = {
@@ -230,7 +256,14 @@ def tidy(text: str, original: str) -> str:
 
 def clean(path: Path) -> bytes | None:
     """The published form of one file, or None if it should not travel."""
-    if path.name in SKIP_EXACT or path.suffix in SKIP_SUFFIXES:
+    try:
+        rel = str(path.relative_to(HOME))
+    except ValueError:
+        rel = ""
+    if rel in SKIP_PATHS:
+        return None
+    kept = rel in KEEP_PATHS
+    if not kept and (path.name in SKIP_EXACT or path.suffix in SKIP_SUFFIXES):
         return None
     # Рабочие копии «на всякий случай» — .bak, .bak-pre, .bak-netpanel и
     # прочие хвосты: в репозитории им делать нечего.

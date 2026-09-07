@@ -6,6 +6,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell.Wayland
 import "root:/design"
+import "root:/reusables"
 import "root:/services"
 
 Scope {
@@ -18,6 +19,8 @@ Scope {
 
     property var tones: ({})
     property var history: []
+
+    readonly property string mono: "JetBrainsMono Nerd Font"
 
     readonly property string dir: Quickshell.env("HOME") + "/Pictures/Wallpapers"
     readonly property string thumbDir: Quickshell.env("HOME") + "/.cache/wallpaper-thumbs"
@@ -63,6 +66,22 @@ Scope {
 
     function baseName(p) {
         return p.substring(p.lastIndexOf("/") + 1);
+    }
+
+    function prettyName(p) {
+        const b = root.baseName(p);
+        const cut = b.lastIndexOf(".");
+        const stem = cut > 0 ? b.substring(0, cut) : b;
+        return stem.replace(/[-_]+/g, " ");
+    }
+
+    function toneOf(p) {
+        const hex = root.tones[root.baseName(p)];
+        return hex ? hex : "";
+    }
+
+    function thumbFor(path) {
+        return path === "" ? "" : "file://" + root.thumbDir + "/" + root.baseName(path);
     }
 
     function bucket(path) {
@@ -233,8 +252,8 @@ Scope {
         Rectangle {
             anchors.fill: parent
             color: "#000000"
-            opacity: root.shown ? 0.5 : 0
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+            opacity: root.shown ? 0.62 : 0
+            Behavior on opacity { NumberAnimation { duration: Motion.base } }
             MouseArea {
                 anchors.fill: parent
                 onClicked: root.close()
@@ -242,51 +261,102 @@ Scope {
         }
 
         Rectangle {
+            anchors.centerIn: card
+            width: card.width - 48
+            height: card.height - 48
+            radius: Shape.modal
+            color: Colors.accent
+            opacity: root.shown ? 0.22 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+
+            layer.enabled: visible
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: 1.0
+                blurMax: 64
+            }
+        }
+
+        ClippingRectangle {
             id: card
+
             anchors.centerIn: parent
-            width: Math.min(1180, parent.width - 80)
-            height: Math.min(760, parent.height - 80)
-            radius: Shape.card
-            color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.96)
-            border.width: 1
-            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                  Colors.accent.b, 0.30)
-            clip: true
+            width: Math.min(1320, parent.width - 72)
+            height: Math.min(820, parent.height - 72)
+            radius: Shape.modal
+            color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.97)
 
             opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.94
-            Behavior on opacity { NumberAnimation { duration: 190 } }
+            scale: root.shown ? 1 : 0.95
+            Behavior on opacity { NumberAnimation { duration: Motion.base } }
             Behavior on scale {
-                NumberAnimation { duration: 300; easing.type: Easing.OutBack }
+                SpringAnimation {
+                    spring: Motion.panelSpring
+                    damping: Motion.panelDamping
+                    mass: Motion.panelMass
+                    epsilon: 0.001
+                }
             }
 
             Item {
-                anchors.fill: parent
-                opacity: 0.22
+                id: backdrop
 
-                Image {
-                    id: preview
-                    anchors.fill: parent
-                    source: root.focused !== ""
-                        ? "file://" + root.thumbDir + "/" + root.baseName(root.focused)
-                        : ""
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    sourceSize.width: 960
-                    visible: false
-                    onStatusChanged: {
-                        if (status === Image.Error && root.focused !== "")
-                            source = "file://" + root.focused;
-                    }
+                anchors.fill: parent
+
+                property bool onA: true
+                readonly property string want: root.thumbFor(root.focused)
+
+                onWantChanged: {
+                    if (backdrop.want === "")
+                        return;
+                    if (backdrop.onA)
+                        layerB.source = backdrop.want;
+                    else
+                        layerA.source = backdrop.want;
                 }
 
-                MultiEffect {
+                Image {
+                    id: layerA
                     anchors.fill: parent
-                    source: preview
-                    blurEnabled: true
-                    blur: 1.0
-                    blurMax: 64
-                    saturation: 0.2
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: false
+                    sourceSize.width: 1600
+                    opacity: backdrop.onA ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+                    onStatusChanged: if (status === Image.Ready && !backdrop.onA) backdrop.onA = true
+                }
+
+                Image {
+                    id: layerB
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: false
+                    sourceSize.width: 1600
+                    opacity: backdrop.onA ? 0 : 1
+                    Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+                    onStatusChanged: if (status === Image.Ready && backdrop.onA) backdrop.onA = false
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop {
+                        position: 0.0
+                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.97)
+                    }
+                    GradientStop {
+                        position: 0.34
+                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.88)
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.74)
+                    }
                 }
             }
 
@@ -295,96 +365,426 @@ Scope {
                 gradient: Gradient {
                     GradientStop {
                         position: 0.0
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.80)
+                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.32)
                     }
+                    GradientStop { position: 0.5; color: "transparent" }
                     GradientStop {
                         position: 1.0
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.97)
+                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.42)
                     }
                 }
             }
 
-            Column {
+            Sheen {
                 anchors.fill: parent
-                anchors.margins: 22
-                spacing: 14
+                radius: Shape.modal
+                edge: Colors.accent
+                edgeOpacity: 0.28
+                grainOpacity: 0.022
+            }
 
-                Rectangle {
-                    width: parent.width
-                    height: 46
-                    radius: Shape.chip
-                    color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
-                    border.width: 1
-                    border.color: search.activeFocus
-                        ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
-                        : "transparent"
-                    Behavior on border.color { ColorAnimation { duration: 160 } }
+            Item {
+                id: side
+
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.margins: 32
+                width: 372
+
+                Column {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    spacing: 22
 
                     Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: 16
-                        anchors.rightMargin: 12
-                        spacing: 12
+                        width: parent.width
+                        spacing: 10
 
                         Text {
+                            anchors.verticalCenter: parent.verticalCenter
                             text: "󰸉"
                             color: Colors.accent
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: root.mono
                             font.pixelSize: 17
-                            anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        TextInput {
-                            id: search
-                            width: parent.width - 200
+                        Text {
                             anchors.verticalCenter: parent.verticalCenter
+                            text: "wallpapers"
                             color: Colors.fg
-                            font.family: "JetBrainsMono Nerd Font"
-                            font.pixelSize: 14
-                            clip: true
-                            selectByMouse: true
-                            selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                                    Colors.accent.b, 0.35)
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: search.text === ""
-                                text: root.results.length + I18n.t("wall.counting")
-                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                               Colors.fgDim.b, 0.5)
-                                font: search.font
-                            }
-
-                            Keys.onEscapePressed: root.close()
-                            Keys.onLeftPressed: grid.moveCurrentIndexLeft()
-                            Keys.onRightPressed: grid.moveCurrentIndexRight()
-                            Keys.onUpPressed: grid.moveCurrentIndexUp()
-                            Keys.onDownPressed: grid.moveCurrentIndexDown()
-                            Keys.onTabPressed: root.cycleFilter(1)
-                            Keys.onBacktabPressed: root.cycleFilter(-1)
-                            Keys.onReturnPressed: root.apply(root.focused)
-                            Keys.onEnterPressed: root.apply(root.focused)
+                            font.family: Fonts.display
+                            font.pixelSize: Fonts.titleSize
                         }
 
                         Rectangle {
-                            width: 92
-                            height: 28
-                            radius: 9
                             anchors.verticalCenter: parent.verticalCenter
-                            color: shuffleArea.containsMouse
-                                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.22)
-                                : "transparent"
-                            border.width: 1
-                            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                                  Colors.accent.b, 0.35)
-                            Behavior on color { ColorAnimation { duration: 140 } }
+                            width: shownCount.implicitWidth + 16
+                            height: 20
+                            radius: Shape.detail
+                            color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                           Colors.fgDim.b, 0.10)
 
                             Text {
+                                id: shownCount
                                 anchors.centerIn: parent
-                                text: "󰑓 random"
-                                color: Colors.accent
-                                font.family: "JetBrainsMono Nerd Font"
+                                text: root.results.length + " / " + root.files.length
+                                color: Colors.fgDim
+                                opacity: 0.75
+                                font.family: root.mono
                                 font.pixelSize: 10
+                            }
+                        }
+                    }
+
+                    Column {
+                        width: parent.width
+                        spacing: 10
+
+                        Text {
+                            width: parent.width
+                            text: root.focused !== ""
+                                ? root.prettyName(root.focused)
+                                : I18n.t("wall.nothing")
+                            color: Colors.fg
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
+                            font.family: Fonts.display
+                            font.pixelSize: 30
+                            font.weight: Font.DemiBold
+                        }
+
+                        Row {
+                            spacing: 8
+                            visible: root.focused !== ""
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: root.toneOf(root.focused) !== ""
+                                width: 18
+                                height: 18
+                                radius: 9
+                                antialiasing: true
+                                color: root.toneOf(root.focused) !== ""
+                                    ? root.toneOf(root.focused) : "transparent"
+                                border.width: 1
+                                border.color: Qt.rgba(0, 0, 0, 0.35)
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: root.bucket(root.focused) !== ""
+                                width: bucketLabel.implicitWidth + 16
+                                height: 20
+                                radius: Shape.detail
+                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                               Colors.fgDim.b, 0.10)
+
+                                Text {
+                                    id: bucketLabel
+                                    anchors.centerIn: parent
+                                    text: root.bucket(root.focused).toLowerCase()
+                                    color: Colors.fgDim
+                                    opacity: 0.8
+                                    font.family: root.mono
+                                    font.pixelSize: 9
+                                    font.letterSpacing: 1
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: root.focused === root.current
+                                width: liveLabel.implicitWidth + 18
+                                height: 20
+                                radius: Shape.detail
+                                color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                               Colors.accent.b, 0.22)
+
+                                Text {
+                                    id: liveLabel
+                                    anchors.centerIn: parent
+                                    text: "󰄬  on screen"
+                                    color: Colors.accent
+                                    font.family: root.mono
+                                    font.pixelSize: 9
+                                    font.letterSpacing: 1
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 48
+                        radius: Shape.field
+                        color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
+                        border.width: 1
+                        border.color: search.activeFocus
+                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
+                            : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                      Colors.outline.b, 0.16)
+                        Behavior on border.color { ColorAnimation { duration: Motion.fast } }
+
+                        Rectangle {
+                            z: -1
+                            anchors.centerIn: parent
+                            width: parent.width + 10
+                            height: parent.height + 10
+                            radius: parent.radius + 5
+                            color: Colors.accent
+                            opacity: search.activeFocus ? 0.20 : 0
+                            Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                blurEnabled: true
+                                blur: 1.0
+                                blurMax: 36
+                            }
+                        }
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 16
+                            anchors.rightMargin: 16
+                            spacing: 12
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "󰍉"
+                                color: Colors.accent
+                                opacity: search.activeFocus ? 1 : 0.7
+                                font.family: root.mono
+                                font.pixelSize: 16
+                            }
+
+                            TextInput {
+                                id: search
+                                width: parent.width - 44
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: Colors.fg
+                                font.family: root.mono
+                                font.pixelSize: 14
+                                clip: true
+                                selectByMouse: true
+                                selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                        Colors.accent.b, 0.35)
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: search.text === ""
+                                    text: I18n.t("act.search")
+                                    color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                                   Colors.fgDim.b, 0.5)
+                                    font: search.font
+                                }
+
+                                Keys.onEscapePressed: root.close()
+                                Keys.onLeftPressed: grid.moveCurrentIndexLeft()
+                                Keys.onRightPressed: grid.moveCurrentIndexRight()
+                                Keys.onUpPressed: grid.moveCurrentIndexUp()
+                                Keys.onDownPressed: grid.moveCurrentIndexDown()
+                                Keys.onTabPressed: root.cycleFilter(1)
+                                Keys.onBacktabPressed: root.cycleFilter(-1)
+                                Keys.onReturnPressed: root.apply(root.focused)
+                                Keys.onEnterPressed: root.apply(root.focused)
+                            }
+                        }
+                    }
+
+                    Flow {
+                        width: parent.width
+                        spacing: 8
+
+                        Repeater {
+                            model: root.filters
+
+                            Rectangle {
+                                id: pill
+
+                                required property var modelData
+
+                                readonly property bool active: root.filter === modelData.name
+                                readonly property bool tinted: modelData.hex !== ""
+
+                                width: tinted ? 36 : label.implicitWidth + 26
+                                height: 36
+                                radius: Shape.chip
+                                antialiasing: true
+
+                                color: active
+                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                              Colors.accent.b, 0.24)
+                                    : pillArea.containsMouse
+                                        ? Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
+                                                  Colors.bgAlt.b, 0.7)
+                                        : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
+                                                  Colors.bgAlt.b, 0.4)
+                                border.width: 1
+                                border.color: active
+                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                              Colors.accent.b, 0.6)
+                                    : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                              Colors.outline.b, 0.12)
+
+                                Behavior on color { ColorAnimation { duration: Motion.fast } }
+                                Behavior on border.color { ColorAnimation { duration: Motion.fast } }
+
+                                scale: active ? 1.06 : (pillArea.containsMouse ? 1.03 : 1.0)
+                                Behavior on scale {
+                                    SpringAnimation {
+                                        spring: Motion.tapSpring
+                                        damping: Motion.tapDamping
+                                        mass: Motion.tapMass
+                                        epsilon: 0.001
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: pill.tinted
+                                    anchors.centerIn: parent
+                                    width: 16
+                                    height: 16
+                                    radius: 8
+                                    antialiasing: true
+                                    color: pill.modelData.hex
+                                    border.width: 1
+                                    border.color: Qt.rgba(0, 0, 0, 0.35)
+                                }
+
+                                Text {
+                                    id: label
+                                    visible: !pill.tinted
+                                    anchors.centerIn: parent
+                                    text: pill.modelData.name.toLowerCase()
+                                    color: pill.active ? Colors.accent : Colors.fgDim
+                                    font.family: root.mono
+                                    font.pixelSize: 11
+                                }
+
+                                MouseArea {
+                                    id: pillArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Sfx.pick();
+                                        root.filter = pill.modelData.name;
+                                        search.forceActiveFocus();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Column {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    spacing: 14
+
+                    Row {
+                        width: parent.width
+                        spacing: 10
+
+                        Rectangle {
+                            width: parent.width - 130
+                            height: 46
+                            radius: Shape.field
+                            antialiasing: true
+                            opacity: root.focused !== "" ? 1 : 0.4
+
+                            color: applyArea.containsMouse
+                                ? Colors.accent
+                                : Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                          Colors.accent.b, 0.22)
+                            border.width: 1
+                            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                  Colors.accent.b, 0.55)
+                            Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                            scale: applyArea.pressed ? 0.97 : 1
+                            Behavior on scale { NumberAnimation { duration: Motion.fast } }
+
+                            Row {
+                                anchors.centerIn: parent
+                                spacing: 10
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "󰸉"
+                                    color: applyArea.containsMouse
+                                        ? Colors.accentText : Colors.accent
+                                    font.family: root.mono
+                                    font.pixelSize: 15
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: I18n.t("act.open")
+                                    color: applyArea.containsMouse
+                                        ? Colors.accentText : Colors.fg
+                                    font.family: Fonts.display
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
+                                }
+                            }
+
+                            MouseArea {
+                                id: applyArea
+                                anchors.fill: parent
+                                enabled: root.focused !== ""
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    Sfx.fill();
+                                    root.apply(root.focused);
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: 120
+                            height: 46
+                            radius: Shape.field
+                            antialiasing: true
+                            color: shuffleArea.containsMouse
+                                ? Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
+                                          Colors.accentAlt.b, 0.22)
+                                : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
+                                          Colors.bgAlt.b, 0.5)
+                            border.width: 1
+                            border.color: Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
+                                                  Colors.accentAlt.b, 0.35)
+                            Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                            scale: shuffleArea.pressed ? 0.97 : 1
+                            Behavior on scale { NumberAnimation { duration: Motion.fast } }
+
+                            Row {
+                                anchors.centerIn: parent
+                                spacing: 8
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "󰑓"
+                                    color: Colors.accentAlt
+                                    font.family: root.mono
+                                    font.pixelSize: 14
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "random"
+                                    color: Colors.fgDim
+                                    opacity: 0.9
+                                    font.family: root.mono
+                                    font.pixelSize: 11
+                                }
                             }
 
                             MouseArea {
@@ -399,297 +799,222 @@ Scope {
                             }
                         }
                     }
-                }
-
-                Row {
-                    id: filterRow
-                    height: 34
-                    spacing: 8
-
-                    Repeater {
-                        model: root.filters
-
-                        Rectangle {
-                            id: pill
-                            required property var modelData
-
-                            readonly property bool active: root.filter === modelData.name
-                            readonly property bool tinted: modelData.hex !== ""
-
-                            width: tinted ? 34 : label.implicitWidth + 24
-                            height: 34
-                            radius: Shape.chip
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            color: active
-                                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.24)
-                                : pillArea.containsMouse
-                                    ? Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
-                                    : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.30)
-                            border.width: 1
-                            border.color: active
-                                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.6)
-                                : "transparent"
-
-                            scale: active ? 1.05 : (pillArea.containsMouse ? 1.03 : 1.0)
-                            Behavior on scale {
-                                NumberAnimation { duration: 170; easing.type: Easing.OutBack }
-                            }
-                            Behavior on color { ColorAnimation { duration: 140 } }
-
-                            Rectangle {
-                                visible: pill.tinted
-                                anchors.centerIn: parent
-                                width: 15
-                                height: 15
-                                radius: 7.5
-                                color: pill.modelData.hex
-                                border.width: 1
-                                border.color: Qt.rgba(0, 0, 0, 0.35)
-                            }
-
-                            Text {
-                                id: label
-                                visible: !pill.tinted
-                                anchors.centerIn: parent
-                                text: pill.modelData.name
-                                color: pill.active ? Colors.accent : Colors.fgDim
-                                font.family: "JetBrainsMono Nerd Font"
-                                font.pixelSize: 11
-                            }
-
-                            MouseArea {
-                                id: pillArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.filter = pill.modelData.name;
-                                    search.forceActiveFocus();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                GridView {
-                    id: grid
-                    width: parent.width
-                    height: parent.height - 136
-                    clip: true
-                    model: root.results
-                    cellWidth: Math.floor(width / 4)
-                    cellHeight: Math.floor(cellWidth * 0.64)
-                    currentIndex: 0
-                    boundsBehavior: Flickable.StopAtBounds
-                    cacheBuffer: 1200
-                    highlightMoveDuration: 160
-
-                    delegate: Item {
-                        id: cell
-                        required property var modelData
-                        required property int index
-
-                        width: grid.cellWidth
-                        height: grid.cellHeight
-
-                        readonly property bool isCurrent: modelData === root.current
-                        readonly property bool isFocused: index === grid.currentIndex
-
-                        opacity: 0
-                        transform: Scale {
-                            id: cellPop
-                            origin.x: cell.width / 2
-                            origin.y: cell.height / 2
-                            xScale: 0.92
-                            yScale: 0.92
-                        }
-
-                        SequentialAnimation {
-                            running: true
-                            PauseAnimation { duration: Motion.delay(index) }
-                            ParallelAnimation {
-                                NumberAnimation {
-                                    target: cell; property: "opacity"; to: 1
-                                    duration: 260
-                                }
-                                NumberAnimation {
-                                    target: cellPop; property: "xScale"; to: 1
-                                    duration: Motion.slow
-                                    easing.type: Easing.Bezier
-                                    easing.bezierCurve: Motion.snap
-                                }
-                                NumberAnimation {
-                                    target: cellPop; property: "yScale"; to: 1
-                                    duration: Motion.slow
-                                    easing.type: Easing.Bezier
-                                    easing.bezierCurve: Motion.snap
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            z: -1
-                            anchors.centerIn: parent
-                            width: parent.width - 6
-                            height: parent.height - 6
-                            radius: Shape.field + 4
-                            color: Colors.accent
-                            opacity: cell.isCurrent ? 0.34
-                                   : (tileArea.containsMouse ? 0.20 : 0)
-                            Behavior on opacity { NumberAnimation { duration: 220 } }
-
-                            layer.enabled: opacity > 0.01
-                            layer.effect: MultiEffect {
-                                blurEnabled: true
-                                blur: 1.0
-                                blurMax: 32
-                            }
-                        }
-
-                        ClippingRectangle {
-                            id: tile
-                            anchors.fill: parent
-                            anchors.margins: 7
-                            radius: Shape.field
-                            color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
-                                           Colors.bgAlt.b, 0.35)
-                            border.width: cell.isCurrent || cell.isFocused ? 2 : 1
-                            border.color: cell.isCurrent
-                                ? Colors.accent
-                                : (cell.isFocused
-                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                              Colors.accent.b, 0.55)
-                                    : Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                              Colors.outline.b, 0.25))
-
-                            scale: tileArea.containsMouse ? 1.05 : (cell.isFocused ? 1.02 : 1.0)
-                            Behavior on scale {
-                                NumberAnimation { duration: 220; easing.type: Easing.OutBack }
-                            }
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                            Image {
-                                anchors.fill: parent
-                                fillMode: Image.PreserveAspectCrop
-                                asynchronous: true
-                                sourceSize.width: 520
-                                source: "file://" + root.thumbDir + "/"
-                                        + root.baseName(cell.modelData)
-                                onStatusChanged: {
-                                    if (status === Image.Error)
-                                        source = "file://" + cell.modelData;
-                                }
-                            }
-
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.bottom: parent.bottom
-                                height: 30
-                                opacity: tileArea.containsMouse || cell.isFocused ? 1 : 0
-                                Behavior on opacity { NumberAnimation { duration: 160 } }
-
-                                gradient: Gradient {
-                                    GradientStop {
-                                        position: 0.0
-                                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.0)
-                                    }
-                                    GradientStop {
-                                        position: 1.0
-                                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
-                                    }
-                                }
-
-                                Text {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 10
-                                    anchors.rightMargin: 10
-                                    verticalAlignment: Text.AlignBottom
-                                    bottomPadding: 5
-                                    text: root.baseName(cell.modelData)
-                                    color: cell.isCurrent ? Colors.accent : Colors.fg
-                                    font.family: Fonts.display
-                                    font.pixelSize: 10
-                                    elide: Text.ElideMiddle
-                                }
-                            }
-
-                            Rectangle {
-                                visible: cell.isCurrent
-                                anchors.top: parent.top
-                                anchors.right: parent.right
-                                anchors.margins: 8
-                                width: 24
-                                height: 24
-                                radius: width / 2
-                                antialiasing: true
-                                color: Colors.accent
-                                border.width: 2
-                                border.color: Qt.rgba(Colors.bg.r, Colors.bg.g,
-                                                      Colors.bg.b, 0.55)
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "󰄬"
-                                    color: Colors.accentText
-                                    font.family: "JetBrainsMono Nerd Font"
-                                    font.pixelSize: 11
-                                    font.weight: Font.Bold
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            id: tileArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onEntered: grid.currentIndex = cell.index
-                            onClicked: {
-                                Sfx.fill();
-                                root.apply(cell.modelData);
-                            }
-                        }
-                    }
 
                     Text {
-                        anchors.centerIn: parent
-                        visible: root.results.length === 0
-                        text: I18n.t("state.empty")
-                        color: Colors.fgDim
-                        opacity: 0.5
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 13
-                    }
-                }
-
-                Item {
-                    width: parent.width
-                    height: 14
-
-                    Text {
-                        anchors.left: parent.left
-                        text: root.focused !== "" ? root.baseName(root.focused) : ""
-                        color: Colors.fgDim
-                        opacity: 0.45
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 10
-                        elide: Text.ElideMiddle
-                        width: parent.width - 260
-                    }
-
-                    Text {
-                        anchors.right: parent.right
+                        width: parent.width
                         text: I18n.t("wall.keys")
                         color: Colors.fgDim
                         opacity: 0.45
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: root.mono
                         font.pixelSize: 10
                     }
                 }
             }
 
+            GridView {
+                id: grid
+
+                anchors.left: side.right
+                anchors.leftMargin: 26
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                anchors.topMargin: 26
+                anchors.bottomMargin: 26
+                anchors.rightMargin: 26
+
+                clip: true
+                model: root.results
+                cellWidth: Math.floor(width / 3)
+                cellHeight: Math.floor(cellWidth * 0.62)
+                currentIndex: 0
+                boundsBehavior: Flickable.StopAtBounds
+                cacheBuffer: 1400
+                highlightMoveDuration: 160
+
+                delegate: Item {
+                    id: cell
+
+                    required property var modelData
+                    required property int index
+
+                    width: grid.cellWidth
+                    height: grid.cellHeight
+
+                    readonly property bool isCurrent: modelData === root.current
+                    readonly property bool isFocused: index === grid.currentIndex
+
+                    opacity: 0
+                    transform: Scale {
+                        id: cellPop
+                        origin.x: cell.width / 2
+                        origin.y: cell.height / 2
+                        xScale: 0.92
+                        yScale: 0.92
+                    }
+
+                    SequentialAnimation {
+                        running: true
+                        PauseAnimation { duration: Motion.delay(cell.index) }
+                        ParallelAnimation {
+                            NumberAnimation {
+                                target: cell; property: "opacity"; to: 1
+                                duration: Motion.base
+                            }
+                            NumberAnimation {
+                                target: cellPop; property: "xScale"; to: 1
+                                duration: Motion.slow
+                                easing.type: Easing.Bezier
+                                easing.bezierCurve: Motion.snap
+                            }
+                            NumberAnimation {
+                                target: cellPop; property: "yScale"; to: 1
+                                duration: Motion.slow
+                                easing.type: Easing.Bezier
+                                easing.bezierCurve: Motion.snap
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        z: -1
+                        anchors.centerIn: parent
+                        width: parent.width - 8
+                        height: parent.height - 8
+                        radius: Shape.field + 6
+                        color: Colors.accent
+                        opacity: cell.isCurrent ? 0.36
+                               : (cell.isFocused ? 0.28
+                               : (tileArea.containsMouse ? 0.18 : 0))
+                        Behavior on opacity { NumberAnimation { duration: Motion.base } }
+
+                        layer.enabled: opacity > 0.01
+                        layer.effect: MultiEffect {
+                            blurEnabled: true
+                            blur: 1.0
+                            blurMax: 34
+                        }
+                    }
+
+                    ClippingRectangle {
+                        id: tile
+
+                        anchors.fill: parent
+                        anchors.margins: 9
+                        radius: Shape.field + 2
+                        color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.35)
+                        border.width: cell.isCurrent || cell.isFocused ? 2 : 1
+                        border.color: cell.isCurrent
+                            ? Colors.accent
+                            : (cell.isFocused
+                                ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                          Colors.accent.b, 0.6)
+                                : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                          Colors.outline.b, 0.22))
+
+                        scale: tileArea.containsMouse ? 1.05 : (cell.isFocused ? 1.02 : 1.0)
+                        Behavior on scale {
+                            SpringAnimation {
+                                spring: Motion.tapSpring
+                                damping: Motion.tapDamping
+                                mass: Motion.tapMass
+                                epsilon: 0.001
+                            }
+                        }
+                        Behavior on border.color { ColorAnimation { duration: Motion.fast } }
+
+                        Image {
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            sourceSize.width: 560
+                            source: root.thumbFor(cell.modelData)
+                            onStatusChanged: {
+                                if (status === Image.Error)
+                                    source = "file://" + cell.modelData;
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: 34
+                            opacity: tileArea.containsMouse || cell.isFocused ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+
+                            gradient: Gradient {
+                                GradientStop {
+                                    position: 0.0
+                                    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.0)
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
+                                }
+                            }
+
+                            Text {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                verticalAlignment: Text.AlignBottom
+                                bottomPadding: 7
+                                text: root.prettyName(cell.modelData)
+                                color: cell.isCurrent ? Colors.accent : Colors.fg
+                                font.family: Fonts.display
+                                font.pixelSize: 11
+                                elide: Text.ElideMiddle
+                            }
+                        }
+
+                        Rectangle {
+                            visible: cell.isCurrent
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.margins: 9
+                            width: 26
+                            height: 26
+                            radius: width / 2
+                            antialiasing: true
+                            color: Colors.accent
+                            border.width: 2
+                            border.color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.55)
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰄬"
+                                color: Colors.accentText
+                                font.family: root.mono
+                                font.pixelSize: 12
+                                font.weight: Font.Bold
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: tileArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: grid.currentIndex = cell.index
+                        onClicked: {
+                            Sfx.fill();
+                            root.apply(cell.modelData);
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: root.results.length === 0
+                    text: I18n.t("state.empty")
+                    color: Colors.fgDim
+                    opacity: 0.5
+                    font.family: root.mono
+                    font.pixelSize: 13
+                }
+            }
         }
     }
 }

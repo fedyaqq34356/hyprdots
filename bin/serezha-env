@@ -1,0 +1,13 @@
+#!/bin/sh
+
+QT_STYLE_OVERRIDE=Fusion
+export QT_STYLE_OVERRIDE
+
+GTK_THEME=adw-gtk3-dark
+export GTK_THEME
+
+XCURSOR_THEME=Adwaita
+HYPRCURSOR_THEME=Adwaita
+export XCURSOR_THEME HYPRCURSOR_THEME
+
+exec "$@"

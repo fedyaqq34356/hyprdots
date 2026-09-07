@@ -27,6 +27,8 @@ Singleton {
     readonly property bool wellbeingEnabled: adapter.wellbeingEnabled
     readonly property bool polkitEnabled: adapter.polkitEnabled
     readonly property bool dockEnabled: adapter.dockEnabled
+    readonly property bool serezhaMode: adapter.serezhaMode
+
     readonly property bool guideSeen: adapter.guideSeen
     readonly property bool greetingEnabled: adapter.greetingEnabled
     readonly property bool idleEnabled: adapter.idleEnabled
@@ -94,6 +96,8 @@ Singleton {
             property bool wellbeingEnabled: true
             property bool polkitEnabled: true
             property bool dockEnabled: true
+
+            property bool serezhaMode: false
 
             property bool guideSeen: false
             property bool greetingEnabled: true

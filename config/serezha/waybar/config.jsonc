@@ -1,0 +1,79 @@
+// Waybar «Серёжа мода». Одна сплошная линия сверху, белым по чёрному.
+//
+// Шесть модулей и ни одного, который не отвечает на вопрос. Всё, что можно
+// сделать событийным, сделано событийным: hyprland/* и wireplumber слушают
+// сокеты и не опрашивают ничего. Оставшиеся три опроса — раз в минуту.
+{
+    "layer": "top",
+    "position": "top",
+    "height": 22,
+    "spacing": 0,
+    "margin": "0",
+    "reload_style_on_change": false,
+
+    "modules-left":   ["hyprland/workspaces", "hyprland/window"],
+    "modules-center": [],
+    "modules-right":  ["wireplumber", "network", "battery", "clock"],
+
+    // Событийный: слушает сокет Hyprland, таймера нет.
+    "hyprland/workspaces": {
+        "format": "{name}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "active-only": false,
+        "sort-by-number": true,
+        "disable-scroll": true
+    },
+
+    // Тоже событийный. Заголовок обрезается, а не растягивает бар.
+    "hyprland/window": {
+        "format": "{title}",
+        "max-length": 90,
+        "separate-outputs": true,
+        "rewrite": {
+            "": ""
+        }
+    },
+
+    // Событийный: pipewire шлёт уведомления сам.
+    "wireplumber": {
+        "format": "vol {volume}",
+        "format-muted": "vol --",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "/home/f/.local/bin/serezha-menu audio",
+        "max-volume": 100,
+        "tooltip": false
+    },
+
+    // 60 секунд. Смена сети приходит и так — модуль слушает netlink,
+    // интервал нужен только для цифры сигнала.
+    "network": {
+        "interval": 60,
+        "format-wifi": "{essid}",
+        "format-ethernet": "eth",
+        "format-linked": "no ip",
+        "format-disconnected": "net --",
+        "max-length": 18,
+        "on-click": "kitty --class serezha-tui -e nmtui",
+        "tooltip": false
+    },
+
+    // 60 секунд: заряд ноутбука за минуту не меняется на величину,
+    // которую стоит показывать.
+    "battery": {
+        "interval": 60,
+        "states": { "warning": 20, "critical": 10 },
+        "format": "bat {capacity}",
+        "format-charging": "bat {capacity}+",
+        "format-plugged": "bat {capacity}=",
+        "tooltip": false
+    },
+
+    // 60 секунд, без секунд на циферблате: секунды — единственная причина,
+    // по которой бар просыпался бы 60 раз в минуту.
+    "clock": {
+        "interval": 60,
+        "format": "{:%a %d.%m  %H:%M}",
+        "tooltip": false
+    }
+}

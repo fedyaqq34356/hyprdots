@@ -239,6 +239,25 @@ Scope {
                 }
             }
 
+            Rectangle {
+                z: -2
+                anchors.centerIn: parent
+                width: parent.width - 44
+                height: parent.height - 44
+                radius: Shape.modal
+                color: root.tint
+                opacity: root.live ? 0.24 : 0.14
+                Behavior on color { ColorAnimation { duration: Motion.slow } }
+                Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    blurEnabled: true
+                    blur: 1.0
+                    blurMax: 56
+                }
+            }
+
             Item {
                 anchors.fill: parent
                 z: -1
@@ -253,7 +272,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: Shape.card
+                    radius: Shape.modal
                     color: Colors.bg
                 }
             }
@@ -262,7 +281,7 @@ Scope {
                 id: card
                 width: 640
                 height: header.height + stage.height + caption.height + footer.height + 56
-                radius: Shape.card
+                radius: Shape.modal
 
                 gradient: Gradient {
                     GradientStop { position: 0.0
@@ -277,7 +296,7 @@ Scope {
 
                 Sheen {
                     anchors.fill: parent
-                    radius: Shape.card
+                    radius: Shape.modal
                     edge: root.tint
                     edgeOpacity: 0.26
                 }
@@ -345,8 +364,9 @@ Scope {
                     Rectangle {
                         id: powerChip
                         width: powerRow.implicitWidth + 26
-                        height: 36
-                        radius: Shape.chip
+                        height: 38
+                        radius: Shape.field
+                        antialiasing: true
                         color: root.radioOn ? root.alpha(root.tint, 0.18)
                                             : root.alpha(Colors.bgAlt, 0.7)
                         border.width: 1
@@ -394,7 +414,12 @@ Scope {
                                     x: root.radioOn ? parent.width - width - 3 : 3
                                     color: root.radioOn ? Colors.fg : Colors.fgDim
                                     Behavior on x {
-                                        NumberAnimation { duration: 220; easing.type: Easing.OutBack }
+                                        SpringAnimation {
+                                            spring: Motion.tapSpring
+                                            damping: Motion.tapDamping
+                                            mass: Motion.tapMass
+                                            epsilon: 0.001
+                                        }
                                     }
                                 }
                             }
@@ -406,6 +431,48 @@ Scope {
                             onClicked: {
                                 if (root.wifiTab) Network.toggleRadio();
                                 else Bt.togglePower();
+                            }
+                        }
+                    }
+
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 14
+
+                        opacity: root.wifiTab && Network.connected ? 1 : 0
+                        visible: opacity > 0.01
+                        Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+
+                        Repeater {
+                            model: [
+                                { glyph: "󰇚", value: Network.rxRate, tint: root.tint },
+                                { glyph: "󰕒", value: Network.txRate, tint: Colors.accentAlt }
+                            ]
+
+                            Row {
+                                id: rate
+
+                                required property var modelData
+                                spacing: 6
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: rate.modelData.glyph
+                                    color: rate.modelData.tint
+                                    opacity: 0.9
+                                    font.family: root.mono
+                                    font.pixelSize: 12
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: Network.human(rate.modelData.value)
+                                    color: Colors.fg
+                                    opacity: 0.85
+                                    font.family: root.mono
+                                    font.pixelSize: 12
+                                }
                             }
                         }
                     }
@@ -449,6 +516,25 @@ Scope {
                     clip: true
 
                     Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        visible: root.graphMode && root.radioOn
+                        width: Math.min(parent.width, parent.height) * 0.6
+                        height: width
+                        radius: width / 2
+                        color: root.tint
+                        opacity: root.live ? 0.20 : 0.10
+                        Behavior on color { ColorAnimation { duration: Motion.slow } }
+                        Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            blurEnabled: true
+                            blur: 1.0
+                            blurMax: 64
+                        }
+                    }
 
                     OrbitGraph {
                         id: constellation
@@ -663,8 +749,8 @@ Scope {
                         text: root.focusTitle
                         color: Colors.fg
                         elide: Text.ElideRight
-                        font.family: root.mono
-                        font.pixelSize: 15
+                        font.family: Fonts.display
+                        font.pixelSize: 18
                         font.weight: Font.DemiBold
 
                         Behavior on opacity { NumberAnimation { duration: 140 } }
@@ -695,7 +781,7 @@ Scope {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 260
                         height: 40
-                        radius: Shape.chip
+                        radius: Shape.field
                         color: root.alpha(Colors.bgAlt, 0.55)
                         border.width: 1
                         border.color: root.alpha(Colors.outline, 0.14)
@@ -705,12 +791,19 @@ Scope {
                             height: parent.height - 8
                             y: 4
                             x: root.wifiTab ? 4 : parent.width - width - 4
-                            radius: Shape.chip
+                            radius: Shape.field - 2
+                            antialiasing: true
                             color: root.alpha(root.tint, 0.24)
                             border.width: 1
                             border.color: root.alpha(root.tint, 0.42)
+
                             Behavior on x {
-                                NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 0.7 }
+                                SpringAnimation {
+                                    spring: Motion.tapSpring
+                                    damping: Motion.tapDamping
+                                    mass: Motion.tapMass
+                                    epsilon: 0.001
+                                }
                             }
                         }
 

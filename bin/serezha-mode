@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+
+set -u
+
+PATH="$HOME/.local/bin:$PATH"
+export PATH
+
+CFG_DIR="$HOME/.config/serezha"
+CFG="$CFG_DIR/config"
+STATE="$CFG_DIR/state"
+HYPR="$HOME/.config/hypr"
+HYPR_MAIN="$HYPR/hyprland.conf"
+MODE_LINK="$HYPR/config/mode.conf"
+SOURCE_LINE='source = ~/.config/hypr/config/mode.conf'
+
+THEME_SWAPS=(
+    "$HOME/.config/gtk-3.0/gtk.css|$CFG_DIR/gtk-3.0/gtk.css"
+    "$HOME/.config/gtk-3.0/settings.ini|$CFG_DIR/gtk-3.0/settings.ini"
+    "$HOME/.config/gtk-4.0/gtk.css|$CFG_DIR/gtk-4.0/gtk.css"
+    "$HOME/.config/gtk-4.0/settings.ini|$CFG_DIR/gtk-4.0/settings.ini"
+    "$HOME/.config/qt6ct/qt6ct.conf|$CFG_DIR/qt/qtNct.conf"
+    "$HOME/.config/qt5ct/qt5ct.conf|$CFG_DIR/qt/qtNct.conf"
+)
+
+KILL_ALWAYS=(
+    "quickshell"
+    "shell-watchdog"
+    "awww-daemon"
+    "startup-wallpaper.sh"
+    "wallpaper-rotate.sh"
+    "notify-trace.sh"
+    "notif-missed.sh"
+    "downloads-sort.py"
+)
+
+msg()  { printf '%s\n' "$*" >&2; }
+die()  { msg "serezha-mode: $*"; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+load_config() {
+    BAR=yes; BAR_POSITION=top; BAR_HEIGHT=22
+    NOTIFY=yes; CLIPBOARD=yes; CLIP_PERSIST=yes; AUTOMOUNT=yes
+    PORTAL=yes; PORTAL_GTK=yes; BRIGHTNESS=""
+    EDITOR_CMD=nvim; TERMINAL=kitty
+    [[ -r "$CFG" ]] && source "$CFG"
+}
+
+current_mode() {
+    [[ -r "$STATE" ]] && cat "$STATE" || echo off
+}
+
+ensure_source_line() {
+    [[ -f "$HYPR_MAIN" ]] || die "нет $HYPR_MAIN"
+    grep -qxF "$SOURCE_LINE" "$HYPR_MAIN" && return 0
+    {
+        printf '\n# Режим сессии. Симлинк переставляет ~/.local/bin/serezha-mode:\n'
+        printf '# mode-normal.conf (пустой) или mode-serezha.conf (чёрный режим).\n'
+        printf '# Подключается последним намеренно: у Hyprland побеждает последнее\n'
+        printf '# присвоение, поэтому режим перекрывает всё выше, ничего не удаляя.\n'
+        printf '%s\n' "$SOURCE_LINE"
+    } >>"$HYPR_MAIN"
+    msg "в hyprland.conf добавлена строка подключения mode.conf"
+}
+
+point_mode() {
+    local target="$HYPR/config/mode-$1.conf"
+    [[ -f "$target" ]] || die "нет $target"
+    ln -sfn "$target" "$MODE_LINK"
+}
+
+swap_themes_in() {
+    local pair target repl
+    for pair in "${THEME_SWAPS[@]}"; do
+        target="${pair%%|*}"; repl="${pair##*|}"
+        [[ -f "$repl" ]] || continue
+        [[ -d "$(dirname "$target")" ]] || continue
+        if [[ ! -e "$target.pre-serezha" && -e "$target" ]]; then
+            mv -f "$target" "$target.pre-serezha"
+        fi
+        cp -f "$repl" "$target"
+    done
+}
+
+swap_themes_out() {
+    local pair target
+    for pair in "${THEME_SWAPS[@]}"; do
+        target="${pair%%|*}"
+        [[ -e "$target.pre-serezha" ]] || continue
+        mv -f "$target.pre-serezha" "$target"
+    done
+}
+
+stop_proc() {
+    pkill -x "$1" >/dev/null 2>&1
+    case "$1" in
+        *.sh|*.py|shell-watchdog) pkill -f "$1" >/dev/null 2>&1 ;;
+    esac
+    return 0
+}
+
+start_once() {
+    local needle="$1"; shift
+    [[ -x "$1" ]] || have "$1" || return 0
+
+    case "$needle" in
+        *.sh|*.py|shell-*) pgrep -f "$needle" >/dev/null && return 0 ;;
+        *)                 pgrep -x "$needle" >/dev/null && return 0 ;;
+    esac
+
+    setsid -f "$@" >/dev/null 2>&1
+}
+
+start_bar() {
+    [[ "$BAR" == yes ]] || return 0
+    have waybar || { msg "waybar не установлен"; return 0; }
+    pgrep -x waybar >/dev/null && return 0
+
+    local src="$CFG_DIR/waybar/config.jsonc"
+    local gen="${XDG_RUNTIME_DIR:-/tmp}/serezha-waybar.jsonc"
+    if sed -e "s|\"position\": *\"[^\"]*\"|\"position\": \"$BAR_POSITION\"|" \
+           -e "s|\"height\": *[0-9]*|\"height\": $BAR_HEIGHT|" \
+           "$src" >"$gen" 2>/dev/null; then
+        src="$gen"
+    fi
+
+    setsid -f waybar \
+        -c "$src" \
+        -s "$CFG_DIR/waybar/style.css" \
+        -b main >/dev/null 2>&1
+}
+
+start_notify() {
+    [[ "$NOTIFY" == yes ]] || return 0
+    pgrep -x mako >/dev/null && return 0
+    if have mako; then
+        setsid -f mako --config "$CFG_DIR/mako.conf" >/dev/null 2>&1
+    elif have dunst; then
+        msg "mako нет, поднимаю dunst"
+        setsid -f dunst >/dev/null 2>&1
+    fi
+}
+
+mode_on() {
+    load_config
+    ensure_source_line
+
+    stop_proc shell-watchdog
+    local p
+    for p in "${KILL_ALWAYS[@]}"; do stop_proc "$p"; done
+    pkill -x qs >/dev/null 2>&1
+
+    [[ "$CLIPBOARD" == yes ]] || { stop_proc "wl-paste"; stop_proc "clipboard-guard.sh"; }
+    [[ "$CLIP_PERSIST" == yes ]] || stop_proc wl-clip-persist
+    [[ "$AUTOMOUNT"   == yes ]] || stop_proc udiskie
+    [[ "$PORTAL"      == yes ]] || stop_proc xdg-desktop-portal-hyprland
+    [[ "$PORTAL_GTK"  == yes ]] || stop_proc xdg-desktop-portal-gtk
+
+    swap_themes_in
+    point_mode serezha
+    echo on >"$STATE"
+
+    if have hyprctl && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+        hyprctl reload >/dev/null 2>&1
+        hyprctl setcursor Adwaita 24 >/dev/null 2>&1
+    fi
+
+    [[ -n "$BRIGHTNESS" ]] && have brightnessctl &&
+        brightnessctl -c backlight set "${BRIGHTNESS}%" >/dev/null 2>&1
+
+    start_notify
+    start_bar
+
+    msg "серёжа мод включён. назад: serezha-mode off (или Super+Shift+P)"
+}
+
+mode_off() {
+    load_config
+
+    stop_proc waybar
+    stop_proc mako
+
+    swap_themes_out
+    point_mode normal
+    echo off >"$STATE"
+
+    if have hyprctl && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+        hyprctl reload >/dev/null 2>&1
+        hyprctl setcursor Matugen-Cursor 24 >/dev/null 2>&1
+    fi
+
+    local s="$HYPR/scripts"
+
+    if have awww-daemon; then
+        start_once awww-daemon awww-daemon
+        local sock="${XDG_RUNTIME_DIR:-/run/user/$UID}/${WAYLAND_DISPLAY:-wayland-1}-awww-daemon.sock"
+        local i
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            [[ -S "$sock" ]] && break
+            sleep 0.2
+        done
+    fi
+    start_once startup-wallpaper.sh "$s/startup-wallpaper.sh"
+    start_once wallpaper-rotate.sh  "$s/wallpaper-rotate.sh"
+    start_once notify-trace.sh      "$s/notify-trace.sh"
+    start_once notif-missed.sh      "$s/notif-missed.sh"
+    start_once clipboard-guard.sh   "$s/clipboard-guard.sh"
+    start_once mic-lock.sh          "$s/mic-lock.sh"
+    start_once downloads-sort.py    "$s/downloads-sort.py"
+
+    pgrep -x udiskie >/dev/null || { have udiskie &&
+        setsid -f udiskie --no-tray --automount --notify >/dev/null 2>&1; }
+
+    if ! pgrep -f "wl-paste --type text" >/dev/null; then
+        setsid -f wl-paste --type text --watch \
+            "$s/cliphist-store.sh" >/dev/null 2>&1
+    fi
+    if ! pgrep -f "wl-paste --type image" >/dev/null; then
+        setsid -f wl-paste --type image --watch \
+            cliphist -max-items 150 store >/dev/null 2>&1
+    fi
+    pgrep -x wl-clip-persist >/dev/null || { have wl-clip-persist &&
+        setsid -f wl-clip-persist --clipboard regular >/dev/null 2>&1; }
+
+    [[ -x "$HOME/.local/bin/shell-autostart" ]] &&
+        setsid -f "$HOME/.local/bin/shell-autostart" >/dev/null 2>&1
+
+    msg "обычный режим вернулся"
+}
+
+mode_status() {
+    load_config
+    local m; m=$(current_mode)
+    printf 'режим:      %s\n' "$m"
+    printf 'mode.conf:  %s\n' "$(readlink -f "$MODE_LINK" 2>/dev/null || echo '—')"
+    printf 'quickshell: %s\n' "$(pgrep -x quickshell >/dev/null && echo да || echo нет)"
+    printf 'waybar:     %s\n' "$(pgrep -x waybar     >/dev/null && echo да || echo нет)"
+    printf 'mako:       %s\n' "$(pgrep -x mako       >/dev/null && echo да || echo нет)"
+}
+
+mode_set() {
+    local key="$1" val="${2-}"
+    [[ -n "$key" ]] || die "нужен ключ: serezha-mode set КЛЮЧ ЗНАЧЕНИЕ"
+    grep -q "^${key}=" "$CFG" 2>/dev/null ||
+        die "нет такого ключа: $key (см. $CFG)"
+    sed -i "s|^${key}=.*|${key}=${val}|" "$CFG"
+    msg "${key}=${val}"
+}
+
+mode_reload() {
+    load_config
+    [[ "$(current_mode)" == on ]] || die "не в чёрном режиме, перезапускать нечего"
+    stop_proc waybar
+    stop_proc mako
+    have hyprctl && hyprctl reload >/dev/null 2>&1
+    start_notify
+    start_bar
+    msg "перечитано"
+}
+
+case "${1-status}" in
+    on)     mode_on ;;
+    off)    mode_off ;;
+    toggle) if [[ "$(current_mode)" == on ]]; then mode_off; else mode_on; fi ;;
+    status) mode_status ;;
+    reload) mode_reload ;;
+    set)    shift; mode_set "${1-}" "${2-}" ;;
+    edit)   load_config; exec "$TERMINAL" -e "$EDITOR_CMD" "$CFG" ;;
+    *)      die "on | off | toggle | status | reload | set КЛЮЧ ЗНАЧЕНИЕ | edit" ;;
+esac

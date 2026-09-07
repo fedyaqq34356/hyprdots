@@ -206,6 +206,19 @@ Scope {
         return scored.map(s => s.entry).slice(0, 40);
     }
 
+    readonly property var favourites: {
+        if (root.calcMode || root.runMode)
+            return [];
+        const all = DesktopEntries.applications.values.filter(e => !e.noDisplay);
+        return all.slice()
+            .sort((a, b) => root.useCount(b) - root.useCount(a))
+            .filter(e => root.useCount(e) > 0)
+            .slice(0, 6);
+    }
+
+    readonly property bool showFavourites:
+        search.text === "" && root.favourites.length > 2
+
     function launch(entry) {
         if (!entry) return;
         Sfx.tapAlt();
@@ -251,14 +264,12 @@ Scope {
             }
         }
 
-        Rectangle {
+        Item {
             id: card
             anchors.horizontalCenter: parent.horizontalCenter
-            y: parent.height * 0.16
-            width: 620
-            height: 460
-            radius: Shape.card
-            color: "transparent"
+            y: parent.height * 0.15
+            width: 660
+            height: 500
 
             opacity: root.shown ? 1 : 0
             scale: root.shown ? 1 : 0.94
@@ -282,10 +293,27 @@ Scope {
                 }
             }
 
+            Rectangle {
+                z: -2
+                anchors.centerIn: parent
+                width: parent.width - 40
+                height: parent.height - 40
+                radius: Shape.modal
+                color: Colors.accent
+                opacity: 0.22
+
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    blurEnabled: true
+                    blur: 1.0
+                    blurMax: 56
+                }
+            }
+
             Glass {
                 z: -1
                 anchors.fill: parent
-                radius: Shape.card
+                radius: Shape.modal
                 elevation: 3
                 tint: Colors.bg
                 tintOpacity: 0.90
@@ -299,13 +327,14 @@ Scope {
 
                 Rectangle {
                     width: parent.width
-                    height: 46
-                    radius: Shape.chip
+                    height: 50
+                    radius: Shape.field
                     color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
                     border.width: 1
                     border.color: search.activeFocus
                         ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
-                        : "transparent"
+                        : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                  Colors.outline.b, 0.14)
                     Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
                     Rectangle {
@@ -351,7 +380,7 @@ Scope {
 
                         TextInput {
                             id: search
-                            width: parent.width - 50
+                            width: parent.width - 130
                             anchors.verticalCenter: parent.verticalCenter
                             color: Colors.fg
                             font.family: "JetBrainsMono Nerd Font"
@@ -377,6 +406,32 @@ Scope {
                             Keys.onUpPressed: if (!root.calcMode) list.decrementCurrentIndex()
                             Keys.onReturnPressed: root.accept()
                             Keys.onEnterPressed: root.accept()
+                        }
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: modeLabel.implicitWidth + 18
+                            height: 22
+                            radius: Shape.detail
+                            antialiasing: true
+                            color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                           Colors.accent.b,
+                                           root.calcMode || root.runMode ? 0.20 : 0.08)
+                            Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                            Text {
+                                id: modeLabel
+                                anchors.centerIn: parent
+                                text: root.runMode ? I18n.t("launcher.keyRun")
+                                    : root.calcMode ? I18n.t("launcher.keyCalc")
+                                    : I18n.t("act.open")
+                                color: root.calcMode || root.runMode
+                                    ? Colors.accent : Colors.fgDim
+                                opacity: root.calcMode || root.runMode ? 1 : 0.7
+                                font.family: "JetBrainsMono Nerd Font"
+                                font.pixelSize: 9
+                                font.letterSpacing: 1
+                            }
                         }
                     }
                 }
@@ -568,10 +623,91 @@ Scope {
                     }
                 }
 
+                Item {
+                    id: quick
+
+                    width: parent.width
+                    height: root.showFavourites ? 66 : 0
+                    visible: height > 1
+                    clip: true
+
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: Motion.base
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Motion.decel
+                        }
+                    }
+
+                    Row {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 10
+
+                        Repeater {
+                            model: root.favourites
+
+                            Rectangle {
+                                id: fav
+
+                                required property var modelData
+                                required property int index
+
+                                width: 58
+                                height: 58
+                                radius: Shape.field
+                                antialiasing: true
+
+                                color: favArea.containsMouse
+                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                              Colors.accent.b, 0.20)
+                                    : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
+                                              Colors.bgAlt.b, 0.45)
+                                border.width: 1
+                                border.color: favArea.containsMouse
+                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                              Colors.accent.b, 0.45)
+                                    : Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                              Colors.outline.b, 0.12)
+
+                                Behavior on color { ColorAnimation { duration: Motion.fast } }
+                                Behavior on border.color { ColorAnimation { duration: Motion.fast } }
+
+                                scale: favArea.pressed ? 0.94
+                                     : (favArea.containsMouse ? 1.06 : 1)
+                                Behavior on scale {
+                                    SpringAnimation {
+                                        spring: Motion.tapSpring
+                                        damping: Motion.tapDamping
+                                        mass: Motion.tapMass
+                                        epsilon: 0.001
+                                    }
+                                }
+
+                                IconImage {
+                                    anchors.centerIn: parent
+                                    source: Quickshell.iconPath(fav.modelData.icon,
+                                                                "application-x-executable")
+                                    implicitSize: 30
+                                }
+
+                                MouseArea {
+                                    id: favArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.launch(fav.modelData)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 ListView {
                     id: list
                     width: parent.width
-                    height: parent.height - 60 - (foot.visible ? foot.height + 14 : 0)
+                    height: parent.height - 60 - (quick.visible ? quick.height + 14 : 0)
+                            - (foot.visible ? foot.height + 14 : 0)
                     clip: true
                     visible: !root.calcMode && !root.runMode
                     model: root.calcMode || root.runMode ? [] : root.results
@@ -586,12 +722,16 @@ Scope {
                         required property int index
 
                         width: list.width
-                        height: 50
-                        radius: Shape.chip
-                        color: index === list.currentIndex
-                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.16)
+                        height: 56
+                        radius: Shape.field
+                        antialiasing: true
+                        color: "transparent"
+                        border.width: 1
+                        border.color: index === list.currentIndex
+                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.32)
                             : "transparent"
-                        Behavior on color { ColorAnimation { duration: 130 } }
+                        Behavior on color { ColorAnimation { duration: Motion.fast } }
+                        Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
                         opacity: 0
                         transform: Translate { id: rowSlide; x: 26 }
@@ -609,6 +749,28 @@ Scope {
                                 NumberAnimation {
                                     target: appRow; property: "opacity"; to: 1
                                     duration: 240
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Shape.field
+                            antialiasing: true
+                            opacity: index === list.currentIndex ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop {
+                                    position: 0.0
+                                    color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                   Colors.accent.b, 0.26)
+                                }
+                                GradientStop {
+                                    position: 1.0
+                                    color: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                   Colors.accent.b, 0.05)
                                 }
                             }
                         }
@@ -641,9 +803,9 @@ Scope {
                             spacing: 13
 
                             Rectangle {
-                                width: 36
-                                height: 36
-                                radius: Shape.field - 4
+                                width: 40
+                                height: 40
+                                radius: Shape.chip
                                 antialiasing: true
                                 anchors.verticalCenter: parent.verticalCenter
                                 color: index === list.currentIndex
@@ -657,14 +819,14 @@ Scope {
                                     anchors.centerIn: parent
                                     source: Quickshell.iconPath(modelData.icon,
                                                                 "application-x-executable")
-                                    implicitSize: 24
+                                    implicitSize: 26
                                 }
                             }
 
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 92
-                                spacing: 1
+                                width: parent.width - 100
+                                spacing: 2
 
                                 Text {
                                     text: modelData.name

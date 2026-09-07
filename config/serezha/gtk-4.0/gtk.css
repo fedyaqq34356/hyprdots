@@ -1,0 +1,82 @@
+@define-color window_bg_color #000000;
+@define-color window_fg_color #b0b0b0;
+@define-color view_bg_color #000000;
+@define-color view_fg_color #b0b0b0;
+@define-color headerbar_bg_color #000000;
+@define-color headerbar_fg_color #b0b0b0;
+@define-color headerbar_border_color #303030;
+@define-color headerbar_backdrop_color #000000;
+@define-color headerbar_shade_color transparent;
+@define-color popover_bg_color #000000;
+@define-color popover_fg_color #b0b0b0;
+@define-color card_bg_color #000000;
+@define-color card_fg_color #b0b0b0;
+@define-color card_shade_color transparent;
+@define-color dialog_bg_color #000000;
+@define-color dialog_fg_color #b0b0b0;
+@define-color sidebar_bg_color #000000;
+@define-color sidebar_fg_color #b0b0b0;
+@define-color sidebar_border_color #303030;
+@define-color sidebar_backdrop_color #000000;
+@define-color thumbnail_bg_color #000000;
+@define-color thumbnail_fg_color #b0b0b0;
+@define-color shade_color transparent;
+@define-color scrollbar_outline_color #303030;
+
+@define-color accent_color #b0b0b0;
+@define-color accent_bg_color #1a1a1a;
+@define-color accent_fg_color #ffffff;
+
+@define-color destructive_color #ff5555;
+@define-color destructive_bg_color #1a1a1a;
+@define-color destructive_fg_color #ff5555;
+
+@define-color success_color #b0b0b0;
+@define-color success_bg_color #1a1a1a;
+@define-color success_fg_color #ffffff;
+@define-color warning_color #b0b0b0;
+@define-color warning_bg_color #1a1a1a;
+@define-color warning_fg_color #ffffff;
+@define-color error_color #ff5555;
+@define-color error_bg_color #1a1a1a;
+@define-color error_fg_color #ffffff;
+
+@define-color theme_bg_color #000000;
+@define-color theme_base_color #000000;
+@define-color theme_fg_color #b0b0b0;
+@define-color theme_text_color #b0b0b0;
+@define-color theme_selected_bg_color #1a1a1a;
+@define-color theme_selected_fg_color #ffffff;
+@define-color borders #303030;
+
+* {
+    border-radius: 0;
+    box-shadow: none;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+    transition: none;
+    animation: none;
+    outline: none;
+}
+
+window,
+.background,
+headerbar,
+.titlebar,
+popover > contents,
+.card,
+.view,
+listview,
+columnview,
+textview {
+    background-color: #000000;
+    background-image: none;
+    color: #b0b0b0;
+    box-shadow: none;
+}
+
+window.csd,
+decoration {
+    box-shadow: none;
+    border-radius: 0;
+}

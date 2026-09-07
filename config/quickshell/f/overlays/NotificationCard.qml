@@ -26,14 +26,16 @@ Rectangle {
 
     readonly property string kind: NotifKind.of(modelData)
     readonly property string shot: NotifKind.shotPath(modelData)
-    readonly property int headHeight: 46
+    readonly property int headHeight: 54
+
+    readonly property color appTint: NotifHistory.appColor(modelData.appName)
 
     property real remaining: 1
     property bool leaving: false
 
-    width: 236
+    width: 330
     height: card.headHeight + extra.height
-    radius: Shape.chip
+    radius: Shape.field + 4
 
     Behavior on height {
         NumberAnimation {
@@ -43,9 +45,22 @@ Rectangle {
         }
     }
 
-    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.94)
+    color: card.critical
+        ? Qt.rgba(Colors.bad.r * 0.35 + Colors.bg.r * 0.65,
+                  Colors.bad.g * 0.35 + Colors.bg.g * 0.65,
+                  Colors.bad.b * 0.35 + Colors.bg.b * 0.65, 0.95)
+        : Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.94)
     border.width: 1
-    border.color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.14)
+    border.color: card.critical
+        ? Qt.rgba(Colors.bad.r, Colors.bad.g, Colors.bad.b, 0.55)
+        : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.14)
+
+    Sheen {
+        anchors.fill: parent
+        radius: card.radius
+        border: false
+        grainOpacity: 0.025
+    }
 
     opacity: 0
     transform: Translate { id: slide; x: 340 }
@@ -62,8 +77,8 @@ Rectangle {
         NumberAnimation {
             target: slide; property: "x"; from: 340; to: 0
             duration: card.entryTime
-            easing.type: Easing.OutBack
-            easing.overshoot: card.entryOvershoot
+            easing.type: Easing.Bezier
+            easing.bezierCurve: card.critical ? Motion.elastic : Motion.expo
         }
         NumberAnimation {
             target: card; property: "opacity"; to: 1
@@ -121,68 +136,25 @@ Rectangle {
         onFinished: card.close()
     }
 
-    Canvas {
-        id: ring
-        anchors.fill: parent
-        anchors.margins: 1
-        renderStrategy: Canvas.Cooperative
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: 1
+        anchors.rightMargin: 1
+        anchors.bottomMargin: 1
+        height: 3
+        radius: 1.5
         visible: !card.critical
+        color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.10)
 
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.reset();
-
-            const w = width;
-            const h = height;
-            const r = card.radius - 1;
-            const frac = Math.max(0, Math.min(1, card.remaining));
-            if (frac <= 0)
-                return;
-
-            const straightH = w - 2 * r;
-            const straightV = h - 2 * r;
-            const arc = (Math.PI / 2) * r;
-            const total = 2 * straightH + 2 * straightV + 4 * arc;
-            let budget = total * frac;
-
-            ctx.beginPath();
-            ctx.moveTo(w / 2, 0);
-
-            function line(x1, y1, x2, y2, len) {
-                if (budget <= 0) return false;
-                const t = Math.min(1, budget / len);
-                ctx.lineTo(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t);
-                budget -= len;
-                return budget > 0;
-            }
-
-            function corner(cx, cy, from, to) {
-                if (budget <= 0) return false;
-                const t = Math.min(1, budget / arc);
-                ctx.arc(cx, cy, r, from, from + (to - from) * t);
-                budget -= arc;
-                return budget > 0;
-            }
-
-            line(w / 2, 0, w - r, 0, straightH / 2)
-                && corner(w - r, r, -Math.PI / 2, 0)
-                && line(w, r, w, h - r, straightV)
-                && corner(w - r, h - r, 0, Math.PI / 2)
-                && line(w - r, h, r, h, straightH)
-                && corner(r, h - r, Math.PI / 2, Math.PI)
-                && line(0, h - r, 0, r, straightV)
-                && corner(r, r, Math.PI, Math.PI * 1.5)
-                && line(r, 0, w / 2, 0, straightH / 2);
-
-            ctx.strokeStyle = card.edge;
-            ctx.lineWidth = 2;
-            ctx.lineCap = "round";
-            ctx.stroke();
+        Rectangle {
+            width: parent.width * Math.max(0, Math.min(1, card.remaining))
+            height: parent.height
+            radius: parent.radius
+            color: card.edge
         }
     }
-
-    onRemainingChanged: ring.requestPaint()
-    onEdgeChanged: ring.requestPaint()
 
     Rectangle {
         visible: card.critical
@@ -193,37 +165,70 @@ Rectangle {
         border.color: card.edge
     }
 
+    Rectangle {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.leftMargin: 9
+        anchors.topMargin: 13
+        width: 3
+        height: card.headHeight - 26
+        radius: 1.5
+        antialiasing: true
+        color: card.critical ? Colors.bad : card.appTint
+    }
+
     Row {
         id: head
 
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.leftMargin: 12
-        anchors.rightMargin: 12
+        anchors.leftMargin: 20
+        anchors.rightMargin: 14
         height: card.headHeight
-        spacing: 9
+        spacing: 11
 
         Rectangle {
-            width: 26
-            height: 26
-            radius: 8
-            anchors.verticalCenter: parent.verticalCenter
-            color: Qt.rgba(card.edge.r, card.edge.g, card.edge.b, 0.16)
+            id: badge
 
-            IconImage {
+            width: 32
+            height: 32
+            radius: Shape.chip
+            antialiasing: true
+            anchors.verticalCenter: parent.verticalCenter
+            color: Qt.rgba(card.appTint.r, card.appTint.g, card.appTint.b, 0.18)
+
+            readonly property string icon: {
+                if (card.modelData.image !== "")
+                    return card.modelData.image;
+                if (!card.modelData.appIcon || card.modelData.appIcon === "")
+                    return "";
+                return Quickshell.iconPath(card.modelData.appIcon, "");
+            }
+
+            Loader {
                 anchors.centerIn: parent
-                source: card.modelData.image !== ""
-                        ? card.modelData.image
-                        : Quickshell.iconPath(card.modelData.appIcon,
-                                              "dialog-information")
-                implicitSize: 17
+                active: badge.icon !== ""
+                sourceComponent: IconImage {
+                    source: badge.icon
+                    implicitSize: 20
+                }
+            }
+
+            Text {
+                anchors.centerIn: parent
+                visible: badge.icon === ""
+                text: NotifHistory.appLetter(card.modelData.appName)
+                color: card.appTint
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 14
+                font.weight: Font.Bold
             }
         }
 
         Column {
-            width: parent.width - 35
-            spacing: 1
+            width: parent.width - badge.width - parent.spacing
+            spacing: 2
             anchors.verticalCenter: parent.verticalCenter
 
             Text {
@@ -231,7 +236,7 @@ Rectangle {
                 text: card.modelData.summary
                 color: Colors.fg
                 font.family: Fonts.display
-                font.pixelSize: 11
+                font.pixelSize: 13
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -244,9 +249,9 @@ Rectangle {
                       ? card.modelData.body.replace(/<[^>]*>/g, "")
                       : card.modelData.appName
                 color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                               Colors.fgDim.b, 0.62)
+                               Colors.fgDim.b, 0.68)
                 font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 9
+                font.pixelSize: 10
                 elide: Text.ElideRight
                 maximumLineCount: 1
             }
@@ -298,11 +303,11 @@ Rectangle {
         id: shotBody
 
         Item {
-            height: 112
+            height: 132
 
             ClippingRectangle {
                 anchors.fill: parent
-                radius: Shape.chip
+                radius: Shape.field
                 color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.6)
 
                 Image {

@@ -65,10 +65,11 @@ Scope {
 
                     Behavior on opacity { NumberAnimation { duration: 200 } }
                     Behavior on scale {
-                        NumberAnimation {
-                            duration: 340
-                            easing.type: Easing.OutBack
-                            easing.overshoot: 1.1
+                        SpringAnimation {
+                            spring: Motion.panelSpring
+                            damping: Motion.panelDamping
+                            mass: Motion.panelMass
+                            epsilon: 0.001
                         }
                     }
 

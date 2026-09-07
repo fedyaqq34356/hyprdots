@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -u
+
+FUZZEL_CFG="$HOME/.config/serezha/fuzzel.ini"
+
+command -v cliphist >/dev/null || { notify-send "clip" "cliphist не установлен" 2>/dev/null; exit 1; }
+command -v fuzzel   >/dev/null || { notify-send "clip" "fuzzel не установлен"   2>/dev/null; exit 1; }
+
+pick=$(cliphist list | fuzzel --config="$FUZZEL_CFG" --dmenu --prompt "clip: ")
+[[ -z "$pick" ]] && exit 0
+
+if [[ "${1-}" == "--delete" ]]; then
+    printf '%s\n' "$pick" | cliphist delete
+    exit 0
+fi
+
+printf '%s\n' "$pick" | cliphist decode | wl-copy

@@ -464,7 +464,7 @@ Scope {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: 18
                                         height: 18
-                                        radius: 6
+                                        radius: Shape.detail
                                         color: root.alpha(
                                             NotifHistory.appColor(group.modelData.app), 0.18)
 

@@ -153,11 +153,9 @@ Item {
             }
         }
 
-        IconButton {
-            glyph: "󰑓"
-            tip: I18n.t("act.face")
-            tint: Colors.accent
-            onActivated: DeskLayout.cycleFace(frame.entry.key)
+        FaceBadge {
+            anchors.verticalCenter: parent.verticalCenter
+            entry: frame.entry
         }
 
         IconButton {
