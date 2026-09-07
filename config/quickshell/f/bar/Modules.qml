@@ -232,7 +232,11 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
 
                         Behavior on width {
-                            NumberAnimation { duration: 280; easing.type: Easing.OutBack }
+                            NumberAnimation {
+                                duration: Motion.slow
+                                easing.type: Easing.Bezier
+                                easing.bezierCurve: Motion.snap
+                            }
                         }
                         Behavior on color { ColorAnimation { duration: 200 } }
 
@@ -701,7 +705,11 @@ Item {
             opacity: Vpn.up ? 1 : 0
 
             Behavior on width {
-                NumberAnimation { duration: 260; easing.type: Easing.OutBack }
+                NumberAnimation {
+                    duration: Motion.slow
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Motion.snap
+                }
             }
             Behavior on opacity { NumberAnimation { duration: 200 } }
 
@@ -711,7 +719,7 @@ Item {
                 anchors.centerIn: parent
                 width: 12
                 height: 12
-                radius: 6
+                radius: Shape.detail
                 color: "transparent"
                 border.width: 1.5
                 border.color: Colors.good

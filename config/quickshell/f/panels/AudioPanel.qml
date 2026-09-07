@@ -166,6 +166,14 @@ Scope {
         if (!node.isSink) root.setMicTarget(v);
     }
 
+    function setVolume(node, v) {
+        if (!node || !node.audio) return;
+        const value = Math.max(0, Math.min(1, v));
+        node.audio.muted = false;
+        node.audio.volume = value;
+        if (!node.isSink) root.setMicTarget(value);
+    }
+
     function toggleMute(node) {
         if (!node || !node.audio) return;
         node.audio.muted = !node.audio.muted;
@@ -235,6 +243,23 @@ Scope {
                 }
             }
 
+            Rectangle {
+                z: -2
+                anchors.centerIn: parent
+                width: parent.width - 44
+                height: parent.height - 44
+                radius: Shape.modal
+                color: Colors.accent
+                opacity: 0.20
+
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    blurEnabled: true
+                    blur: 1.0
+                    blurMax: 56
+                }
+            }
+
             Item {
                 anchors.fill: parent
                 z: -1
@@ -249,7 +274,7 @@ Scope {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: Shape.card
+                    radius: Shape.modal
                     color: Colors.bg
                 }
             }
@@ -257,8 +282,9 @@ Scope {
             Rectangle {
                 id: card
                 width: 640
-                height: header.height + stage.height + caption.height + footer.height + 56
-                radius: Shape.card
+                height: header.height + stage.height + caption.height
+                        + control.height + footer.height + 62
+                radius: Shape.modal
 
                 gradient: Gradient {
                     GradientStop { position: 0.0
@@ -273,7 +299,7 @@ Scope {
 
                 Sheen {
                     anchors.fill: parent
-                    radius: Shape.card
+                    radius: Shape.modal
                     edge: Colors.accent
                     edgeOpacity: 0.26
                 }
@@ -308,7 +334,7 @@ Scope {
                     id: header
                     anchors { top: parent.top; left: parent.left; right: parent.right }
                     anchors.margins: 20
-                    height: 40
+                    height: 44
 
                     Rectangle {
                         width: muteRow.implicitWidth + 26
@@ -361,7 +387,12 @@ Scope {
                                     x: root.muted ? 3 : parent.width - width - 3
                                     color: root.muted ? Colors.fgDim : Colors.fg
                                     Behavior on x {
-                                        NumberAnimation { duration: 220; easing.type: Easing.OutBack }
+                                        SpringAnimation {
+                                            spring: Motion.tapSpring
+                                            damping: Motion.tapDamping
+                                            mass: Motion.tapMass
+                                            epsilon: 0.001
+                                        }
                                     }
                                 }
                             }
@@ -382,24 +413,26 @@ Scope {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 3
 
-                        Text {
+                        RollText {
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 2
-                            text: Math.round(root.level * 100)
+                            text: String(Math.round(root.level * 100))
                             color: root.muted ? Colors.fgDim : Colors.fg
+                            family: root.mono
+                            pixelSize: 30
+                            weight: Font.DemiBold
                             opacity: root.muted ? 0.4 : 0.95
-                            font.family: root.mono
-                            font.pixelSize: 24
-                            font.weight: Font.DemiBold
+                            Behavior on opacity { NumberAnimation { duration: Motion.base } }
                         }
+
                         Text {
                             anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 5
+                            anchors.bottomMargin: 6
                             text: "%"
                             color: Colors.fgDim
                             opacity: 0.4
                             font.family: root.mono
-                            font.pixelSize: 12
+                            font.pixelSize: 13
                         }
                     }
                 }
@@ -412,6 +445,28 @@ Scope {
                     anchors.rightMargin: 12
                     height: 456
                     clip: true
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: Math.min(parent.width, parent.height) * 0.62
+                        height: width
+                        radius: width / 2
+                        color: Colors.accent
+                        opacity: root.muted ? 0.10
+                               : 0.18 + Math.min(0.22, root.level * 0.3)
+                        visible: !!root.current
+
+                        scale: 1 + (root.muted ? 0 : Beat.level * 0.06)
+                        Behavior on scale { NumberAnimation { duration: Motion.fast } }
+                        Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            blurEnabled: true
+                            blur: 1.0
+                            blurMax: 64
+                        }
+                    }
 
                     OrbitGraph {
                         id: constellation
@@ -494,6 +549,76 @@ Scope {
                 }
 
                 Item {
+                    id: control
+
+                    anchors { top: caption.bottom; left: parent.left; right: parent.right }
+                    anchors.topMargin: 10
+                    anchors.leftMargin: 30
+                    anchors.rightMargin: 30
+                    height: 46
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Shape.field
+                        color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.45)
+                        border.width: 1
+                        border.color: Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                              Colors.outline.b, 0.14)
+                    }
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 14
+                        spacing: 14
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "󰝞"
+                            color: Colors.fgDim
+                            opacity: stepDown.containsMouse ? 1 : 0.6
+                            font.family: root.mono
+                            font.pixelSize: 15
+
+                            MouseArea {
+                                id: stepDown
+                                anchors.fill: parent
+                                anchors.margins: -8
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.nudge(root.current, -1)
+                            }
+                        }
+
+                        Slider {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 78
+                            value: root.muted ? 0 : root.level
+                            tint: root.muted ? Colors.fgDim : Colors.accent
+                            onMoved: (value) => root.setVolume(root.current, value)
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "󰝝"
+                            color: Colors.fgDim
+                            opacity: stepUp.containsMouse ? 1 : 0.6
+                            font.family: root.mono
+                            font.pixelSize: 15
+
+                            MouseArea {
+                                id: stepUp
+                                anchors.fill: parent
+                                anchors.margins: -8
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.nudge(root.current, 1)
+                            }
+                        }
+                    }
+                }
+
+                Item {
                     id: footer
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
                     anchors.margins: 20
@@ -504,7 +629,7 @@ Scope {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 260
                         height: 40
-                        radius: Shape.chip
+                        radius: Shape.field
                         color: root.alpha(Colors.bgAlt, 0.55)
                         border.width: 1
                         border.color: root.alpha(Colors.outline, 0.14)
@@ -514,12 +639,19 @@ Scope {
                             height: parent.height - 8
                             y: 4
                             x: root.outTab ? 4 : parent.width - width - 4
-                            radius: Shape.chip
+                            radius: Shape.field - 2
+                            antialiasing: true
                             color: root.alpha(Colors.accent, 0.24)
                             border.width: 1
                             border.color: root.alpha(Colors.accent, 0.42)
+
                             Behavior on x {
-                                NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 0.7 }
+                                SpringAnimation {
+                                    spring: Motion.tapSpring
+                                    damping: Motion.tapDamping
+                                    mass: Motion.tapMass
+                                    epsilon: 0.001
+                                }
                             }
                         }
 

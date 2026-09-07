@@ -475,7 +475,7 @@ Scope {
                                     anchors.margins: 10
                                     width: 17
                                     height: 17
-                                    radius: 6
+                                    radius: Shape.detail
                                     antialiasing: true
                                     color: tile.current
                                         ? tile.tint

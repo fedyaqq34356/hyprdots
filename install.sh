@@ -85,6 +85,7 @@ PACMAN_PKGS=(
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
+    waybar fuzzel mako networkmanager
     qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     zsh zsh-autosuggestions zsh-syntax-highlighting

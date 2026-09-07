@@ -22,8 +22,8 @@ Rectangle {
     property bool leaving: false
 
     width: parent ? parent.width : 0
-    height: Math.max(52, content.implicitHeight + 22)
-    radius: Shape.chip
+    height: Math.max(58, content.implicitHeight + 24)
+    radius: Shape.field
 
     color: hover.hovered ? Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.62)
                          : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.34)
@@ -64,23 +64,25 @@ Rectangle {
     }
 
     Rectangle {
-        visible: row.critical
         anchors.left: parent.left
-        anchors.leftMargin: 1
+        anchors.leftMargin: 5
         anchors.verticalCenter: parent.verticalCenter
         width: 3
-        height: parent.height * 0.55
-        radius: 2
-        color: row.edge
+        height: parent.height * 0.5
+        radius: Shape.detail / 2
+        antialiasing: true
+        color: row.critical ? row.edge : row.avatar
+        opacity: row.critical ? 1 : 0.75
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
     }
 
     Rectangle {
         id: iconBox
         anchors.left: parent.left
-        anchors.leftMargin: 12
+        anchors.leftMargin: 15
         anchors.verticalCenter: parent.verticalCenter
-        width: 30
-        height: 30
+        width: 32
+        height: 32
         radius: Shape.chip
         color: row.critical
             ? Qt.rgba(row.edge.r, row.edge.g, row.edge.b, 0.18)
@@ -134,7 +136,7 @@ Rectangle {
                 color: Colors.fg
                 opacity: 0.95
                 font.family: Fonts.display
-                font.pixelSize: 11
+                font.pixelSize: 12
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -148,7 +150,7 @@ Rectangle {
             color: Colors.fgDim
             opacity: 0.62
             font.family: row.mono
-            font.pixelSize: 9
+            font.pixelSize: 10
             wrapMode: Text.WordWrap
             elide: Text.ElideRight
             maximumLineCount: 2
@@ -173,9 +175,9 @@ Rectangle {
         anchors.right: parent.right
         anchors.rightMargin: 9
         anchors.verticalCenter: parent.verticalCenter
-        width: 22
-        height: 22
-        radius: 8
+        width: 24
+        height: 24
+        radius: Shape.detail + 2
         color: closeHover.hovered
             ? Qt.rgba(Colors.bad.r, Colors.bad.g, Colors.bad.b, 0.22)
             : "transparent"

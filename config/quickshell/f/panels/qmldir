@@ -17,3 +17,6 @@ SysRings SysRings.qml
 TimerPanel TimerPanel.qml
 WallpaperPicker WallpaperPicker.qml
 BarBuilder BarBuilder.qml
+SettingsSection SettingsSection.qml
+SettingsToggle SettingsToggle.qml
+SettingsChoice SettingsChoice.qml

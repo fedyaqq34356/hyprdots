@@ -15,79 +15,92 @@ Singleton {
         "clock": {
             title: I18n.t("bar.clock"),
             glyph: "󰥔",
-            faces: ["digital", "minimal", "hand", "ring"],
+            faces: ["minimal", "digital", "roll", "flip", "words", "hand",
+                    "ring", "orbit", "binary", "bar"],
             size: 1.0
         },
         "media": {
             title: I18n.t("bar.music"),
             glyph: "󰎈",
-            faces: ["cover", "round", "wave", "line"],
+            faces: ["cover", "poster", "tile", "stack", "round", "wave",
+                    "pulse", "strip", "frame", "line"],
             size: 1.0
         },
         "weather": {
             title: I18n.t("bar.weather"),
             glyph: "󰖐",
-            faces: ["full", "compact", "hero"],
+            faces: ["full", "detail", "sky", "hero", "ring", "range",
+                    "forecast", "strip", "compact", "badge"],
             size: 1.0
         },
         "usage": {
             title: I18n.t("bar.system"),
             glyph: "󰍛",
-            faces: ["rings", "bars", "digits", "full", "meters", "compact"],
+            faces: ["rings", "bars", "digits", "full", "meters", "compact",
+                    "grid", "column", "gauge", "trace"],
             size: 1.0
         },
         "screentime": {
             title: I18n.t("desk.screentime"),
             glyph: "󰔟",
-            faces: ["bars", "total", "ring"],
+            faces: ["bars", "grid", "stack", "donut", "week", "budget",
+                    "list", "now", "ring", "total"],
             size: 1.0
         },
         "visualizer": {
             title: I18n.t("desk.visualizer"),
             glyph: "󰗆",
-            faces: ["bars", "wave", "radial", "mirror", "dots"],
+            faces: ["bars", "mirror", "flame", "grid", "dots", "tape",
+                    "wave", "line", "radial", "orb"],
             size: 1.0
         },
         "timer": {
             title: I18n.t("timer.title"),
             glyph: "󰔛",
-            faces: ["ring", "list"],
+            faces: ["ring", "arc", "digits", "bar", "sand", "list",
+                    "grid", "pills", "stack", "minimal"],
             size: 1.0
         },
         "calendar": {
             title: I18n.t("bar.calendar"),
             glyph: "󰃭",
-            faces: ["month", "day"],
+            faces: ["month", "week", "day", "tear", "ring", "list",
+                    "year", "column", "dots", "compact"],
             size: 1.0
         },
         "battery": {
             title: I18n.t("desk.battery"),
             glyph: "󰁹",
-            faces: ["ring", "bar"],
+            faces: ["ring", "cell", "detail", "arc", "wave", "digits",
+                    "column", "dots", "bar", "pill"],
             size: 1.0
         },
         "disk": {
             title: I18n.t("desk.disk"),
             glyph: "󰋊",
-            faces: ["bars", "dots"],
+            faces: ["bars", "grid", "rings", "column", "stack", "donut",
+                    "gauge", "list", "dots", "compact"],
             size: 1.0
         },
         "net": {
             title: I18n.t("desk.net"),
             glyph: "󰤨",
-            faces: ["speed", "link"],
+            faces: ["link", "detail", "graph", "meters", "dial", "bars",
+                    "column", "speed", "minimal", "badge"],
             size: 1.0
         },
         "notifs": {
             title: I18n.t("desk.notifs"),
             glyph: "󰂚",
-            faces: ["list", "count"],
+            faces: ["list", "cards", "latest", "apps", "column", "compact",
+                    "ticker", "dots", "count", "badge"],
             size: 1.0
         },
         "updates": {
             title: I18n.t("desk.updates"),
             glyph: "󰏗",
-            faces: ["count", "list"],
+            faces: ["count", "list", "detail", "grid", "split", "column",
+                    "compact", "dots", "minimal", "badge"],
             size: 1.0
         }
     })
