@@ -18,7 +18,7 @@ Scope {
     readonly property string previewDir:
         Quickshell.env("XDG_RUNTIME_DIR") + "/cliphist-preview"
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     function toggle() {
         if (shown) {
@@ -206,22 +206,7 @@ Scope {
                 }
             }
 
-            Rectangle {
-                z: -2
-                anchors.centerIn: parent
-                width: parent.width - 40
-                height: parent.height - 40
-                radius: Shape.modal
-                color: Colors.accent
-                opacity: 0.22
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    blurEnabled: true
-                    blur: 1.0
-                    blurMax: 56
-                }
-            }
+            Bloom { target: card }
 
             Glass {
                 z: -1

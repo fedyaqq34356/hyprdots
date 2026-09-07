@@ -110,7 +110,7 @@ Scope {
                     visible: root.soon !== null
                     text: Timers.clock(Timers.left(root.soon))
                     color: Timers.anyRinging ? Colors.bad : Colors.accent
-                    font.family: "JetBrainsMono Nerd Font"
+                    font.family: Fonts.mono
                     font.pixelSize: 9
                     rotation: 90
                 }

@@ -293,22 +293,7 @@ Scope {
                 }
             }
 
-            Rectangle {
-                z: -2
-                anchors.centerIn: parent
-                width: parent.width - 40
-                height: parent.height - 40
-                radius: Shape.modal
-                color: Colors.accent
-                opacity: 0.22
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    blurEnabled: true
-                    blur: 1.0
-                    blurMax: 56
-                }
-            }
+            Bloom { target: card }
 
             Glass {
                 z: -1
@@ -364,7 +349,7 @@ Scope {
                         Text {
                             text: root.runMode ? "󰞷" : root.calcMode ? "󰃬" : "󰍉"
                             color: Colors.accent
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 17
                             anchors.verticalCenter: parent.verticalCenter
 
@@ -383,7 +368,7 @@ Scope {
                             width: parent.width - 130
                             anchors.verticalCenter: parent.verticalCenter
                             color: Colors.fg
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 14
                             clip: true
                             selectByMouse: true
@@ -428,7 +413,7 @@ Scope {
                                 color: root.calcMode || root.runMode
                                     ? Colors.accent : Colors.fgDim
                                 opacity: root.calcMode || root.runMode ? 1 : 0.7
-                                font.family: "JetBrainsMono Nerd Font"
+                                font.family: Fonts.mono
                                 font.pixelSize: 9
                                 font.letterSpacing: 1
                             }
@@ -474,7 +459,7 @@ Scope {
                                     text: root.calcExpr
                                     color: Colors.fgDim
                                     opacity: 0.7
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 13
                                     elide: Text.ElideLeft
                                     horizontalAlignment: Text.AlignRight
@@ -486,7 +471,7 @@ Scope {
                                     text: root.calcResult !== "" ? root.calcResult : "—"
                                     color: root.calcResult !== "" ? Colors.accent : Colors.fgDim
                                     opacity: root.calcResult !== "" ? 1 : 0.35
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 34
                                     font.weight: Font.DemiBold
                                     elide: Text.ElideLeft
@@ -517,7 +502,7 @@ Scope {
                                         : I18n.t("launcher.incomplete")
                                     color: Colors.fgDim
                                     opacity: 0.45
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 9
                                     horizontalAlignment: Text.AlignRight
                                 }
@@ -528,7 +513,7 @@ Scope {
                             text: I18n.t("notif.history")
                             color: Colors.fgDim
                             opacity: 0.4
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 9
                             visible: root.calcHistory.length > 0
                         }
@@ -568,7 +553,7 @@ Scope {
                                     text: modelData
                                     color: Colors.fgDim
                                     opacity: histHover.hovered ? 0.9 : 0.55
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 10
                                     elide: Text.ElideRight
                                 }
@@ -608,7 +593,7 @@ Scope {
                                 color: root.runCmd === "" ? Colors.fgDim : Colors.fg
                                 opacity: root.runCmd === "" ? 0.5 : 1
                                 elide: Text.ElideRight
-                                font.family: "JetBrainsMono Nerd Font"
+                                font.family: Fonts.mono
                                 font.pixelSize: 13
                             }
                         }
@@ -617,7 +602,7 @@ Scope {
                             text: I18n.t("launcher.runKeys")
                             color: Colors.fgDim
                             opacity: 0.45
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 10
                         }
                     }
@@ -844,7 +829,7 @@ Scope {
                                     text: modelData.genericName || modelData.comment || ""
                                     color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                                    Colors.fgDim.b, 0.65)
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 10
                                     elide: Text.ElideRight
                                     width: parent.width
@@ -858,7 +843,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "\u{f0311}"
                             color: Colors.accent
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 13
                             opacity: index === list.currentIndex ? 0.8 : 0
                             Behavior on opacity { NumberAnimation { duration: Motion.fast } }
@@ -886,7 +871,7 @@ Scope {
                         text: root.results.length + " " + I18n.t("launcher.matches")
                         color: Colors.fgDim
                         opacity: 0.42
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 9
                         font.letterSpacing: 1
                     }
@@ -922,7 +907,7 @@ Scope {
                                         text: modelData.k
                                         color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                                        Colors.fgDim.b, 0.7)
-                                        font.family: "JetBrainsMono Nerd Font"
+                                        font.family: Fonts.mono
                                         font.pixelSize: 9
                                     }
                                 }
@@ -932,7 +917,7 @@ Scope {
                                     text: modelData.v
                                     color: Colors.fgDim
                                     opacity: 0.4
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 9
                                 }
                             }

@@ -170,7 +170,7 @@ Scope {
                         text: Media.playing ? "󰋋" : "󰝛"
                         color: Colors.accent
                         opacity: 0.8
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 12
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -180,7 +180,7 @@ Scope {
                         text: Media.source !== "" ? Media.source.toUpperCase() : "NO PLAYER"
                         color: Colors.fgDim
                         opacity: 0.5
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: Fonts.mono
                         font.pixelSize: 9
                         font.letterSpacing: 1.2
                         elide: Text.ElideRight
@@ -323,7 +323,7 @@ Scope {
                                     text: "󰎈"
                                     color: Colors.fgDim
                                     opacity: 0.4
-                                    font.family: "JetBrainsMono Nerd Font"
+                                    font.family: Fonts.mono
                                     font.pixelSize: 34
                                 }
                             }
@@ -450,7 +450,7 @@ Scope {
                             y: (parent.height - height) / 2
                             x: Math.max(0, Math.min(parent.width - width, fill.width - width / 2))
                             opacity: seekArea.containsMouse ? 1 : 0
-                            Behavior on opacity { NumberAnimation { duration: 140 } }
+                            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
                         }
 
                         MouseArea {
@@ -472,7 +472,7 @@ Scope {
                             text: Media.has ? Media.clock(Media.player.position) : "0:00"
                             color: Colors.fgDim
                             opacity: 0.65
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 10
                         }
 
@@ -481,7 +481,7 @@ Scope {
                             text: "-" + Media.clock(root.remaining)
                             color: Colors.accent
                             opacity: 0.85
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: 10
                         }
                     }
@@ -516,7 +516,7 @@ Scope {
                             anchors.centerIn: parent
                             text: parent.glyph
                             color: parent.primary ? Colors.accent : Colors.fg
-                            font.family: "JetBrainsMono Nerd Font"
+                            font.family: Fonts.mono
                             font.pixelSize: parent.primary ? 17 : 13
                         }
 

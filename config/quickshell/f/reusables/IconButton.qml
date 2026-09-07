@@ -8,7 +8,7 @@ Rectangle {
 
     property string glyph: ""
     property color tint: "#ffffff"
-    property string mono: "JetBrainsMono Nerd Font"
+    property string mono: Fonts.mono
     property string tip: ""
     property bool spinning: false
 

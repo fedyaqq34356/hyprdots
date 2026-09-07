@@ -10,7 +10,7 @@ Item {
 
     readonly property bool bare: true
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     implicitWidth: body.implicitWidth
     implicitHeight: body.implicitHeight

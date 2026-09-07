@@ -14,7 +14,7 @@ Item {
                               || face.variant === "dial"
                               || face.variant === "bars"
 
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string mono: Fonts.mono
 
     implicitWidth: loader.implicitWidth
     implicitHeight: loader.implicitHeight
