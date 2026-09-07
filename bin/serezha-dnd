@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -u
+
+command -v makoctl >/dev/null || exit 0
+
+if makoctl mode | grep -qx dnd; then
+    makoctl mode -r dnd >/dev/null
+    notify-send -u low "уведомления" "включены" 2>/dev/null
+else
+    notify-send -u low "уведомления" "выключены" 2>/dev/null
+    sleep 0.4
+    makoctl mode -a dnd >/dev/null
+fi

@@ -55,7 +55,12 @@ Scope {
                 Behavior on color { ColorAnimation { duration: 220 } }
                 Behavior on borderColor { ColorAnimation { duration: 220 } }
                 Behavior on scale {
-                    NumberAnimation { duration: 240; easing.type: Easing.OutBack }
+                    SpringAnimation {
+                        spring: Motion.tapSpring
+                        damping: Motion.tapDamping
+                        mass: Motion.tapMass
+                        epsilon: 0.001
+                    }
                 }
 
                 Rectangle {
@@ -100,8 +105,8 @@ Scope {
                         NumberAnimation {
                             target: intro; property: "y"; to: 0
                             duration: 620
-                            easing.type: Easing.OutBack
-                            easing.overshoot: 1.05
+                            easing.type: Easing.Bezier
+                            easing.bezierCurve: Motion.snap
                         }
                         NumberAnimation {
                             target: island; property: "opacity"; to: 1

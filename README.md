@@ -718,6 +718,43 @@ locale, because the shell's language is its own setting and does not follow `LAN
 
 </details>
 
+<details>
+<summary><b>Serezha mode</b> — <sub>a black session the shell steps out of</sub></summary>
+
+
+A second session mode for when the machine has to be fast rather than pretty. Quickshell shuts
+down entirely and waybar takes the top edge: white on black, one solid line, no rounding, no
+gaps, no animations anywhere — `animations:enabled = false` and the composer's own
+`misc:background_color` paints the desktop instead of a wallpaper daemon.
+
+<table>
+<tr>
+<td><img src="assets/serezha-desktop.jpg" alt="The black desktop with waybar" width="100%"></td>
+<td><img src="assets/serezha-launcher.jpg" alt="fuzzel as the launcher" width="100%"></td>
+</tr>
+<tr>
+<td><img src="assets/serezha-menu.jpg" alt="The mode menu, which replaces the settings panel" width="100%"></td>
+<td><img src="assets/serezha-memory.jpg" alt="Session memory, measured in PSS" width="100%"></td>
+</tr>
+</table>
+
+The shell's panels are replaced by the cheapest thing that answers the same question: fuzzel for
+the launcher and for clipboard history, `nmtui` and `bluetoothctl` in a terminal for the network,
+mako for notifications, and one fuzzel menu on `Super` + `Shift` + `P` for everything the settings
+panel used to hold — including the way back.
+
+Switching in happens in the shell's own settings, held rather than clicked; switching out lives in
+the mode's menu, because in this mode there is no shell to hold a settings panel. Both directions
+are a symlink and `hyprctl reload`: no logout, and nothing removed from the normal configuration —
+`config/hypr/config/mode.conf` points at an empty file or at the black one, and the black one wins
+by being sourced last.
+
+Measured with PSS rather than RSS, because summing RSS counts every shared library once per
+process: a free session is **532 MB with two terminals open**, against roughly 1005 MB in the
+normal mode. Almost all of the difference is Quickshell.
+
+</details>
+
 ### Keybindings
 
 `Super` is the modifier.
@@ -1388,6 +1425,41 @@ VPN, но только пока туннель поднят: определен�
 `config/quickshell/f/lang/*.json`; правило множественного числа принадлежит языку, поэтому английский
 отдаёт две формы, русский три. Названия месяцев и дней берутся оттуда же, а не из локали Qt: язык
 шелла — отдельная настройка и за `LANG` не следует.
+
+</details>
+
+<details>
+<summary><b>Серёжа мод</b> — <sub>чёрная сессия, из которой шелл уходит совсем</sub></summary>
+
+
+Второй режим сессии — для случая, когда машина должна быть быстрой, а не красивой. Quickshell
+выключается целиком, верхний край занимает waybar: белым по чёрному, одной сплошной линией, без
+скруглений, без промежутков и без единой анимации — `animations:enabled = false`, а фон рисует сам
+компоситор через `misc:background_color`, без демона обоев.
+
+<table>
+<tr>
+<td><img src="assets/serezha-desktop.jpg" alt="Чёрный стол с waybar" width="100%"></td>
+<td><img src="assets/serezha-launcher.jpg" alt="fuzzel вместо лаунчера" width="100%"></td>
+</tr>
+<tr>
+<td><img src="assets/serezha-menu.jpg" alt="Меню режима вместо панели настроек" width="100%"></td>
+<td><img src="assets/serezha-memory.jpg" alt="Память сессии, измеренная по PSS" width="100%"></td>
+</tr>
+</table>
+
+Панели шелла заменены самым дешёвым, что отвечает на тот же вопрос: fuzzel — лаунчер и история
+буфера, `nmtui` и `bluetoothctl` в терминале — сеть и bluetooth, mako — уведомления, а всё, что
+держала панель настроек, включая возврат обратно, лежит в одном меню на `Super` + `Shift` + `P`.
+
+Вход — в настройках самого шелла, удержанием, а не кликом. Выход — в меню режима: в этом режиме
+нет шелла, который держал бы панель настроек. В обе стороны это симлинк и `hyprctl reload`: без
+перелогина и без единой удалённой строки из обычного конфига — `config/hypr/config/mode.conf`
+указывает либо на пустой файл, либо на чёрный, и чёрный побеждает тем, что подключается последним.
+
+Меряется PSS, а не RSS: сумма RSS считает каждую общую библиотеку заново на каждый процесс.
+Свободная сессия — **532 МБ с двумя открытыми терминалами** против примерно 1005 МБ в обычном
+режиме. Почти вся разница — Quickshell.
 
 </details>
 

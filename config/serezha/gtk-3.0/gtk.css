@@ -1,0 +1,78 @@
+@define-color theme_bg_color #000000;
+@define-color theme_base_color #000000;
+@define-color theme_fg_color #b0b0b0;
+@define-color theme_text_color #b0b0b0;
+
+@define-color theme_selected_bg_color #1a1a1a;
+@define-color theme_selected_fg_color #ffffff;
+
+@define-color theme_unfocused_bg_color #000000;
+@define-color theme_unfocused_base_color #000000;
+@define-color theme_unfocused_fg_color #808080;
+@define-color theme_unfocused_text_color #808080;
+@define-color theme_unfocused_selected_bg_color #1a1a1a;
+@define-color theme_unfocused_selected_fg_color #ffffff;
+
+@define-color insensitive_bg_color #000000;
+@define-color insensitive_fg_color #4a4a4a;
+@define-color insensitive_base_color #000000;
+
+@define-color borders #303030;
+@define-color unfocused_borders #202020;
+
+@define-color accent_color #b0b0b0;
+@define-color accent_bg_color #1a1a1a;
+@define-color accent_fg_color #ffffff;
+
+@define-color window_bg_color #000000;
+@define-color window_fg_color #b0b0b0;
+@define-color view_bg_color #000000;
+@define-color view_fg_color #b0b0b0;
+@define-color headerbar_bg_color #000000;
+@define-color headerbar_fg_color #b0b0b0;
+@define-color headerbar_border_color #303030;
+@define-color popover_bg_color #000000;
+@define-color popover_fg_color #b0b0b0;
+@define-color card_bg_color #000000;
+@define-color card_fg_color #b0b0b0;
+@define-color dialog_bg_color #000000;
+@define-color dialog_fg_color #b0b0b0;
+@define-color sidebar_bg_color #000000;
+@define-color sidebar_fg_color #b0b0b0;
+
+@define-color destructive_color #ff5555;
+@define-color success_color #b0b0b0;
+@define-color warning_color #b0b0b0;
+@define-color error_color #ff5555;
+
+* {
+    border-radius: 0;
+    box-shadow: none;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+    transition: none;
+    animation: none;
+    outline: none;
+}
+
+window,
+.background,
+headerbar,
+.titlebar,
+popover,
+popover > contents,
+menu,
+.menu,
+dialog,
+.csd {
+    background-color: #000000;
+    background-image: none;
+    color: #b0b0b0;
+    box-shadow: none;
+}
+
+decoration,
+decoration:backdrop {
+    box-shadow: none;
+    border-radius: 0;
+}

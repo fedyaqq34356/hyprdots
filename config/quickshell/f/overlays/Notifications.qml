@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.Notifications
 import QtQuick
 import Quickshell.Wayland
+import "root:/design"
 import "root:/services"
 
 Scope {
@@ -60,14 +61,15 @@ Scope {
             anchors.right: parent.right
             anchors.topMargin: Prefs.barAtTop ? 42 : 12
             anchors.rightMargin: 12
-            spacing: 8
+            spacing: 10
 
             move: Transition {
-                NumberAnimation {
+                SpringAnimation {
                     properties: "y"
-                    duration: 320
-                    easing.type: Easing.OutBack
-                    easing.overshoot: 0.9
+                    spring: Motion.panelSpring
+                    damping: Motion.panelDamping
+                    mass: Motion.panelMass
+                    epsilon: 0.001
                 }
             }
 

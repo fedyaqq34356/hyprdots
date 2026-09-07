@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -u
+
+CFG_DIR="$HOME/.config/serezha"
+CFG="$CFG_DIR/config"
+FUZZEL_CFG="$CFG_DIR/fuzzel.ini"
+
+BIN="$HOME/.local/bin"
+
+BAR=yes; NOTIFY=yes; EDITOR_CMD=nvim; TERMINAL=kitty
+[[ -r "$CFG" ]] && source "$CFG"
+
+menu() { fuzzel --config="$FUZZEL_CFG" --dmenu --prompt "${1:-: }"; }
+term() { setsid -f "$TERMINAL" --class serezha-tui -e "$@" >/dev/null 2>&1; }
+
+audio_menu() {
+    local list pick id
+    list=$(wpctl status | awk '
+        /^Audio/      { in_audio = 1 }
+        /^Video|^Settings/ { in_audio = 0 }
+        in_audio && /Sinks:/ { in_sinks = 1; next }
+        in_sinks && /Sources:|Sink endpoints:|Filters:/ { in_sinks = 0 }
+        in_sinks && /[0-9]+\./ {
+            line = $0
+            sub(/^[^0-9]*/, "", line)
+            n = line; sub(/\..*/, "", n)
+            name = line; sub(/^[0-9]+\. */, "", name); sub(/ *\[vol.*/, "", name)
+            printf "%s\t%s\n", n, name
+        }')
+
+    [[ -z "$list" ]] && { notify-send "звук" "стоков не найдено" 2>/dev/null; return; }
+
+    pick=$(printf '%s\n' "$list" | cut -f2- | menu "выход: ")
+    [[ -z "$pick" ]] && return
+
+    id=$(printf '%s\n' "$list" | grep -F -m1 "$pick" | cut -f1)
+    [[ -n "$id" ]] && wpctl set-default "$id"
+}
+
+main_menu() {
+    local pick
+    pick=$(printf '%s\n' \
+        "обычный режим — вернуть quickshell" \
+        "настройки режима — правка config" \
+        "бар — сейчас: $BAR" \
+        "уведомления — не беспокоить" \
+        "звук — выбрать выход" \
+        "сеть — nmtui" \
+        "bluetooth — bluetoothctl" \
+        "память — сколько ест сессия" \
+        "перечитать конфиг" \
+        "питание — выключение и перезагрузка" \
+        | menu "режим: ")
+
+    case "$pick" in
+        "обычный режим"*)
+            "$BIN/serezha-mode" off
+            ;;
+        "настройки режима"*)
+            term "$EDITOR_CMD" "$CFG"
+            ;;
+        "бар"*)
+            if [[ "$BAR" == yes ]]; then
+                "$BIN/serezha-mode" set BAR no
+                pkill -x waybar
+            else
+                "$BIN/serezha-mode" set BAR yes
+                "$BIN/serezha-mode" reload
+            fi
+            ;;
+        "уведомления"*)
+            "$BIN/serezha-dnd"
+            ;;
+        "звук"*)
+            audio_menu
+            ;;
+        "сеть"*)
+            term nmtui
+            ;;
+        "bluetooth"*)
+            term bluetoothctl
+            ;;
+        "память"*)
+            term sh -c "$BIN/serezha-mem; printf '\nEnter — закрыть'; read -r _"
+            ;;
+        "перечитать"*)
+            "$BIN/serezha-mode" reload
+            ;;
+        "питание"*)
+            "$HOME/.config/hypr/scripts/power-menu.sh"
+            ;;
+    esac
+}
+
+case "${1-}" in
+    audio) audio_menu ;;
+    *)     main_menu ;;
+esac
