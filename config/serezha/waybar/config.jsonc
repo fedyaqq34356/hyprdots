@@ -1,8 +1,3 @@
-// Waybar «Серёжа мода». Одна сплошная линия сверху, белым по чёрному.
-//
-// Шесть модулей и ни одного, который не отвечает на вопрос. Всё, что можно
-// сделать событийным, сделано событийным: hyprland/* и wireplumber слушают
-// сокеты и не опрашивают ничего. Оставшиеся три опроса — раз в минуту.
 {
     "layer": "top",
     "position": "top",
@@ -15,7 +10,6 @@
     "modules-center": [],
     "modules-right":  ["wireplumber", "network", "battery", "clock"],
 
-    // Событийный: слушает сокет Hyprland, таймера нет.
     "hyprland/workspaces": {
         "format": "{name}",
         "on-click": "activate",
@@ -25,7 +19,6 @@
         "disable-scroll": true
     },
 
-    // Тоже событийный. Заголовок обрезается, а не растягивает бар.
     "hyprland/window": {
         "format": "{title}",
         "max-length": 90,
@@ -35,18 +28,15 @@
         }
     },
 
-    // Событийный: pipewire шлёт уведомления сам.
     "wireplumber": {
         "format": "vol {volume}",
         "format-muted": "vol --",
         "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-        "on-click-right": "/home/f/.local/bin/serezha-menu audio",
+        "on-click-right": "@HOME@/.local/bin/serezha-menu audio",
         "max-volume": 100,
         "tooltip": false
     },
 
-    // 60 секунд. Смена сети приходит и так — модуль слушает netlink,
-    // интервал нужен только для цифры сигнала.
     "network": {
         "interval": 60,
         "format-wifi": "{essid}",
@@ -58,8 +48,6 @@
         "tooltip": false
     },
 
-    // 60 секунд: заряд ноутбука за минуту не меняется на величину,
-    // которую стоит показывать.
     "battery": {
         "interval": 60,
         "states": { "warning": 20, "critical": 10 },
@@ -69,8 +57,6 @@
         "tooltip": false
     },
 
-    // 60 секунд, без секунд на циферблате: секунды — единственная причина,
-    // по которой бар просыпался бы 60 раз в минуту.
     "clock": {
         "interval": 60,
         "format": "{:%a %d.%m  %H:%M}",
