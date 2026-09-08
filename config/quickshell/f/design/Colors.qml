@@ -94,6 +94,17 @@ Singleton {
                        1);
     }
 
+    function mix(a, b, t) {
+        return Qt.rgba(a.r + (b.r - a.r) * t,
+                       a.g + (b.g - a.g) * t,
+                       a.b + (b.b - a.b) * t,
+                       a.a + (b.a - a.a) * t);
+    }
+
+    function alpha(c, a) {
+        return Qt.rgba(c.r, c.g, c.b, a);
+    }
+
     readonly property color surface1: root.step(root.bg, root.bgAlt, 0.34)
     readonly property color surface2: root.step(root.bg, root.bgAlt, 0.67)
     readonly property color surface3: root.bgAlt
@@ -114,4 +125,30 @@ Singleton {
 
     readonly property color warn: Qt.hsla(0.11, statusSat, statusLight, 1)
     readonly property color good: Qt.hsla(0.36, statusSat, statusLight, 1)
+
+    readonly property color accentWash: root.step(root.bg, root.accent, 0.10)
+    readonly property color accentSoft: root.step(root.bg, root.accent, 0.22)
+    readonly property color accentDim:  root.step(root.bg, root.accent, 0.48)
+
+    readonly property color accentGlow:
+        Qt.hsla(root.accent.hslHue,
+                Math.min(1.0, root.accent.hslSaturation * 1.15),
+                Math.max(0.62, root.accent.hslLightness),
+                1)
+
+    readonly property color shadowTone:
+        Qt.hsla(root.bg.hslHue,
+                Math.min(0.55, root.bg.hslSaturation * 1.4),
+                0.035,
+                1)
+
+    function shadow(a) {
+        return root.alpha(root.shadowTone, a);
+    }
+
+    readonly property color lightTone: root.step("#ffffff", root.accentGlow, 0.22)
+
+    function light(a) {
+        return root.alpha(root.lightTone, a);
+    }
 }
