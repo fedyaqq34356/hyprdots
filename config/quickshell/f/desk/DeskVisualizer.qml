@@ -14,12 +14,22 @@ Item {
     implicitWidth: loader.implicitWidth
     implicitHeight: loader.implicitHeight
 
+    readonly property real minWidth:
+        loader.item && loader.item.minWidth !== undefined ? loader.item.minWidth : 0
+    readonly property real maxWidth:
+        loader.item && loader.item.maxWidth !== undefined ? loader.item.maxWidth : 0
+    readonly property real minHeight:
+        loader.item && loader.item.minHeight !== undefined ? loader.item.minHeight : 0
+    readonly property real maxHeight:
+        loader.item && loader.item.maxHeight !== undefined ? loader.item.maxHeight : 0
+
     opacity: Media.playing ? 1 : 0.22
     Behavior on opacity { NumberAnimation { duration: Motion.slow } }
 
     Loader {
         id: loader
         sourceComponent: face.variant === "wave" ? wave
+                       : face.variant === "cover" ? cover
                        : face.variant === "orb" ? orb
                        : face.variant === "line" ? line
                        : face.variant === "grid" ? grid
@@ -62,6 +72,9 @@ Item {
             implicitWidth: 230
             implicitHeight: 230
 
+            readonly property real minWidth: 170
+            readonly property real maxWidth: 520
+
             Spectrum {
                 anchors.fill: parent
                 mode: "radial"
@@ -91,6 +104,65 @@ Item {
                 border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                       Colors.accent.b, 0.2 + Beat.level * 0.5)
                 scale: 1 + Beat.bass * 0.10
+            }
+        }
+    }
+
+    Component {
+        id: cover
+
+        Item {
+            id: wreath
+
+            implicitWidth: 250
+            implicitHeight: 250
+
+            readonly property real minWidth: 180
+            readonly property real maxWidth: 560
+
+            readonly property real discSize: width * 0.46
+            readonly property real gap: 10
+
+            Bloom {
+                target: disc
+                tint: Colors.accent
+                amount: Media.playing ? 0.08 + Beat.level * 0.30 : 0.04
+                radius: disc.width / 2
+                inset: -20
+                blurMax: 44
+            }
+
+            Spectrum {
+                anchors.fill: parent
+                mode: "radial"
+                tint: Colors.accent
+                resolution: 64
+                gap: 0.34
+
+                hole: {
+                    const outer = Math.min(width, height) / 2;
+                    if (outer <= 0)
+                        return 0.5;
+                    const inner = wreath.discSize / 2 + wreath.gap;
+                    return Math.max(0.1, Math.min(0.9, inner / outer));
+                }
+            }
+
+            Vinyl {
+                id: disc
+
+                anchors.centerIn: parent
+                width: wreath.discSize
+                height: width
+                art: Media.art
+                spinning: Media.playing
+                grooves: 7
+                labelRatio: 0.62
+                scale: (Media.playing ? 1 : 0.965) + Beat.bass * 0.05
+
+                Behavior on scale {
+                    NumberAnimation { duration: Motion.instant }
+                }
             }
         }
     }
@@ -215,6 +287,9 @@ Item {
         Item {
             implicitWidth: 220
             implicitHeight: 220
+
+            readonly property real minWidth: 150
+            readonly property real maxWidth: 480
 
             Repeater {
                 model: 4
@@ -429,6 +504,8 @@ Item {
 
         Column {
             spacing: 6
+
+            readonly property real minWidth: 260
 
             Repeater {
                 model: Math.min(10, Cava.bars)

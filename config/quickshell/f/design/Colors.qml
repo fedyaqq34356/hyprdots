@@ -87,6 +87,26 @@ Singleton {
     property color bad: srcBad
     Behavior on bad { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
+    function step(a, b, t) {
+        return Qt.rgba(a.r + (b.r - a.r) * t,
+                       a.g + (b.g - a.g) * t,
+                       a.b + (b.b - a.b) * t,
+                       1);
+    }
+
+    readonly property color surface1: root.step(root.bg, root.bgAlt, 0.34)
+    readonly property color surface2: root.step(root.bg, root.bgAlt, 0.67)
+    readonly property color surface3: root.bgAlt
+
+    function surfaceFor(level) {
+        switch (Math.max(0, Math.min(3, level))) {
+        case 1:  return root.surface1;
+        case 2:  return root.surface2;
+        case 3:  return root.surface3;
+        default: return root.bg;
+        }
+    }
+
     readonly property real statusSat:
         Math.max(0.45, Math.min(0.85, bad.hslSaturation))
     readonly property real statusLight:

@@ -4,6 +4,7 @@ import Quickshell.Services.UPower
 import Quickshell.Wayland
 import QtQuick
 import "root:/design"
+import "root:/reusables"
 import "root:/services"
 
 Scope {
@@ -13,6 +14,8 @@ Scope {
     readonly property int hold: 3400
 
     readonly property string name: Quickshell.env("USER")
+
+    WeatherHold { active: root.showing }
 
     SystemClock {
         id: clock

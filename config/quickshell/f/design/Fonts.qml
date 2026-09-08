@@ -17,8 +17,8 @@ Singleton {
         { value: "JetBrainsMono Nerd Font", label: "mono only" }
     ]
 
-    readonly property int titleSize: 17
-    readonly property int headingSize: 14
-    readonly property int bodySize: 12
-    readonly property int smallSize: 10
+    readonly property real titleSize: Scaler.f(17)
+    readonly property real headingSize: Scaler.f(14)
+    readonly property real bodySize: Scaler.f(12)
+    readonly property real smallSize: Scaler.f(10)
 }

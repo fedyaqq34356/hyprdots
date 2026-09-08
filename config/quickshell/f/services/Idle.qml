@@ -12,6 +12,13 @@ Singleton {
     readonly property int lockAfter: Prefs.idleLockSec
     readonly property int screenOffAfter: Prefs.idleScreenOffSec
 
+    readonly property int dimLead: Prefs.idleDimLeadSec
+    readonly property int dimAfter:
+        root.screenOffAfter > 0 && root.dimLead > 0
+            ? Math.max(1, root.screenOffAfter - root.dimLead) : 0
+
+    property bool dimming: false
+
     readonly property string guard:
         Quickshell.env("HOME") + "/.config/hypr/scripts/idle-guard.sh"
 
@@ -37,6 +44,14 @@ Singleton {
             if (isIdle)
                 root.run("lock");
         }
+    }
+
+    IdleMonitor {
+        enabled: root.enabled && root.dimAfter > 0
+        timeout: root.dimAfter
+        respectInhibitors: true
+
+        onIsIdleChanged: root.dimming = isIdle
     }
 
     IdleMonitor {

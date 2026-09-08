@@ -786,6 +786,53 @@ Scope {
             }
         }
 
+        Row {
+            visible: opt.spec && opt.spec.type === "pick"
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+
+            Repeater {
+                model: opt.spec && opt.spec.values ? opt.spec.values : []
+
+                Rectangle {
+                    required property var modelData
+
+                    readonly property bool chosen: opt.value === modelData
+
+                    width: segText.implicitWidth + 16
+                    height: 22
+                    radius: Shape.detail
+                    antialiasing: true
+
+                    color: chosen
+                        ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                  Colors.accent.b, 0.85)
+                        : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                  Colors.fgDim.b, 0.14)
+                    Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                    Text {
+                        id: segText
+                        anchors.centerIn: parent
+                        text: modelData
+                        color: parent.chosen ? Colors.accentText : Colors.fgDim
+                        font.family: Fonts.mono
+                        font.pixelSize: 10
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            opt.commit(modelData);
+                            Sfx.tick();
+                        }
+                    }
+                }
+            }
+        }
+
         Rectangle {
             visible: opt.spec && opt.spec.type === "text"
             anchors.right: parent.right

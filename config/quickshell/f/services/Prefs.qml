@@ -14,12 +14,18 @@ Singleton {
     readonly property string language: adapter.language
     readonly property string fontDisplay: adapter.fontDisplay
     readonly property string weatherPlace: adapter.weatherPlace
+    readonly property bool weatherEnabled:
+        adapter.weatherEnabled === undefined ? true : adapter.weatherEnabled
+    readonly property int weatherEveryMin:
+        adapter.weatherEveryMin === undefined ? 60 : adapter.weatherEveryMin
     readonly property string barPosition: adapter.barPosition
     readonly property string osdStyle: adapter.osdStyle
     readonly property bool barAtTop: adapter.barPosition !== "bottom"
 
     readonly property real uiScale: adapter.uiScale === undefined ? 1.0 : adapter.uiScale
     readonly property var monitorScales: adapter.monitorScales
+    readonly property int cornerRadius:
+        adapter.cornerRadius === undefined ? 12 : adapter.cornerRadius
 
     readonly property bool widgetsEnabled: adapter.widgetsEnabled
     readonly property bool quickActionsEnabled: adapter.quickActionsEnabled
@@ -34,6 +40,8 @@ Singleton {
     readonly property bool idleEnabled: adapter.idleEnabled
     readonly property int idleLockSec: adapter.idleLockSec
     readonly property int idleScreenOffSec: adapter.idleScreenOffSec
+    readonly property int idleDimLeadSec:
+        adapter.idleDimLeadSec === undefined ? 45 : adapter.idleDimLeadSec
 
     readonly property string timerSound: adapter.timerSound
     readonly property real timerVolume: Math.max(0, Math.min(1, adapter.timerVolume))
@@ -84,11 +92,15 @@ Singleton {
             property string language: "en"
             property string fontDisplay: "Adwaita Sans"
             property string weatherPlace: ""
+            property bool weatherEnabled: true
+            property int weatherEveryMin: 60
             property string barPosition: "top"
             property string osdStyle: "island"
 
             property real uiScale: 1.0
             property var monitorScales: ({})
+
+            property int cornerRadius: 12
 
             property bool widgetsEnabled: true
             property bool quickActionsEnabled: true
@@ -105,6 +117,7 @@ Singleton {
             property bool idleEnabled: true
             property int idleLockSec: 3000
             property int idleScreenOffSec: 3300
+            property int idleDimLeadSec: 45
 
             property string timerSound: "chime"
             property real timerVolume: 0.8
