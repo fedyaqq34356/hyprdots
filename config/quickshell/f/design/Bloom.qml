@@ -7,7 +7,8 @@ Item {
 
     property Item target: null
 
-    property color tint: Colors.accent
+    property color tint: Colors.accentGlow
+    property color tintAlt: bloom.tint === Colors.accentGlow ? Colors.accentAlt : bloom.tint
     property real amount: 0.22
     property real radius: Shape.modal
     property real inset: 40
@@ -21,12 +22,17 @@ Item {
     visible: bloom.amount > 0.001
 
     Rectangle {
+        id: halo
         anchors.fill: parent
         radius: bloom.radius
-        color: bloom.tint
+        color: "transparent"
         opacity: bloom.amount
 
-        Behavior on color { ColorAnimation { duration: Motion.slow } }
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: bloom.tint }
+            GradientStop { position: 1.0; color: bloom.tintAlt }
+        }
+
         Behavior on opacity { NumberAnimation { duration: Motion.slow } }
 
         layer.enabled: true

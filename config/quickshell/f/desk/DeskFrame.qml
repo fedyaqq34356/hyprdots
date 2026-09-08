@@ -56,6 +56,16 @@ Item {
     Behavior on x { enabled: !dragArea.drag.active; NumberAnimation { duration: Motion.base } }
     Behavior on y { enabled: !dragArea.drag.active; NumberAnimation { duration: Motion.base } }
 
+    Bloom {
+        target: frame
+        tint: Colors.shadowTone
+        tintAlt: Colors.shadowTone
+        amount: 0.30
+        inset: -Math.min(frame.width, frame.height) * 0.35
+        radius: Math.min(frame.width, frame.height) * 0.5
+        blurMax: 64
+    }
+
     Item {
         id: content
 
@@ -109,13 +119,11 @@ Item {
         anchors.fill: parent
         anchors.margins: -10
         radius: Shape.field
-        color: frame.selected
-            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
-            : "transparent"
+        color: frame.selected ? Colors.alpha(Colors.accent, 0.10) : "transparent"
         border.width: 1
         border.color: frame.selected
-            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.8)
-            : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.35)
+            ? Colors.alpha(Colors.accent, 0.8)
+            : Colors.alpha(Colors.outline, 0.35)
 
         opacity: frame.editing ? 1 : 0
         visible: opacity > 0.01
