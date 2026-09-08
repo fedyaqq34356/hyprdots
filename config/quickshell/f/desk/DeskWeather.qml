@@ -41,6 +41,8 @@ Item {
     readonly property var today: Weather.forecast.length > 0
         ? Weather.forecast[0] : null
 
+    WeatherHold { active: true }
+
     Loader {
         id: loader
         sourceComponent: face.variant === "compact" ? compact

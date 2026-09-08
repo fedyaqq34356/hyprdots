@@ -3,19 +3,28 @@ import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 import "root:/design"
+import "root:/services"
 
 Scope {
     id: root
 
     property bool showing: false
 
-    readonly property string shot:
-        "file://" + Quickshell.env("XDG_RUNTIME_DIR") + "/lock-bg.png"
+    readonly property int hold: 1150
+
+    readonly property string name: Quickshell.env("USER")
 
     function up() {
         if (root.showing)
             return;
         root.showing = true;
+        life.restart();
+    }
+
+    Timer {
+        id: life
+        interval: root.hold
+        onTriggered: root.showing = false
     }
 
     IpcHandler {
@@ -27,90 +36,98 @@ Scope {
         }
     }
 
-    LazyLoader {
-        active: root.showing
+    PanelWindow {
+        id: win
 
-        PanelWindow {
-            id: win
-            WlrLayershell.namespace: "qs-curtain"
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        WlrLayershell.namespace: "qs-curtain"
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
-            anchors {
-                top: true
-                bottom: true
-                left: true
-                right: true
+        screen: Focus.screen
+        visible: root.showing || veilFade.running
+
+        anchors { top: true; bottom: true; left: true; right: true }
+        exclusiveZone: 0
+        color: "transparent"
+        mask: Region {}
+
+        Rectangle {
+            id: veil
+
+            anchors.fill: parent
+            color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.82)
+            opacity: root.showing ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    id: veilFade
+                    duration: root.showing ? Motion.instant : Motion.lazy
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Motion.expo
+                }
             }
 
-            exclusiveZone: 0
-            color: "transparent"
-            mask: Region {}
-
-            Item {
-                id: sheet
+            Grain {
                 anchors.fill: parent
+                amount: 0.02
+            }
+        }
 
-                transform: Translate {
-                    id: slide
-                    y: 0
-                    x: 0
-                }
+        Column {
+            id: body
 
-                Image {
-                    anchors.fill: parent
-                    source: root.shot
-                    fillMode: Image.PreserveAspectCrop
-                    cache: false
-                    asynchronous: true
-                }
+            anchors.centerIn: parent
+            spacing: 18
+            opacity: root.showing ? 1 : 0
 
-                Rectangle {
-                    anchors.fill: parent
-                    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.55)
-                }
-
-                Rectangle {
-                    anchors.bottom: parent.bottom
-                    width: parent.width
-                    height: 2
-                    color: Colors.accent
-                    opacity: 0.75
+            transform: Translate {
+                y: root.showing ? 0 : -26
+                Behavior on y {
+                    NumberAnimation {
+                        duration: Motion.lazy
+                        easing.type: Easing.Bezier
+                        easing.bezierCurve: Motion.expo
+                    }
                 }
             }
 
-            ParallelAnimation {
-                id: leave
-                running: true
+            Behavior on opacity {
+                NumberAnimation { duration: Motion.slow }
+            }
 
-                NumberAnimation {
-                    target: slide
-                    property: "y"
-                    from: 0
-                    to: -win.height - 8
-                    duration: 620
-                    easing.type: Easing.InOutCubic
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: I18n.t("hello.back")
+                color: Colors.fg
+                font.family: Fonts.display
+                font.pixelSize: 52
+                font.weight: Font.Light
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: root.name
+                color: Colors.accent
+                font.family: Fonts.mono
+                font.pixelSize: 15
+                font.letterSpacing: 6
+                opacity: 0.9
+            }
+
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 220
+                height: 1
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: "transparent" }
+                    GradientStop {
+                        position: 0.5
+                        color: Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                       Colors.outline.b, 0.7)
+                    }
+                    GradientStop { position: 1.0; color: "transparent" }
                 }
-
-                NumberAnimation {
-                    target: slide
-                    property: "x"
-                    from: 0
-                    to: Math.round(win.width * 0.06)
-                    duration: 620
-                    easing.type: Easing.InOutCubic
-                }
-
-                NumberAnimation {
-                    target: sheet
-                    property: "opacity"
-                    from: 1
-                    to: 0.85
-                    duration: 620
-                    easing.type: Easing.InQuad
-                }
-
-                onFinished: root.showing = false
             }
         }
     }

@@ -9,6 +9,26 @@ import "root:/services"
 Singleton {
     id: root
 
+    readonly property bool enabled: Prefs.weatherEnabled
+
+    readonly property int every:
+        Math.max(5, Prefs.weatherEveryMin) * 60 * 1000
+
+    property int watchers: 0
+
+    function hold()    { root.watchers++; }
+    function release() { root.watchers = Math.max(0, root.watchers - 1); }
+
+    readonly property bool wanted: root.enabled && root.watchers > 0
+
+    property real fetchedAt: 0
+
+    function fresh() {
+        return root.fetchedAt > 0 && (Date.now() - root.fetchedAt) < root.every;
+    }
+
+    onWantedChanged: if (root.wanted) root.refresh(false)
+
     readonly property string place: {
         const env = Quickshell.env("WEATHER_PLACE");
         if (env && env !== "")
@@ -16,12 +36,12 @@ Singleton {
         return Prefs.weatherPlace !== "" ? encodeURIComponent(Prefs.weatherPlace) : "";
     }
 
-    onPlaceChanged: refetch.restart()
+    onPlaceChanged: if (root.wanted) refetch.restart()
 
     Timer {
         id: refetch
         interval: 400
-        onTriggered: root.refresh()
+        onTriggered: root.refresh(true)
     }
 
     property real temp: 0
@@ -71,7 +91,11 @@ Singleton {
         return Colors.fgDim;
     }
 
-    function refresh() {
+    function refresh(force) {
+        if (!root.enabled)
+            return;
+        if (!force && root.fresh())
+            return;
         fetch.running = false;
         fetch.running = true;
     }
@@ -81,7 +105,6 @@ Singleton {
 
         command: ["curl", "-sf", "--max-time", "12",
                   "https://wttr.in/" + root.place + "?format=j1"]
-        running: true
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -120,6 +143,7 @@ Singleton {
 
                     root.error = "";
                     root.ready = true;
+                    root.fetchedAt = Date.now();
                     root.save();
                 } catch (e) {
                     root.error = I18n.t("weather.badParse");
@@ -129,10 +153,10 @@ Singleton {
     }
 
     Timer {
-        interval: 20 * 60 * 1000
-        running: true
+        interval: root.every
+        running: root.wanted
         repeat: true
-        onTriggered: root.refresh()
+        onTriggered: root.refresh(true)
     }
 
     function save() {
@@ -140,6 +164,7 @@ Singleton {
         cache.code = root.code;
         cache.text = root.text;
         cache.city = root.city;
+        cache.fetchedAt = root.fetchedAt;
         store.writeAdapter();
     }
 
@@ -153,6 +178,7 @@ Singleton {
             root.code = cache.code;
             root.text = cache.text;
             root.city = cache.city;
+            root.fetchedAt = cache.fetchedAt;
             root.ready = true;
         }
         onLoadFailed: (error) => {
@@ -166,6 +192,7 @@ Singleton {
             property int code: 113
             property string text: ""
             property string city: ""
+            property real fetchedAt: 0
         }
     }
 }

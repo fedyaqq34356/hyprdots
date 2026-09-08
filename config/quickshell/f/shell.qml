@@ -104,6 +104,14 @@ ShellRoot {
         function cava(): string {
             return "watchers=" + Cava.watchers + " active=" + Cava.active;
         }
+        function weather(): string {
+            return "watchers=" + Weather.watchers
+                 + " wanted=" + Weather.wanted
+                 + " everyMin=" + (Weather.every / 60000)
+                 + " age=" + (Weather.fetchedAt > 0
+                     ? Math.round((Date.now() - Weather.fetchedAt) / 1000) + "s"
+                     : "never");
+        }
     }
 
     Process {
@@ -118,6 +126,7 @@ ShellRoot {
     }
     FocusTrail {}
     Greeting {}
+    Dim {}
 
     LazyLoader {
         id: deskLoader

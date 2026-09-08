@@ -1272,6 +1272,8 @@ Item {
             property var item: null
             spacing: 5
             property bool shown: Weather.ready
+
+            WeatherHold { active: true }
             visible: shown
             anchors.verticalCenter: parent ? parent.verticalCenter : undefined
 

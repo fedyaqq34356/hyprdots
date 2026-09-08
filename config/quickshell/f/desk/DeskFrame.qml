@@ -15,6 +15,38 @@ Item {
     readonly property bool editing: DeskLayout.editing
     readonly property bool selected: DeskLayout.selected === entry.key
 
+    readonly property real minSize: {
+        const it = widget.item;
+        const w = content.width;
+        const h = content.height;
+        if (!it || w <= 0 || h <= 0)
+            return 0.5;
+        let lo = 0.5;
+        if (it.minWidth !== undefined && it.minWidth > 0)
+            lo = Math.max(lo, it.minWidth / w);
+        if (it.minHeight !== undefined && it.minHeight > 0)
+            lo = Math.max(lo, it.minHeight / h);
+        return Math.min(lo, 3.0);
+    }
+
+    readonly property real maxSize: {
+        const it = widget.item;
+        const w = content.width;
+        const h = content.height;
+        if (!it || w <= 0 || h <= 0)
+            return 3.0;
+        let hi = 3.0;
+        if (it.maxWidth !== undefined && it.maxWidth > 0)
+            hi = Math.min(hi, it.maxWidth / w);
+        if (it.maxHeight !== undefined && it.maxHeight > 0)
+            hi = Math.min(hi, it.maxHeight / h);
+        return Math.max(hi, frame.minSize);
+    }
+
+    function grow(delta) {
+        DeskLayout.resize(frame.entry.key, delta, frame.minSize, frame.maxSize);
+    }
+
     x: entry.x * fieldWidth - width / 2
     y: entry.y * fieldHeight - height / 2
 
@@ -128,7 +160,7 @@ Item {
         }
 
         onWheel: (wheel) => {
-            DeskLayout.resize(frame.entry.key, wheel.angleDelta.y > 0 ? 0.1 : -0.1);
+            frame.grow(wheel.angleDelta.y > 0 ? 0.1 : -0.1);
             Sfx.tick();
         }
     }
@@ -162,14 +194,14 @@ Item {
             glyph: "󰐕"
             tip: I18n.t("act.bigger")
             tint: Colors.accentAlt
-            onActivated: DeskLayout.resize(frame.entry.key, 0.15)
+            onActivated: frame.grow(0.15)
         }
 
         IconButton {
             glyph: "󰍴"
             tip: I18n.t("act.smaller")
             tint: Colors.accentAlt
-            onActivated: DeskLayout.resize(frame.entry.key, -0.15)
+            onActivated: frame.grow(-0.15)
         }
 
         IconButton {

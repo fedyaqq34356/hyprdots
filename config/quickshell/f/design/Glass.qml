@@ -9,7 +9,7 @@ Item {
 
     property real radius: Shape.field
     property int elevation: 1
-    property color tint: Colors.bg
+    property color tint: Colors.surfaceFor(glass.elevation)
     property real tintOpacity: 0.72
     property color edge: Colors.outline
     property bool specular: true
