@@ -8,11 +8,18 @@ FUZZEL_CFG="$CFG_DIR/fuzzel.ini"
 
 BIN="$HOME/.local/bin"
 
-BAR=yes; NOTIFY=yes; EDITOR_CMD=nvim; TERMINAL=kitty
+BAR=yes; NOTIFY=yes; EDITOR_CMD=nvim; TERMINAL=foot; FILEMANAGER=nnn
 [[ -r "$CFG" ]] && source "$CFG"
 
 menu() { fuzzel --config="$FUZZEL_CFG" --dmenu --prompt "${1:-: }"; }
-term() { setsid -f "$TERMINAL" --class serezha-tui -e "$@" >/dev/null 2>&1; }
+
+term() {
+    case "$TERMINAL" in
+        foot) setsid -f foot -c "$CFG_DIR/foot/foot.ini" \
+                  --app-id serezha-tui -e "$@" >/dev/null 2>&1 ;;
+        *)    setsid -f "$TERMINAL" --class serezha-tui -e "$@" >/dev/null 2>&1 ;;
+    esac
+}
 
 audio_menu() {
     local list pick id
@@ -45,6 +52,7 @@ main_menu() {
         "настройки режима — правка config" \
         "бар — сейчас: $BAR" \
         "уведомления — не беспокоить" \
+        "проводник — $FILEMANAGER" \
         "звук — выбрать выход" \
         "сеть — nmtui" \
         "bluetooth — bluetoothctl" \
@@ -71,6 +79,9 @@ main_menu() {
             ;;
         "уведомления"*)
             "$BIN/serezha-dnd"
+            ;;
+        "проводник"*)
+            "$BIN/serezha-files"
             ;;
         "звук"*)
             audio_menu

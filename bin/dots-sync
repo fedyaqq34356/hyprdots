@@ -54,6 +54,11 @@ MANIFEST = [
     (".local/bin/serezha-dnd", "bin/serezha-dnd"),
     (".local/bin/serezha-env", "bin/serezha-env"),
     (".local/bin/serezha-mem", "bin/serezha-mem"),
+    (".local/bin/serezha-files", "bin/serezha-files"),
+    (".local/bin/serezha-power", "bin/serezha-power"),
+    (".local/bin/serezha-automount", "bin/serezha-automount"),
+    (".local/share/applications/serezha-files.desktop",
+     "config/serezha/applications/serezha-files.desktop"),
 ]
 
 # Имена из SKIP_EXACT, которые по этим путям всё-таки публикуются. Запрет там

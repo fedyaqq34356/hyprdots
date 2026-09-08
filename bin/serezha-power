@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+
+set -u
+
+STATE="/run/serezha-power"
+
+[[ $EUID -eq 0 ]] || { printf 'serezha-power: нужен root\n' >&2; exit 1; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+save() {
+    local key="$1" value="$2"
+    mkdir -p "$STATE"
+    [[ -e "$STATE/$key" ]] || printf '%s\n' "$value" >"$STATE/$key"
+}
+
+restore() {
+    local key="$1"
+    [[ -r "$STATE/$key" ]] || return 1
+    cat "$STATE/$key"
+}
+
+write() {
+    local path="$1" value="$2"
+    [[ -w "$path" ]] || return 0
+    printf '%s' "$value" >"$path" 2>/dev/null
+}
+
+cpu_on() {
+    local p
+    for p in /sys/devices/system/cpu/cpufreq/policy*; do
+        [[ -d "$p" ]] || continue
+        local id="${p##*/}"
+        [[ -r "$p/scaling_governor" ]] &&
+            save "gov.$id" "$(<"$p/scaling_governor")" &&
+            write "$p/scaling_governor" powersave
+        [[ -r "$p/energy_performance_preference" ]] &&
+            save "epp.$id" "$(<"$p/energy_performance_preference")" &&
+            write "$p/energy_performance_preference" power
+    done
+}
+
+cpu_off() {
+    local p
+    for p in /sys/devices/system/cpu/cpufreq/policy*; do
+        [[ -d "$p" ]] || continue
+        local id="${p##*/}" v
+        v=$(restore "gov.$id") && write "$p/scaling_governor" "$v"
+        v=$(restore "epp.$id") && write "$p/energy_performance_preference" "$v"
+    done
+}
+
+aspm_on() {
+    local f=/sys/module/pcie_aspm/parameters/policy
+    [[ -r "$f" ]] || return 0
+    local cur
+    cur=$(sed -n 's/.*\[\([a-z]*\)\].*/\1/p' "$f")
+    save aspm "$cur"
+    write "$f" powersupersave
+}
+
+aspm_off() {
+    local v
+    v=$(restore aspm) && write /sys/module/pcie_aspm/parameters/policy "$v"
+}
+
+audio_on() {
+    local f=/sys/module/snd_hda_intel/parameters/power_save
+    [[ -r "$f" ]] || return 0
+    save audio "$(<"$f")"
+    write "$f" 1
+    write /sys/module/snd_hda_intel/parameters/power_save_controller Y
+}
+
+audio_off() {
+    local v
+    v=$(restore audio) && write /sys/module/snd_hda_intel/parameters/power_save "$v"
+}
+
+usb_is_hid() {
+    local dev="$1" f
+    for f in "$dev"/*/bInterfaceClass; do
+        [[ -r "$f" ]] || continue
+        [[ "$(<"$f")" == "03" ]] && return 0
+    done
+    return 1
+}
+
+usb_on() {
+    local dev
+    for dev in /sys/bus/usb/devices/*; do
+        [[ -w "$dev/power/control" ]] || continue
+        usb_is_hid "$dev" && continue
+        save "usb.${dev##*/}" "$(<"$dev/power/control")"
+        write "$dev/power/control" auto
+    done
+}
+
+usb_off() {
+    local dev v
+    for dev in /sys/bus/usb/devices/*; do
+        [[ -w "$dev/power/control" ]] || continue
+        v=$(restore "usb.${dev##*/}") && write "$dev/power/control" "$v"
+    done
+}
+
+disk_on() {
+    local h
+    for h in /sys/class/scsi_host/host*/link_power_management_policy; do
+        [[ -w "$h" ]] || continue
+        local id; id=$(printf '%s' "$h" | tr / .)
+        save "sata$id" "$(<"$h")"
+        write "$h" med_power_with_dipm
+    done
+}
+
+disk_off() {
+    local h v
+    for h in /sys/class/scsi_host/host*/link_power_management_policy; do
+        [[ -w "$h" ]] || continue
+        local id; id=$(printf '%s' "$h" | tr / .)
+        v=$(restore "sata$id") && write "$h" "$v"
+    done
+}
+
+kernel_on() {
+    save writeback "$(sysctl -n vm.dirty_writeback_centisecs)"
+    save laptop    "$(sysctl -n vm.laptop_mode)"
+    save nmi       "$(sysctl -n kernel.nmi_watchdog)"
+    sysctl -q -w vm.dirty_writeback_centisecs=1500
+    sysctl -q -w vm.laptop_mode=5
+    sysctl -q -w kernel.nmi_watchdog=0
+}
+
+kernel_off() {
+    local v
+    v=$(restore writeback) && sysctl -q -w "vm.dirty_writeback_centisecs=$v"
+    v=$(restore laptop)    && sysctl -q -w "vm.laptop_mode=$v"
+    v=$(restore nmi)       && sysctl -q -w "kernel.nmi_watchdog=$v"
+}
+
+wifi_on() {
+    have iw || return 0
+    local dev
+    for dev in $(iw dev 2>/dev/null | awk '/Interface/ { print $2 }'); do
+        save "wifi.$dev" "$(iw dev "$dev" get power_save 2>/dev/null |
+            awk '{ print $NF }')"
+        iw dev "$dev" set power_save on >/dev/null 2>&1
+    done
+}
+
+wifi_off() {
+    have iw || return 0
+    local dev v
+    for dev in $(iw dev 2>/dev/null | awk '/Interface/ { print $2 }'); do
+        v=$(restore "wifi.$dev") || continue
+        iw dev "$dev" set power_save "$v" >/dev/null 2>&1
+    done
+}
+
+nvidia_on() {
+    have nvidia-smi || return 0
+    local cur min
+    cur=$(nvidia-smi --query-gpu=power.limit --format=csv,noheader,nounits 2>/dev/null |
+        head -1 | tr -d ' ')
+    min=$(nvidia-smi --query-gpu=power.min_limit --format=csv,noheader,nounits 2>/dev/null |
+        head -1 | tr -d ' ')
+    [[ "$cur" =~ ^[0-9]+([.][0-9]+)?$ ]] || return 0
+    [[ "$min" =~ ^[0-9]+([.][0-9]+)?$ ]] || return 0
+    save nvpl "$cur"
+    nvidia-smi --persistence-mode=0 >/dev/null 2>&1
+    nvidia-smi --power-limit="${min%%.*}" >/dev/null 2>&1
+}
+
+nvidia_off() {
+    have nvidia-smi || return 0
+    local v
+    v=$(restore nvpl) && nvidia-smi --power-limit="${v%%.*}" >/dev/null 2>&1
+}
+
+show() {
+    local p=/sys/devices/system/cpu/cpufreq/policy0
+    printf 'governor:   %s\n' "$(cat "$p/scaling_governor" 2>/dev/null)"
+    printf 'epp:        %s\n' "$(cat "$p/energy_performance_preference" 2>/dev/null)"
+    printf 'aspm:       %s\n' \
+        "$(sed -n 's/.*\[\([a-z]*\)\].*/\1/p' \
+            /sys/module/pcie_aspm/parameters/policy 2>/dev/null)"
+    printf 'hda:        %s\n' \
+        "$(cat /sys/module/snd_hda_intel/parameters/power_save 2>/dev/null)"
+    printf 'writeback:  %s\n' "$(sysctl -n vm.dirty_writeback_centisecs)"
+    have nvidia-smi && printf 'gpu limit:  %s W\n' \
+        "$(nvidia-smi --query-gpu=power.limit \
+            --format=csv,noheader,nounits 2>/dev/null | head -1)"
+    printf 'сохранено:  %s\n' \
+        "$([[ -d $STATE ]] && echo "$STATE" || echo 'нечего возвращать')"
+}
+
+case "${1-show}" in
+    on)
+        cpu_on; aspm_on; audio_on; usb_on; disk_on
+        kernel_on; wifi_on; nvidia_on
+        ;;
+    off)
+        [[ -d "$STATE" ]] || exit 0
+        cpu_off; aspm_off; audio_off; usb_off; disk_off
+        kernel_off; wifi_off; nvidia_off
+        rm -rf "$STATE"
+        ;;
+    show)
+        show
+        ;;
+    *)
+        printf 'serezha-power: on | off | show\n' >&2
+        exit 1
+        ;;
+esac
