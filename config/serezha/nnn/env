@@ -1,0 +1,15 @@
+NNN_COLORS="7777"
+
+NNN_FCOLORS="0b0b0b0b0b0b0b0b"
+
+NNN_OPENER="xdg-open"
+
+NNN_TRASH=0
+
+NNN_PLUG="p:preview-tui;d:diskusage;o:fzopen"
+
+NNN_BMS="h:$HOME;d:$HOME/Downloads;p:$HOME/Projects;c:$HOME/.config;m:/run/media"
+
+NNN_TMPFILE="${XDG_RUNTIME_DIR:-/tmp}/nnn-cd"
+
+NNN_OPTS="deHoU"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Проводник режима
+Comment=nnn в терминале «Серёжа мода»
+Exec=/home/f/.local/bin/serezha-files %f
+Icon=system-file-manager
+Terminal=false
+NoDisplay=true
+MimeType=inode/directory;x-directory/normal;
+Categories=System;FileTools;FileManager;

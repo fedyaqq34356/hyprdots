@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -u
+
+CFG_DIR="$HOME/.config/serezha"
+ENV_FILE="$CFG_DIR/nnn/env"
+TERMINAL=foot
+FILEMANAGER=nnn
+EDITOR_CMD=nvim
+[[ -r "$CFG_DIR/config" ]] && source "$CFG_DIR/config"
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+have "$FILEMANAGER" || {
+    printf 'serezha-files: %s не установлен\n' "$FILEMANAGER" >&2
+    exit 1
+}
+
+[[ -r "$ENV_FILE" ]] && set -a && source "$ENV_FILE" && set +a
+
+EDITOR="${EDITOR_CMD}"
+VISUAL="${EDITOR_CMD}"
+export EDITOR VISUAL
+
+target="${1-}"
+[[ "$target" == "--here" ]] && { target="${2-}"; here=1; } || here=0
+[[ -z "$target" ]] && target="$HOME"
+[[ -f "$target" ]] && target="$(dirname "$target")"
+[[ -d "$target" ]] || target="$HOME"
+
+run() {
+    "$FILEMANAGER" "$target"
+    rm -f "${NNN_TMPFILE:-}" 2>/dev/null
+}
+
+if (( here )); then
+    run
+    exit 0
+fi
+
+case "$TERMINAL" in
+    foot) exec setsid -f "$TERMINAL" \
+              -c "$CFG_DIR/foot/foot.ini" \
+              --app-id serezha-files \
+              -e "$0" --here "$target" >/dev/null 2>&1 ;;
+    *)    exec setsid -f "$TERMINAL" \
+              --class serezha-files \
+              -e "$0" --here "$target" >/dev/null 2>&1 ;;
+esac
