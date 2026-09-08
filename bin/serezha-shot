@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -u
+
+PATH="$HOME/.local/bin:$PATH"
+export PATH
+
+CFG_DIR="$HOME/.config/serezha"
+REPO="$HOME/Projects/hyprdots"
+ASSET="$REPO/assets/serezha-memory.jpg"
+WAIT_LIMIT=1800
+
+TERMINAL=foot
+[[ -r "$CFG_DIR/config" ]] && source "$CFG_DIR/config"
+
+msg()  { printf '%s\n' "$*" >&2; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+for tool in grim magick "$TERMINAL"; do
+    have "$tool" || { msg "serezha-shot: нет $tool"; exit 1; }
+done
+
+NOW=0; GIT=1
+for arg in "$@"; do
+    case "$arg" in
+        --now)    NOW=1 ;;
+        --no-git) GIT=0 ;;
+        *)        msg "serezha-shot: --now | --no-git"; exit 1 ;;
+    esac
+done
+
+wait_for_kitty() {
+    (( NOW )) && return 0
+    pgrep -x kitty >/dev/null || return 0
+    msg "жду, пока закроется kitty (до $((WAIT_LIMIT / 60)) минут)"
+    local waited=0
+    while pgrep -x kitty >/dev/null; do
+        sleep 2
+        waited=$((waited + 2))
+        (( waited >= WAIT_LIMIT )) && { msg "не дождался, снимаю как есть"; return 0; }
+    done
+    sleep 2
+}
+
+close_stray_terminals() {
+    pkill -f "app-id serezha-files" >/dev/null 2>&1
+    pkill -f "app-id serezha-tui"   >/dev/null 2>&1
+    sleep 1
+    return 0
+}
+
+shoot() {
+    local out="${XDG_RUNTIME_DIR:-/tmp}/serezha-mem.txt"
+    serezha-mem >"$out" 2>&1
+
+    setsid -f "$TERMINAL" -c "$CFG_DIR/foot/foot.ini" \
+        --app-id serezha-shot \
+        --window-size-pixels 1100x760 \
+        -e sh -c "cat '$out'; sleep 3600" >/dev/null 2>&1
+
+    local i
+    for i in $(seq 1 40); do
+        hyprctl clients 2>/dev/null | grep -q "serezha-shot" && break
+        sleep 0.1
+    done
+    sleep 0.6
+
+    grim -t png - | magick png:- -quality 92 "$ASSET"
+    local rc=$?
+
+    pkill -f "app-id serezha-shot" >/dev/null 2>&1
+    return $rc
+}
+
+publish() {
+    (( GIT )) || return 0
+    [[ -d "$REPO/.git" ]] || return 0
+    git -C "$REPO" add "$ASSET" || return 0
+    git -C "$REPO" diff --cached --quiet && { msg "кадр не изменился"; return 0; }
+    git -C "$REPO" commit -q -m \
+        "docs(assets): reshoot the black mode's memory readout" || return 0
+    git -C "$REPO" push -q origin main && msg "кадр ушёл в репозиторий"
+}
+
+wait_for_kitty
+close_stray_terminals
+
+if shoot; then
+    msg "снято: $ASSET"
+    serezha-mem | tail -4 >&2
+    publish
+else
+    msg "serezha-shot: снять не удалось"
+    exit 1
+fi

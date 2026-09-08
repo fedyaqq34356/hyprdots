@@ -57,6 +57,7 @@ MANIFEST = [
     (".local/bin/serezha-files", "bin/serezha-files"),
     (".local/bin/serezha-power", "bin/serezha-power"),
     (".local/bin/serezha-automount", "bin/serezha-automount"),
+    (".local/bin/serezha-shot", "bin/serezha-shot"),
     (".local/share/applications/serezha-files.desktop",
      "config/serezha/applications/serezha-files.desktop"),
 ]

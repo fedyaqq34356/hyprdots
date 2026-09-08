@@ -772,6 +772,9 @@ Measured with PSS rather than RSS, because summing RSS counts every shared libra
 process: a free session is **236 MB with a terminal open**, against roughly 1005 MB in the normal
 mode. Quickshell is the largest single line of the difference, but not the whole of it.
 
+That 236 MB is the mode with `XWAYLAND_IDLE=yes` and no X11 client on screen, which is what the
+screenshot above shows. On the defaults, where Xwayland is left alone, the same session is 302 MB.
+
 The mode used to sit at 532 MB, and four processes held nearly all of what came off:
 
 | | normal mode | black mode | |
@@ -1503,6 +1506,9 @@ VPN, но только пока туннель поднят: определен�
 Меряется PSS, а не RSS: сумма RSS считает каждую общую библиотеку заново на каждый процесс.
 Свободная сессия — **236 МБ с открытым терминалом** против примерно 1005 МБ в обычном режиме.
 Quickshell — самая крупная строка разницы, но не вся она.
+
+Эти 236 МБ — режим с `XWAYLAND_IDLE=yes` и без единого окна X11 на экране, ровно то, что на
+скриншоте выше. На умолчаниях, где Xwayland не трогают, та же сессия — 302 МБ.
 
 Раньше режим стоил 532 МБ, и почти всё, что с тех пор ушло, держали четыре процесса:
 
