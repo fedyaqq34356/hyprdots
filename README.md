@@ -143,7 +143,7 @@ and the lock screen recolour themselves around it.
 <td colspan="2" align="center"><sub>the file manager takes the same palette — <code>Super</code> + <code>E</code></sub></td>
 </tr>
 <tr>
-<td colspan="2" align="center"><sub><b>Serezha mode</b> — the same session with the shell shut down: black, waybar, 532 MB</sub></td>
+<td colspan="2" align="center"><sub><b>Serezha mode</b> — the same session with the shell shut down: black, waybar, 236 MB</sub></td>
 </tr>
 <tr>
 <td><img src="assets/serezha-desktop.jpg" alt="The black desktop with waybar"></td>
@@ -769,8 +769,32 @@ are a symlink and `hyprctl reload`: no logout, and nothing removed from the norm
 by being sourced last.
 
 Measured with PSS rather than RSS, because summing RSS counts every shared library once per
-process: a free session is **532 MB with two terminals open**, against roughly 1005 MB in the
-normal mode. Almost all of the difference is Quickshell.
+process: a free session is **236 MB with a terminal open**, against roughly 1005 MB in the normal
+mode. Quickshell is the largest single line of the difference, but not the whole of it.
+
+The mode used to sit at 532 MB, and four processes held nearly all of what came off:
+
+| | normal mode | black mode | |
+| --- | --- | --- | --- |
+| terminal | kitty, 210 MB | **foot**, 8 MB | a Python runtime and an OpenGL renderer against C and `wl_shm` |
+| files | Thunar, 60 MB | **nnn**, 1 MB | and `tumbler` leaves with it — the thumbnailer read every file in a directory |
+| automount | udiskie, 36 MB | **serezha-automount**, 3 MB | `udevadm` and `udisksctl` instead of PyGObject and GTK |
+| X11 | Xwayland, 66 MB | Xwayland, 66 MB | `XWAYLAND_IDLE` can drop it, but defaults to `no` — see below |
+
+Thunar leaves for colour as much as for weight: the swapped GTK theme never reaches its sidebar or
+its path bar, so it stays grey in a black session. `mimeapps.list` is swapped alongside the themes,
+so `xdg-open` follows and a double-clicked folder opens `nnn` rather than bringing Thunar back.
+
+Xwayland stays because killing it is a one-way trade on Hyprland 0.56.1: the compositor does not
+bring it back — not lazily on the first X11 client, not on `hyprctl reload` — and the client simply
+hangs on `:0`. `XWAYLAND_IDLE=yes` is there for a day when X11 is not needed, and it only fires when
+no window reports `xwayland: 1`.
+
+Battery is a separate axis and does not come out of the display. `serezha-power` runs from
+`/usr/local/bin` under one passwordless sudo rule for that single path: governor and EPP, the HDA
+codec's idle timeout, USB autosuspend outside input devices, SATA ALPM, dirty writeback, Wi-Fi
+power save, and the GPU power cap where the card allows one. Every value is saved to `/run` and put
+back on the way out. Brightness, volume, refresh rate and idle timeouts are deliberately untouched.
 
 </details>
 
@@ -1477,8 +1501,34 @@ VPN, но только пока туннель поднят: определен�
 указывает либо на пустой файл, либо на чёрный, и чёрный побеждает тем, что подключается последним.
 
 Меряется PSS, а не RSS: сумма RSS считает каждую общую библиотеку заново на каждый процесс.
-Свободная сессия — **532 МБ с двумя открытыми терминалами** против примерно 1005 МБ в обычном
-режиме. Почти вся разница — Quickshell.
+Свободная сессия — **236 МБ с открытым терминалом** против примерно 1005 МБ в обычном режиме.
+Quickshell — самая крупная строка разницы, но не вся она.
+
+Раньше режим стоил 532 МБ, и почти всё, что с тех пор ушло, держали четыре процесса:
+
+| | обычный режим | чёрный режим | |
+| --- | --- | --- | --- |
+| терминал | kitty, 210 МБ | **foot**, 8 МБ | Python-рантайм и рендер на OpenGL против C и `wl_shm` |
+| проводник | Thunar, 60 МБ | **nnn**, 1 МБ | вместе с ним уходит `tumbler` — он читал каждый файл в каталоге ради миниатюр |
+| автомонтирование | udiskie, 36 МБ | **serezha-automount**, 3 МБ | `udevadm` и `udisksctl` вместо PyGObject и GTK |
+| X11 | Xwayland, 66 МБ | Xwayland, 66 МБ | `XWAYLAND_IDLE` его гасит, но по умолчанию `no` — почему, ниже |
+
+Thunar убран не столько за вес, сколько за цвет: подменённая GTK-тема не достаёт до его боковой
+панели и полосы пути, и в чёрной сессии он остаётся серым. Вместе с темами подменяется
+`mimeapps.list`, поэтому `xdg-open` идёт следом и папка по двойному клику открывает `nnn`, а не
+поднимает Thunar обратно.
+
+Xwayland остаётся, потому что на Hyprland 0.56.1 это сделка в одну сторону: компоситор не поднимает
+его заново — ни лениво при первом X11-клиенте, ни по `hyprctl reload`, — и клиент просто виснет на
+`:0`. `XWAYLAND_IDLE=yes` существует для дня, когда X11 заведомо не нужен, и срабатывает только
+если ни одно окно не отвечает `xwayland: 1`.
+
+Батарея — отдельная ось, и она не берётся из экрана. `serezha-power` работает из `/usr/local/bin`
+по одному правилу sudo без пароля на этот единственный путь: политика частот и EPP, таймаут сна
+HDA-кодека, автосон USB кроме устройств ввода, SATA ALPM, writeback, power save у Wi-Fi и потолок
+мощности видеокарты там, где карта его разрешает. Каждое значение сохраняется в `/run` и
+возвращается на выходе. Яркость, громкость, частота обновления и таймауты засыпания намеренно не
+трогаются.
 
 </details>
 
