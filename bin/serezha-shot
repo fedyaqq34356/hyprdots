@@ -50,20 +50,17 @@ close_stray_terminals() {
 }
 
 shoot() {
-    local out="${XDG_RUNTIME_DIR:-/tmp}/serezha-mem.txt"
-    serezha-mem >"$out" 2>&1
-
     setsid -f "$TERMINAL" -c "$CFG_DIR/foot/foot.ini" \
         --app-id serezha-shot \
         --window-size-pixels 1100x760 \
-        -e sh -c "cat '$out'; sleep 3600" >/dev/null 2>&1
+        -e sh -c "sleep 0.5; serezha-mem; sleep 3600" >/dev/null 2>&1
 
     local i
     for i in $(seq 1 40); do
         hyprctl clients 2>/dev/null | grep -q "serezha-shot" && break
         sleep 0.1
     done
-    sleep 0.6
+    sleep 2.5
 
     grim -t png - | magick png:- -quality 92 "$ASSET"
     local rc=$?
