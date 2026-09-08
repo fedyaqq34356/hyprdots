@@ -65,13 +65,12 @@ Scope {
                 Component.onDestruction: island.blobSync()
 
                 property real radius: BarConfig.s("radius")
-                property color color: Qt.rgba(
-                    Colors.bg.r, Colors.bg.g, Colors.bg.b,
+                property color color: Colors.alpha(
+                    Colors.bg,
                     (hovered ? BarConfig.s("fillHover") : BarConfig.s("fill")) / 100)
                 property color borderColor: hovered
-                    ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
-                    : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b,
-                              BarConfig.s("borderAlpha") / 100)
+                    ? Colors.alpha(Colors.accent, 0.55)
+                    : Colors.alpha(Colors.outline, BarConfig.s("borderAlpha") / 100)
 
                 default property alias content: body.data
 
@@ -102,9 +101,17 @@ Scope {
                     layer.enabled: BarConfig.s("shadow")
                     layer.effect: MultiEffect {
                         shadowEnabled: true
-                        shadowColor: Qt.rgba(0, 0, 0, island.hovered ? 0.45 : 0.30)
-                        shadowBlur: 0.55
+                        shadowColor: Colors.shadow(island.hovered ? 0.45 : 0.30)
+                        shadowBlur: 0.60
                         shadowVerticalOffset: 3
+                    }
+
+                    Sheen {
+                        anchors.fill: parent
+                        radius: island.radius
+                        border: false
+                        grain: false
+                        strength: 0.65
                     }
                 }
 

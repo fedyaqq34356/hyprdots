@@ -16,9 +16,12 @@ Item {
     property bool grain: true
     property real grainOpacity: 0.035
 
-    readonly property real shadowBlur: [0, 0.45, 0.65, 0.85][Math.max(0, Math.min(3, elevation))]
-    readonly property real shadowAlpha: [0, 0.28, 0.40, 0.52][Math.max(0, Math.min(3, elevation))]
-    readonly property int shadowDrop: [0, 3, 6, 10][Math.max(0, Math.min(3, elevation))]
+    readonly property real shadowBlur: [0, 0.55, 0.80, 1.00][Math.max(0, Math.min(3, elevation))]
+    readonly property real shadowAlpha: [0, 0.22, 0.32, 0.42][Math.max(0, Math.min(3, elevation))]
+    readonly property int shadowDrop: [0, 5, 10, 18][Math.max(0, Math.min(3, elevation))]
+
+    readonly property int contactDrop: [0, 2, 3, 4][Math.max(0, Math.min(3, elevation))]
+    readonly property real contactAlpha: [0, 0.30, 0.40, 0.50][Math.max(0, Math.min(3, elevation))]
 
     HoverHandler {
         id: pointer
@@ -26,10 +29,20 @@ Item {
     }
 
     Rectangle {
+        anchors.fill: parent
+        anchors.topMargin: glass.contactDrop
+        anchors.bottomMargin: -glass.contactDrop
+        visible: glass.elevation > 0
+        radius: glass.radius
+        color: Colors.shadow(glass.contactAlpha)
+        antialiasing: true
+    }
+
+    Rectangle {
         id: body
         anchors.fill: parent
         radius: glass.radius
-        color: Qt.rgba(glass.tint.r, glass.tint.g, glass.tint.b, glass.tintOpacity)
+        color: Colors.alpha(glass.tint, glass.tintOpacity)
         antialiasing: true
 
         Behavior on color { ColorAnimation { duration: Motion.slow } }
@@ -37,7 +50,7 @@ Item {
         layer.enabled: glass.elevation > 0
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: Qt.rgba(0, 0, 0, glass.shadowAlpha)
+            shadowColor: Colors.shadow(glass.shadowAlpha)
             shadowBlur: glass.shadowBlur
             shadowVerticalOffset: glass.shadowDrop
         }
@@ -47,9 +60,10 @@ Item {
         anchors.fill: body
         radius: glass.radius
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.07) }
-            GradientStop { position: 0.45; color: Qt.rgba(1, 1, 1, 0.012) }
-            GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.10) }
+            GradientStop { position: 0.0; color: Colors.light(0.080) }
+            GradientStop { position: 0.42; color: Colors.light(0.014) }
+            GradientStop { position: 0.75; color: Colors.shadow(0.035) }
+            GradientStop { position: 1.0; color: Colors.shadow(0.120) }
         }
     }
 
@@ -79,6 +93,9 @@ Item {
             x: (pointer.hovered ? pointer.point.position.x : glass.width / 2) - width / 2
             y: (pointer.hovered ? pointer.point.position.y : glass.height / 2) - height / 2
 
+            property color tone: Colors.lightTone
+            onToneChanged: blob.requestPaint()
+
             Behavior on opacity { NumberAnimation { duration: Motion.slow } }
             Behavior on x { NumberAnimation { duration: Motion.base; easing.type: Easing.OutQuad } }
             Behavior on y { NumberAnimation { duration: Motion.base; easing.type: Easing.OutQuad } }
@@ -88,9 +105,9 @@ Item {
                 ctx.reset();
                 const r = width / 2;
                 const g = ctx.createRadialGradient(r, r, r * 0.05, r, r, r);
-                g.addColorStop(0.0, Qt.rgba(1, 1, 1, 0.075));
-                g.addColorStop(0.45, Qt.rgba(1, 1, 1, 0.030));
-                g.addColorStop(1.0, Qt.rgba(1, 1, 1, 0.0));
+                g.addColorStop(0.0, Colors.light(0.090));
+                g.addColorStop(0.40, Colors.light(0.034));
+                g.addColorStop(1.0, Colors.light(0.0));
                 ctx.fillStyle = g;
                 ctx.fillRect(0, 0, width, height);
             }
@@ -107,12 +124,26 @@ Item {
         anchors.top: body.top
         anchors.topMargin: 1
         anchors.horizontalCenter: body.horizontalCenter
-        width: body.width - glass.radius * 1.6
+        width: Math.max(0, body.width - glass.radius * 1.6)
         height: 1
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.22) }
+            GradientStop { position: 0.5; color: Colors.light(0.26) }
+            GradientStop { position: 1.0; color: "transparent" }
+        }
+    }
+
+    Rectangle {
+        anchors.bottom: body.bottom
+        anchors.bottomMargin: 1
+        anchors.horizontalCenter: body.horizontalCenter
+        width: Math.max(0, body.width - glass.radius * 1.6)
+        height: 1
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "transparent" }
+            GradientStop { position: 0.5; color: Colors.shadow(0.34) }
             GradientStop { position: 1.0; color: "transparent" }
         }
     }
@@ -123,8 +154,7 @@ Item {
         color: "transparent"
         antialiasing: true
         border.width: 1
-        border.color: Qt.rgba(glass.edge.r, glass.edge.g, glass.edge.b,
-                              pointer.hovered ? 0.30 : 0.16)
+        border.color: Colors.alpha(glass.edge, pointer.hovered ? 0.32 : 0.16)
         Behavior on border.color { ColorAnimation { duration: Motion.base } }
     }
 

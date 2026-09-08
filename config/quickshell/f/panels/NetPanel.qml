@@ -255,7 +255,7 @@ Scope {
                     shadowBlur: 1.0
                     shadowVerticalOffset: 12
                     shadowOpacity: 0.5
-                    shadowColor: "#000000"
+                    shadowColor: Colors.shadowTone
                 }
 
                 Rectangle {
@@ -762,11 +762,12 @@ Scope {
                     id: footer
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
                     anchors.margins: 20
-                    height: 42
+                    height: 62
 
                     Rectangle {
                         id: tabs
                         anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: parent.top
                         width: 260
                         height: 40
                         radius: Shape.field
@@ -846,7 +847,7 @@ Scope {
 
                     Text {
                         anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenter: tabs.verticalCenter
                         width: (parent.width - tabs.width) / 2 - 14
                         text: Network.error !== "" ? Network.error
                             : Bt.error !== "" ? Bt.error
@@ -862,9 +863,11 @@ Scope {
                     }
 
                     Text {
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        horizontalAlignment: Text.AlignRight
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
                         text: I18n.t("net.keys")
                         color: Colors.fgDim
                         opacity: 0.3
