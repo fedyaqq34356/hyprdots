@@ -20,6 +20,7 @@ THEME_SWAPS=(
     "$HOME/.config/gtk-4.0/settings.ini|$CFG_DIR/gtk-4.0/settings.ini"
     "$HOME/.config/qt6ct/qt6ct.conf|$CFG_DIR/qt/qtNct.conf"
     "$HOME/.config/qt5ct/qt5ct.conf|$CFG_DIR/qt/qtNct.conf"
+    "$HOME/.config/mimeapps.list|$CFG_DIR/mimeapps.list"
 )
 
 KILL_ALWAYS=(
@@ -31,6 +32,14 @@ KILL_ALWAYS=(
     "notify-trace.sh"
     "notif-missed.sh"
     "downloads-sort.py"
+    "udiskie"
+)
+
+KILL_THUNAR_PROCS=(
+    "Thunar"
+    "thunar"
+    "tumblerd"
+    "thunar-volman"
 )
 
 msg()  { printf '%s\n' "$*" >&2; }
@@ -41,7 +50,8 @@ load_config() {
     BAR=yes; BAR_POSITION=top; BAR_HEIGHT=22
     NOTIFY=yes; CLIPBOARD=yes; CLIP_PERSIST=yes; AUTOMOUNT=yes
     PORTAL=yes; PORTAL_GTK=yes; BRIGHTNESS=""
-    EDITOR_CMD=nvim; TERMINAL=kitty
+    XWAYLAND_IDLE=yes; KILL_THUNAR=yes; POWER=yes
+    EDITOR_CMD=nvim; TERMINAL=foot; FILEMANAGER=nnn
     [[ -r "$CFG" ]] && source "$CFG"
 }
 
@@ -140,6 +150,40 @@ start_notify() {
     fi
 }
 
+start_automount() {
+    [[ "$AUTOMOUNT" == yes ]] || { stop_proc "serezha-automount"; return 0; }
+    pgrep -f "serezha-automount" >/dev/null && return 0
+    have "$HOME/.local/bin/serezha-automount" ||
+        [[ -x "$HOME/.local/bin/serezha-automount" ]] || return 0
+    setsid -f "$HOME/.local/bin/serezha-automount" >/dev/null 2>&1
+}
+
+xwayland_reap() {
+    [[ "$XWAYLAND_IDLE" == yes ]] || return 0
+    have hyprctl || return 0
+    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || return 0
+    pgrep -x Xwayland >/dev/null || return 0
+
+    hyprctl clients 2>/dev/null | grep -q "xwayland: 1" && return 0
+    pkill -KILL -x Xwayland >/dev/null 2>&1
+    msg "Xwayland погашен: X11 вернётся только с перезапуском Hyprland"
+    return 0
+}
+
+power_on() {
+    [[ "$POWER" == yes ]] || return 0
+    [[ -x /usr/local/bin/serezha-power ]] || return 0
+    sudo -n /usr/local/bin/serezha-power on >/dev/null 2>&1 ||
+        msg "энергопрофиль пропущен: нет правила sudo (см. install.sh)"
+    return 0
+}
+
+power_off() {
+    [[ -x /usr/local/bin/serezha-power ]] || return 0
+    sudo -n /usr/local/bin/serezha-power off >/dev/null 2>&1
+    return 0
+}
+
 mode_on() {
     load_config
     ensure_source_line
@@ -151,9 +195,12 @@ mode_on() {
 
     [[ "$CLIPBOARD" == yes ]] || { stop_proc "wl-paste"; stop_proc "clipboard-guard.sh"; }
     [[ "$CLIP_PERSIST" == yes ]] || stop_proc wl-clip-persist
-    [[ "$AUTOMOUNT"   == yes ]] || stop_proc udiskie
     [[ "$PORTAL"      == yes ]] || stop_proc xdg-desktop-portal-hyprland
     [[ "$PORTAL_GTK"  == yes ]] || stop_proc xdg-desktop-portal-gtk
+
+    if [[ "$KILL_THUNAR" == yes ]]; then
+        for p in "${KILL_THUNAR_PROCS[@]}"; do stop_proc "$p"; done
+    fi
 
     swap_themes_in
     point_mode serezha
@@ -169,6 +216,9 @@ mode_on() {
 
     start_notify
     start_bar
+    start_automount
+    power_on
+    xwayland_reap
 
     msg "серёжа мод включён. назад: serezha-mode off (или Super+Shift+P)"
 }
@@ -178,6 +228,10 @@ mode_off() {
 
     stop_proc waybar
     stop_proc mako
+    stop_proc serezha-automount
+    pkill -f "serezha-automount" >/dev/null 2>&1
+
+    power_off
 
     swap_themes_out
     point_mode normal
@@ -235,6 +289,13 @@ mode_status() {
     printf 'quickshell: %s\n' "$(pgrep -x quickshell >/dev/null && echo да || echo нет)"
     printf 'waybar:     %s\n' "$(pgrep -x waybar     >/dev/null && echo да || echo нет)"
     printf 'mako:       %s\n' "$(pgrep -x mako       >/dev/null && echo да || echo нет)"
+    printf 'Xwayland:   %s\n' "$(pgrep -x Xwayland   >/dev/null && echo да || echo нет)"
+    printf 'Thunar:     %s\n' "$(pgrep -x Thunar     >/dev/null && echo да || echo нет)"
+    printf 'автомонт.:  %s\n' \
+        "$(pgrep -f serezha-automount >/dev/null && echo 'serezha-automount' ||
+           { pgrep -x udiskie >/dev/null && echo udiskie || echo нет; })"
+    printf 'энергия:    %s\n' \
+        "$([[ -d /run/serezha-power ]] && echo 'профиль режима' || echo 'системная')"
 }
 
 mode_set() {
@@ -254,7 +315,17 @@ mode_reload() {
     have hyprctl && hyprctl reload >/dev/null 2>&1
     start_notify
     start_bar
+    start_automount
+    power_on
+    xwayland_reap
     msg "перечитано"
+}
+
+term_run() {
+    case "$TERMINAL" in
+        foot) exec foot -c "$CFG_DIR/foot/foot.ini" -e "$@" ;;
+        *)    exec "$TERMINAL" -e "$@" ;;
+    esac
 }
 
 case "${1-status}" in
@@ -264,6 +335,10 @@ case "${1-status}" in
     status) mode_status ;;
     reload) mode_reload ;;
     set)    shift; mode_set "${1-}" "${2-}" ;;
-    edit)   load_config; exec "$TERMINAL" -e "$EDITOR_CMD" "$CFG" ;;
-    *)      die "on | off | toggle | status | reload | set КЛЮЧ ЗНАЧЕНИЕ | edit" ;;
+    edit)   load_config; term_run "$EDITOR_CMD" "$CFG" ;;
+    power)  load_config; shift
+            [[ -x /usr/local/bin/serezha-power ]] ||
+                die "нет /usr/local/bin/serezha-power (поставь через install.sh)"
+            sudo -n /usr/local/bin/serezha-power "${1-show}" ;;
+    *)      die "on | off | toggle | status | reload | set КЛЮЧ ЗНАЧЕНИЕ | edit | power" ;;
 esac

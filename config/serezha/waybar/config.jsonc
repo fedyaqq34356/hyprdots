@@ -44,7 +44,7 @@
         "format-linked": "no ip",
         "format-disconnected": "net --",
         "max-length": 18,
-        "on-click": "kitty --class serezha-tui -e nmtui",
+        "on-click": "foot -c @HOME@/.config/serezha/foot/foot.ini --app-id serezha-tui -e nmtui",
         "tooltip": false
     },
 

@@ -85,7 +85,7 @@ PACMAN_PKGS=(
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
-    waybar fuzzel mako networkmanager
+    waybar fuzzel mako networkmanager foot nnn udisks2
     qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     zsh zsh-autosuggestions zsh-syntax-highlighting
@@ -167,7 +167,35 @@ expand_home() {
     while IFS= read -r -d '' file; do
         grep -q '@HOME@' "$file" 2>/dev/null || continue
         run sed -i "s|@HOME@|$HOME|g" "$file"
-    done < <(find "$HOME/.config/serezha" "$HOME/.local/bin" -type f -print0 2>/dev/null)
+    done < <(find "$HOME/.config/serezha" "$HOME/.local/bin" \
+        "$HOME/.local/share/applications" -type f -print0 2>/dev/null)
+}
+
+# The black mode's power profile touches the CPU governor, PCIe ASPM, USB
+# autosuspend and the GPU power cap — all of it root-only. The script lands in
+# /usr/local/bin and gets one passwordless sudo rule for itself alone, so that
+# switching modes does not stop to ask for a password. Nothing else in the
+# repository asks for root, and the rule grants nothing beyond this one path.
+install_power() {
+    local src="$SRC_DIR/bin/serezha-power"
+    local dst=/usr/local/bin/serezha-power
+    local rule=/etc/sudoers.d/serezha-power
+
+    [[ -f "$src" ]] || return 0
+    log "Installing the power profile helper (needs root)"
+
+    run sudo install -m 755 "$src" "$dst" || {
+        warn "could not install $dst — POWER=yes will do nothing"
+        return 0
+    }
+    printf '%s ALL=(root) NOPASSWD: %s\n' "$USER" "$dst" |
+        run sudo install -m 440 /dev/stdin "$rule" || {
+            warn "could not write $rule — POWER=yes will do nothing"
+            return 0
+        }
+    sudo visudo -cf "$rule" >/dev/null 2>&1 ||
+        warn "$rule did not pass visudo — check it by hand"
+    ok "power profile helper installed"
 }
 
 deploy_config() {
@@ -175,7 +203,16 @@ deploy_config() {
     deploy_tree "$SRC_DIR/config" "$HOME/.config"
     deploy_tree "$SRC_DIR/home" "$HOME"
     deploy_tree "$SRC_DIR/bin" "$HOME/.local/bin"
+
+    # The mode's file manager needs a desktop entry so that xdg-open can name
+    # it as the handler for inode/directory.
+    if [[ -d "$SRC_DIR/config/serezha/applications" ]]; then
+        deploy_tree "$SRC_DIR/config/serezha/applications" \
+            "$HOME/.local/share/applications"
+    fi
+
     expand_home
+    install_power
     ok "files installed (backup: ${BACKUP_DIR/#$HOME/\~})"
 }
 

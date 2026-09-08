@@ -2,7 +2,7 @@
 
 set -u
 
-SESSION_RE='^(Hyprland|quickshell|qs|waybar|mako|dunst|fuzzel|kitty|Xwayland|pipewire|pipewire-pulse|wireplumber|xdg-desktop-portal|xdg-desktop-portal-hyprland|xdg-desktop-portal-gtk|xdg-document-portal|udiskie|awww-daemon|wl-paste|wl-clip-persist|hyprpolkitagent|hyprlock|hypridle|swaybg)$'
+SESSION_RE='^(Hyprland|quickshell|qs|waybar|mako|dunst|fuzzel|kitty|foot|nnn|Thunar|tumblerd|Xwayland|pipewire|pipewire-pulse|wireplumber|xdg-desktop-portal|xdg-desktop-portal-hyprland|xdg-desktop-portal-gtk|xdg-document-portal|udiskie|udevadm|awww-daemon|wl-paste|wl-clip-persist|hyprpolkitagent|hyprlock|hypridle|swaybg)$'
 
 pss_kb() {
     local kb

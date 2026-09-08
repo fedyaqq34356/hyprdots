@@ -1,0 +1,40 @@
+# Ассоциации «Серёжа мода». Подменяют ~/.config/mimeapps.list на время
+# режима; оригинал уезжает в mimeapps.list.pre-serezha и возвращается при
+# выходе, как и подменённые GTK- и Qt-темы.
+#
+# Отличий от обычного файла ровно два, и оба про то, что режим не открывает
+# окон, которых не может покрасить: каталоги уходят в serezha-files вместо
+# Thunar, терминальная схема — в терминал режима вместо kitty. Всё
+# остальное — браузеры, схемы discord — скопировано как есть: подменять их
+# незачем, а потерять на время режима было бы неожиданно.
+
+[Default Applications]
+x-scheme-handler/terminal=foot.desktop
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop
+x-scheme-handler/http=librewolf.desktop
+x-scheme-handler/https=librewolf.desktop
+x-scheme-handler/chrome=zen.desktop
+text/html=librewolf.desktop
+application/x-extension-htm=zen.desktop
+application/x-extension-html=zen.desktop
+application/x-extension-shtml=zen.desktop
+application/xhtml+xml=zen.desktop
+application/x-extension-xhtml=zen.desktop
+application/x-extension-xht=zen.desktop
+x-scheme-handler/discord-831593107883032657=discord-831593107883032657.desktop
+x-scheme-handler/about=librewolf.desktop
+x-scheme-handler/unknown=librewolf.desktop
+inode/directory=serezha-files.desktop
+x-directory/normal=serezha-files.desktop
+
+[Added Associations]
+x-scheme-handler/http=zen.desktop;
+x-scheme-handler/https=zen.desktop;
+x-scheme-handler/chrome=zen.desktop;
+text/html=zen.desktop;
+application/x-extension-htm=zen.desktop;
+application/x-extension-html=zen.desktop;
+application/x-extension-shtml=zen.desktop;
+application/xhtml+xml=zen.desktop;
+application/x-extension-xhtml=zen.desktop;
+application/x-extension-xht=zen.desktop;
