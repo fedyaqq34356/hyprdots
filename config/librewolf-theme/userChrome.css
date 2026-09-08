@@ -134,6 +134,12 @@ toolbar .toolbarbutton-1[open] > .toolbarbutton-icon {
     --toolbar-field-color:                  var(--mg-fg) !important;
     --toolbar-field-focus-color:            var(--mg-fg) !important;
     --toolbar-field-border-color:           transparent !important;
+
+    --urlbar-box-background-color:          transparent !important;
+    --urlbar-box-background-color-focus:    transparent !important;
+    --urlbar-box-bgcolor:                   transparent !important;
+    --urlbar-box-text-color:                var(--mg-fg-dim) !important;
+    --urlbar-searchmodeswitcher-margin-inline-end: 4px !important;
 }
 
 #urlbar-background {
@@ -166,6 +172,45 @@ toolbar .toolbarbutton-1[open] > .toolbarbutton-icon {
 
 #identity-box image,
 #urlbar .urlbar-icon { fill: var(--mg-fg-dim) !important; }
+
+.searchmode-switcher,
+#urlbar-search-mode-indicator,
+#urlbar-label-box {
+    --button-background-color: transparent !important;
+    --button-background-color-active: color-mix(in srgb, var(--mg-layer-4) 90%, transparent) !important;
+    --button-background-color-hover: color-mix(in srgb, var(--mg-layer-4) 75%, transparent) !important;
+    --button-background-color-selected: transparent !important;
+    --button-border-color: transparent !important;
+
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border-radius: var(--uc-radius-small) !important;
+    transition: background-color var(--uc-speed) var(--uc-ease) !important;
+}
+
+.searchmode-switcher::after,
+.searchmode-switcher::before,
+#urlbar-search-mode-indicator::after { display: none !important; }
+
+.searchmode-switcher-icon,
+.searchmode-switcher-dropmarker {
+    fill: var(--mg-fg-dim) !important;
+    color: var(--mg-fg-dim) !important;
+    opacity: 0.8 !important;
+}
+
+.searchmode-switcher:hover .searchmode-switcher-icon,
+.searchmode-switcher:hover .searchmode-switcher-dropmarker {
+    fill: var(--mg-accent) !important;
+    color: var(--mg-accent) !important;
+    opacity: 1 !important;
+}
+
+#urlbar .urlbar-input-container { padding-inline-start: 4px !important; }
+
+#urlbar-input { padding-inline-start: 8px !important; }
 
 #urlbar[open] > #urlbar-background {
     background: var(--mg-layer-2) !important;
