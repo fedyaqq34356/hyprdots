@@ -1,0 +1,390 @@
+@import url("matugen-colors.css");
+
+:root {
+    --uc-radius:        14px;
+    --uc-radius-small:  10px;
+    --uc-ease:          cubic-bezier(0.22, 1, 0.36, 1);
+    --uc-speed:         160ms;
+
+    --uc-urlbar-max:    min(920px, 62vw);
+
+    --uc-shadow-soft:   0 6px 20px -8px color-mix(in srgb, var(--mg-shadow) 70%, transparent);
+    --uc-shadow-panel:  0 18px 48px -18px color-mix(in srgb, var(--mg-shadow) 85%, transparent);
+}
+
+:root {
+    --toolbar-bgcolor:                       transparent !important;
+    --toolbar-color:                         var(--mg-fg) !important;
+    --toolbarbutton-icon-fill:               var(--mg-fg-dim) !important;
+    --toolbarbutton-hover-background:        var(--mg-layer-3) !important;
+    --toolbarbutton-active-background:       var(--mg-layer-4) !important;
+    --toolbarbutton-border-radius:           var(--uc-radius-small) !important;
+
+    --lwt-text-color:                        var(--mg-fg) !important;
+    --lwt-tab-text:                          var(--mg-fg) !important;
+    --lwt-accent-color:                      var(--mg-bg) !important;
+
+    --tabs-border-color:                     transparent !important;
+    --tab-border-radius:                     var(--uc-radius-small) !important;
+
+    --arrowpanel-background:                 var(--mg-layer-2) !important;
+    --arrowpanel-color:                      var(--mg-fg) !important;
+    --arrowpanel-border-color:               var(--mg-outline-soft) !important;
+    --arrowpanel-border-radius:              var(--uc-radius) !important;
+    --arrowpanel-dimmed:                     var(--mg-layer-3) !important;
+
+    --panel-separator-color:                 var(--mg-outline-soft) !important;
+    --panel-item-hover-bgcolor:              var(--mg-layer-3) !important;
+
+    --urlbar-popup-url-color:                var(--mg-accent) !important;
+    --focus-outline-color:                   var(--mg-accent) !important;
+
+    --sidebar-background-color:              var(--mg-layer-1) !important;
+    --lwt-sidebar-background-color:          var(--mg-layer-1) !important;
+    --lwt-sidebar-text-color:                var(--mg-fg) !important;
+
+    --identity-tab-color:                    var(--mg-accent) !important;
+}
+
+window,
+#main-window,
+#navigator-toolbox,
+#toolbar-menubar,
+#TabsToolbar,
+#nav-bar,
+#PersonalToolbar {
+    -moz-appearance: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--mg-bg) !important;
+}
+
+#navigator-toolbox { border-bottom: none !important; }
+
+#nav-bar {
+    background: transparent !important;
+    padding-inline: 8px !important;
+}
+
+#TabsToolbar,
+#TabsToolbar-customization-target { visibility: collapse !important; }
+
+.titlebar-spacer { display: none !important; }
+
+#forward-button,
+#stop-button,
+#reload-button,
+#star-button,
+#urlbar-zoom-button,
+#tracking-protection-icon-container,
+#identity-permission-box,
+#pageActionButton,
+#page-action-buttons,
+.tab-secondary-label { display: none !important; }
+
+#back-button,
+#PanelUI-button { display: -moz-inline-box !important; }
+
+toolbar .toolbarbutton-1 > .toolbarbutton-icon,
+toolbar .toolbarbutton-1 > .toolbarbutton-badge-stack {
+    color: var(--mg-fg-dim) !important;
+    fill: var(--mg-fg-dim) !important;
+    border-radius: var(--uc-radius-small) !important;
+    transition: background-color var(--uc-speed) var(--uc-ease),
+                color var(--uc-speed) var(--uc-ease),
+                fill var(--uc-speed) var(--uc-ease) !important;
+}
+
+toolbar .toolbarbutton-1:hover > .toolbarbutton-icon,
+toolbar .toolbarbutton-1:hover > .toolbarbutton-badge-stack {
+    background-color: var(--mg-layer-3) !important;
+    color: var(--mg-accent) !important;
+    fill: var(--mg-accent) !important;
+}
+
+toolbar .toolbarbutton-1[open] > .toolbarbutton-icon {
+    background-color: var(--mg-accent-box) !important;
+    color: var(--mg-on-accent-box) !important;
+    fill: var(--mg-on-accent-box) !important;
+}
+
+.titlebar-buttonbox-container { display: -moz-inline-box !important; }
+
+.titlebar-button { border-radius: var(--uc-radius-small) !important; }
+
+.titlebar-button:hover { background-color: var(--mg-layer-3) !important; }
+
+.titlebar-close:hover {
+    background-color: var(--mg-error) !important;
+    fill: var(--mg-bg) !important;
+}
+
+#urlbar-container {
+    max-width: var(--uc-urlbar-max) !important;
+    margin-inline: auto !important;
+    padding-inline: 8px !important;
+}
+
+#urlbar,
+#urlbar * { box-shadow: none !important; }
+
+#urlbar {
+    --toolbar-field-background-color:       var(--mg-layer-2) !important;
+    --toolbar-field-focus-background-color: var(--mg-layer-3) !important;
+    --toolbar-field-color:                  var(--mg-fg) !important;
+    --toolbar-field-focus-color:            var(--mg-fg) !important;
+    --toolbar-field-border-color:           transparent !important;
+}
+
+#urlbar-background {
+    background: var(--mg-layer-3) !important;
+    border: 1px solid color-mix(in srgb, var(--mg-outline) 55%, transparent) !important;
+    border-radius: var(--uc-radius) !important;
+    transition: background-color var(--uc-speed) var(--uc-ease),
+                border-color var(--uc-speed) var(--uc-ease),
+                box-shadow var(--uc-speed) var(--uc-ease) !important;
+}
+
+#urlbar:hover > #urlbar-background {
+    border-color: color-mix(in srgb, var(--mg-outline) 80%, transparent) !important;
+}
+
+#urlbar[focused="true"] > #urlbar-background {
+    background: var(--mg-layer-4) !important;
+    border-color: var(--mg-accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-accent) 18%, transparent),
+                var(--uc-shadow-soft) !important;
+}
+
+#urlbar-input,
+#urlbar .urlbar-input,
+#urlbar .urlbar-input-container { color: var(--mg-fg) !important; }
+
+#urlbar-input::placeholder {
+    color: color-mix(in srgb, var(--mg-fg-dim) 70%, transparent) !important;
+}
+
+#identity-box image,
+#urlbar .urlbar-icon { fill: var(--mg-fg-dim) !important; }
+
+#urlbar[open] > #urlbar-background {
+    background: var(--mg-layer-2) !important;
+    border-color: color-mix(in srgb, var(--mg-outline) 60%, transparent) !important;
+    box-shadow: var(--uc-shadow-panel) !important;
+}
+
+.urlbarView { padding-block: 6px !important; }
+
+.urlbarView-row > .urlbarView-row-inner {
+    border-radius: var(--uc-radius-small) !important;
+    margin-inline: 6px !important;
+    padding-block: 7px !important;
+    transition: background-color var(--uc-speed) var(--uc-ease) !important;
+}
+
+.urlbarView-row:hover > .urlbarView-row-inner { background: var(--mg-layer-3) !important; }
+
+.urlbarView-row[selected] > .urlbarView-row-inner { background: var(--mg-accent-box) !important; }
+
+.urlbarView-row[selected] .urlbarView-title,
+.urlbarView-row[selected] .urlbarView-url,
+.urlbarView-row[selected] .urlbarView-title-separator {
+    color: var(--mg-on-accent-box) !important;
+}
+
+.urlbarView-title { color: var(--mg-fg) !important; }
+.urlbarView-url   { color: var(--mg-accent) !important; }
+
+#sidebar-main,
+#sidebar-box,
+#sidebar-header,
+sidebar-main {
+    background-color: var(--mg-layer-2) !important;
+    color: var(--mg-fg) !important;
+    border: none !important;
+}
+
+#sidebar-main {
+    padding-inline: 6px !important;
+    border-right: 1px solid color-mix(in srgb, var(--mg-outline-soft) 50%, transparent) !important;
+}
+
+#sidebar-splitter {
+    border: none !important;
+    width: 1px !important;
+    background-color: color-mix(in srgb, var(--mg-outline-soft) 45%, transparent) !important;
+}
+
+#tabbrowser-tabs[orient="vertical"] .tabbrowser-tab,
+#vertical-tabs .tabbrowser-tab { margin-block: 1px !important; }
+
+.tabbrowser-tab > .tab-stack > .tab-background {
+    background: transparent !important;
+    border: none !important;
+    border-radius: var(--uc-radius-small) !important;
+    box-shadow: none !important;
+    transition: background-color var(--uc-speed) var(--uc-ease) !important;
+}
+
+.tabbrowser-tab:hover:not([selected]) > .tab-stack > .tab-background {
+    background: color-mix(in srgb, var(--mg-layer-3) 70%, transparent) !important;
+}
+
+.tabbrowser-tab[selected] > .tab-stack > .tab-background {
+    background: var(--mg-accent-box) !important;
+}
+
+.tab-label { color: var(--mg-fg-dim) !important; }
+
+.tabbrowser-tab[selected] .tab-label {
+    color: var(--mg-on-accent-box) !important;
+    font-weight: 600 !important;
+}
+
+.tabbrowser-tab:not([selected]) .tab-icon-image {
+    opacity: 0.72 !important;
+    transition: opacity var(--uc-speed) var(--uc-ease) !important;
+}
+
+.tabbrowser-tab:hover .tab-icon-image,
+.tabbrowser-tab[selected] .tab-icon-image { opacity: 1 !important; }
+
+.tab-line,
+.tabbrowser-tab::after,
+.tabbrowser-tab::before { display: none !important; }
+
+.tabbrowser-tab:not([pinned]) .tab-close-button { display: none !important; }
+
+.tabbrowser-tab:not([pinned]):hover .tab-close-button,
+.tabbrowser-tab[selected]:not([pinned]) .tab-close-button {
+    display: -moz-inline-box !important;
+    border-radius: 6px !important;
+    fill: var(--mg-fg-dim) !important;
+}
+
+.tabbrowser-tab[selected] .tab-close-button { fill: var(--mg-on-accent-box) !important; }
+
+.tabbrowser-tab .tab-close-button:hover {
+    background: var(--mg-error) !important;
+    fill: var(--mg-bg) !important;
+}
+
+.tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line {
+    margin: 0 !important;
+    border-radius: var(--uc-radius-small) !important;
+}
+
+.tab-icon-overlay:not([crashed]) {
+    border-radius: 10px !important;
+    color: var(--mg-fg-dim) !important;
+}
+
+.tab-icon-overlay:not([crashed]):hover {
+    background-color: var(--mg-accent) !important;
+    stroke: var(--mg-accent) !important;
+    color: var(--mg-on-accent) !important;
+}
+
+#vertical-tabs-newtab-button,
+#tabs-newtab-button,
+#sidebar-main moz-button,
+.tools-and-extensions moz-button {
+    border-radius: var(--uc-radius-small) !important;
+    color: var(--mg-fg-dim) !important;
+    fill: var(--mg-fg-dim) !important;
+    transition: background-color var(--uc-speed) var(--uc-ease) !important;
+}
+
+#vertical-tabs-newtab-button:hover,
+#tabs-newtab-button:hover,
+#sidebar-main moz-button:hover,
+.tools-and-extensions moz-button:hover {
+    background-color: var(--mg-layer-3) !important;
+    color: var(--mg-accent) !important;
+    fill: var(--mg-accent) !important;
+}
+
+#sidebar-main .tools-and-extensions,
+#sidebar-main separator {
+    border-color: color-mix(in srgb, var(--mg-outline-soft) 45%, transparent) !important;
+}
+
+#PersonalToolbar {
+    padding-inline: 6px !important;
+    border-top: 1px solid color-mix(in srgb, var(--mg-outline-soft) 40%, transparent) !important;
+}
+
+#PersonalToolbar .bookmark-item {
+    color: var(--mg-fg-dim) !important;
+    border-radius: var(--uc-radius-small) !important;
+    padding: 4px 8px !important;
+    transition: background-color var(--uc-speed) var(--uc-ease),
+                color var(--uc-speed) var(--uc-ease) !important;
+}
+
+#PersonalToolbar .bookmark-item:hover {
+    background: var(--mg-layer-3) !important;
+    color: var(--mg-fg) !important;
+}
+
+#PersonalToolbar toolbarbutton:not(:hover),
+#bookmarks-toolbar-button:not(:hover) { filter: grayscale(1) !important; }
+
+menupopup,
+panel,
+.panel-arrowcontent {
+    --panel-background: var(--mg-layer-2) !important;
+    --panel-color: var(--mg-fg) !important;
+    --panel-border-color: var(--mg-outline-soft) !important;
+    --panel-border-radius: var(--uc-radius) !important;
+}
+
+menupopup {
+    --panel-shadow-margin: 0 !important;
+    box-shadow: var(--uc-shadow-panel) !important;
+}
+
+menupopup > menuitem,
+menupopup > menu {
+    border-radius: var(--uc-radius-small) !important;
+    margin-inline: 4px !important;
+    padding-block: 5px !important;
+}
+
+menuitem:hover,
+menu:hover,
+.subviewbutton:hover,
+.panel-banner-item:hover {
+    background-color: var(--mg-layer-3) !important;
+    color: var(--mg-accent) !important;
+}
+
+menuseparator { border-color: var(--mg-outline-soft) !important; }
+
+findbar {
+    background-color: var(--mg-layer-2) !important;
+    color: var(--mg-fg) !important;
+    border-top: 1px solid var(--mg-outline-soft) !important;
+}
+
+findbar .findbar-textbox {
+    background-color: var(--mg-layer-3) !important;
+    color: var(--mg-fg) !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--uc-radius-small) !important;
+}
+
+findbar .findbar-textbox:focus {
+    border-color: var(--mg-accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-accent) 18%, transparent) !important;
+}
+
+#tabbrowser-tabs .tab-throbber,
+#tabbrowser-tabs .tab-progress { color: var(--mg-accent) !important; }
+
+notification-message,
+.notification-message {
+    background-color: var(--mg-layer-2) !important;
+    color: var(--mg-fg) !important;
+    border-radius: var(--uc-radius) !important;
+}

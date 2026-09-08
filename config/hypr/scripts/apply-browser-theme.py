@@ -26,6 +26,9 @@ PALETTE_FILE = "matugen-colors.css"
 IMPORT_LINE = f'@import url("{PALETTE_FILE}");'
 IMPORT_BLOCK = f"/* matugen palette - regenerated on wallpaper change */\n{IMPORT_LINE}\n"
 
+THEME_DIR = HOME / ".config/librewolf-theme"
+THEME_FILES = ("userChrome.css", "userContent.css")
+
 def profile_inis() -> list[Path]:
     found: list[Path] = []
     for root in SEARCH_ROOTS:
@@ -58,19 +61,39 @@ def profiles_from(ini_path: Path) -> list[Path]:
             out.append(target)
     return out
 
+def seed_theme(chrome: Path) -> list[str]:
+    """Кладёт оформление в профиль, если его там ещё нет.
+
+    Существующие файлы не трогаем: у профиля может быть своя тема, и
+    затирать её на каждой смене обоев — худшее, что может сделать хук."""
+    seeded: list[str] = []
+    for name in THEME_FILES:
+        source = THEME_DIR / name
+        target = chrome / name
+        if source.is_file() and not target.exists():
+            shutil.copyfile(source, target)
+            seeded.append(name)
+    return seeded
+
 def ensure_import(chrome: Path) -> str:
-    user_chrome = chrome / "userChrome.css"
+    states: list[str] = []
 
-    if not user_chrome.exists():
-        user_chrome.write_text(IMPORT_BLOCK)
-        return "created"
+    for name in THEME_FILES:
+        sheet = chrome / name
+        if not sheet.exists():
+            if name == "userChrome.css":
+                sheet.write_text(IMPORT_BLOCK)
+                states.append("userChrome created")
+            continue
 
-    text = user_chrome.read_text()
-    if PALETTE_FILE in text:
-        return "already linked"
+        text = sheet.read_text()
+        if PALETTE_FILE in text:
+            continue
 
-    user_chrome.write_text(IMPORT_BLOCK + text)
-    return "import added"
+        sheet.write_text(IMPORT_BLOCK + text)
+        states.append(f"{name} linked")
+
+    return ", ".join(states) if states else "already linked"
 
 def ensure_pref(profile: Path) -> None:
     user_js = profile / "user.js"
@@ -98,7 +121,10 @@ def main() -> int:
         chrome = profile / "chrome"
         chrome.mkdir(exist_ok=True)
         shutil.copyfile(SOURCE, chrome / PALETTE_FILE)
+        seeded = seed_theme(chrome)
         state = ensure_import(chrome)
+        if seeded:
+            state = f"seeded {' + '.join(seeded)}"
         ensure_pref(profile)
         print(f"themed: {profile.parent.name}/{profile.name} ({state})")
 
