@@ -125,9 +125,11 @@ disk_off() {
 
 kernel_on() {
     save writeback "$(sysctl -n vm.dirty_writeback_centisecs)"
+    save expire    "$(sysctl -n vm.dirty_expire_centisecs)"
     save laptop    "$(sysctl -n vm.laptop_mode)"
     save nmi       "$(sysctl -n kernel.nmi_watchdog)"
     sysctl -q -w vm.dirty_writeback_centisecs=1500
+    sysctl -q -w vm.dirty_expire_centisecs=1500
     sysctl -q -w vm.laptop_mode=5
     sysctl -q -w kernel.nmi_watchdog=0
 }
@@ -135,6 +137,7 @@ kernel_on() {
 kernel_off() {
     local v
     v=$(restore writeback) && sysctl -q -w "vm.dirty_writeback_centisecs=$v"
+    v=$(restore expire)    && sysctl -q -w "vm.dirty_expire_centisecs=$v"
     v=$(restore laptop)    && sysctl -q -w "vm.laptop_mode=$v"
     v=$(restore nmi)       && sysctl -q -w "kernel.nmi_watchdog=$v"
 }

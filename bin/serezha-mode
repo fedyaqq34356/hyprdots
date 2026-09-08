@@ -5,6 +5,10 @@ set -u
 PATH="$HOME/.local/bin:$PATH"
 export PATH
 
+export MALLOC_ARENA_MAX=2
+export MALLOC_TRIM_THRESHOLD_=131072
+export GTK_A11Y=none
+
 CFG_DIR="$HOME/.config/serezha"
 CFG="$CFG_DIR/config"
 STATE="$CFG_DIR/state"
@@ -32,7 +36,31 @@ KILL_ALWAYS=(
     "notify-trace.sh"
     "notif-missed.sh"
     "downloads-sort.py"
+    "monitor-flicker-fix.py"
     "udiskie"
+)
+
+ORPHAN_PROCS=(
+    "dbus-monitor"
+    "nmcli"
+    "cliphist"
+    "wl-copy"
+    "pactl"
+    "cat"
+)
+
+DBUS_ACTIVATED=(
+    "gvfsd"
+    "gvfsd-trash"
+    "gvfsd-metadata"
+    "gvfsd-fuse"
+    "gvfs-udisks2-vo"
+    "gvfs-goa-volume"
+    "gvfs-mtp-volume"
+    "gvfs-gphoto2-vo"
+    "gvfs-afc-volume"
+    "at-spi-bus-laun"
+    "at-spi2-registr"
 )
 
 KILL_THUNAR_PROCS=(
@@ -50,7 +78,7 @@ load_config() {
     BAR=yes; BAR_POSITION=top; BAR_HEIGHT=22
     NOTIFY=yes; CLIPBOARD=yes; CLIP_PERSIST=yes; AUTOMOUNT=yes
     PORTAL=yes; PORTAL_GTK=yes; BRIGHTNESS=""
-    XWAYLAND_IDLE=yes; KILL_THUNAR=yes; POWER=yes
+    XWAYLAND_IDLE=yes; KILL_THUNAR=yes; KILL_GVFS=yes; POWER=yes
     EDITOR_CMD=nvim; TERMINAL=foot; FILEMANAGER=nnn
     [[ -r "$CFG" ]] && source "$CFG"
 }
@@ -105,6 +133,49 @@ stop_proc() {
     case "$1" in
         *.sh|*.py|shell-watchdog) pkill -f "$1" >/dev/null 2>&1 ;;
     esac
+    return 0
+}
+
+reap_orphans() {
+    local pid ppid comm p hit=() left=()
+
+    while read -r pid ppid comm; do
+        [[ "$ppid" == 1 ]] || continue
+        for p in "${ORPHAN_PROCS[@]}"; do
+            [[ "$comm" == "$p" ]] || continue
+            hit+=("$pid")
+            break
+        done
+    done < <(ps -u "$(id -u)" -o pid=,ppid=,comm=)
+
+    (( ${#hit[@]} )) || return 0
+    kill "${hit[@]}" 2>/dev/null
+
+    sleep 0.3
+    for pid in "${hit[@]}"; do
+        [[ -d "/proc/$pid" ]] && left+=("$pid")
+    done
+    (( ${#left[@]} )) && kill -KILL "${left[@]}" 2>/dev/null
+
+    return 0
+}
+
+reap_dbus_activated() {
+    [[ "$KILL_GVFS" == yes ]] || return 0
+    local p
+    for p in "${DBUS_ACTIVATED[@]}"; do
+        pkill -x "$p" >/dev/null 2>&1
+    done
+    return 0
+}
+
+dedupe_watchers() {
+    ps -u "$(id -u)" -o pid=,args= |
+        awk '$2 == "wl-paste" && /--watch/ {
+                 pid = $1; $1 = ""
+                 if (seen[$0]++) print pid
+             }' |
+        while read -r pid; do kill "$pid" 2>/dev/null; done
     return 0
 }
 
@@ -201,6 +272,10 @@ mode_on() {
     if [[ "$KILL_THUNAR" == yes ]]; then
         for p in "${KILL_THUNAR_PROCS[@]}"; do stop_proc "$p"; done
     fi
+
+    reap_orphans
+    reap_dbus_activated
+    dedupe_watchers
 
     swap_themes_in
     point_mode serezha
@@ -318,7 +393,16 @@ mode_reload() {
     start_automount
     power_on
     xwayland_reap
+    mode_reap
     msg "перечитано"
+}
+
+mode_reap() {
+    load_config
+    reap_orphans
+    reap_dbus_activated
+    dedupe_watchers
+    return 0
 }
 
 term_run() {
@@ -334,11 +418,12 @@ case "${1-status}" in
     toggle) if [[ "$(current_mode)" == on ]]; then mode_off; else mode_on; fi ;;
     status) mode_status ;;
     reload) mode_reload ;;
+    reap)   mode_reap; msg "убрано" ;;
     set)    shift; mode_set "${1-}" "${2-}" ;;
     edit)   load_config; term_run "$EDITOR_CMD" "$CFG" ;;
     power)  load_config; shift
             [[ -x /usr/local/bin/serezha-power ]] ||
                 die "нет /usr/local/bin/serezha-power (поставь через install.sh)"
             sudo -n /usr/local/bin/serezha-power "${1-show}" ;;
-    *)      die "on | off | toggle | status | reload | set КЛЮЧ ЗНАЧЕНИЕ | edit | power" ;;
+    *)      die "on | off | toggle | status | reload | reap | set КЛЮЧ ЗНАЧЕНИЕ | edit | power" ;;
 esac

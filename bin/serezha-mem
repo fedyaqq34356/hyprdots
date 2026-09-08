@@ -2,7 +2,7 @@
 
 set -u
 
-SESSION_RE='^(Hyprland|quickshell|qs|waybar|mako|dunst|fuzzel|kitty|foot|nnn|Thunar|tumblerd|Xwayland|pipewire|pipewire-pulse|wireplumber|xdg-desktop-portal|xdg-desktop-portal-hyprland|xdg-desktop-portal-gtk|xdg-document-portal|udiskie|udevadm|awww-daemon|wl-paste|wl-clip-persist|hyprpolkitagent|hyprlock|hypridle|swaybg)$'
+SESSION_RE='^(Hyprland|quickshell|qs|waybar|mako|dunst|fuzzel|kitty|foot|nnn|Thunar|tumblerd|Xwayland|pipewire|pipewire-pulse|wireplumber|xdg-desktop-portal|xdg-desktop-portal-hyprland|xdg-desktop-portal-gtk|xdg-document-portal|xdg-permission-store|udiskie|udevadm|awww-daemon|wl-paste|wl-copy|wl-clip-persist|cliphist|nmcli|dbus-monitor|dbus-daemon|dconf-service|gnome-keyring-daemon|gvfsd|gvfsd-trash|gvfsd-metadata|gvfsd-fuse|gvfs-udisks2-volume-monitor|gvfs-goa-volume-monitor|gvfs-mtp-volume-monitor|gvfs-gphoto2-volume-monitor|gvfs-afc-volume-monitor|at-spi-bus-launcher|at-spi2-registryd|hyprpolkitagent|hyprlock|hypridle|swaybg)$'
 
 pss_kb() {
     local kb
@@ -36,10 +36,15 @@ report() {
         END { printf "\n%9.1fM  всего\n", total/1024 }'
 }
 
+names() {
+    ps -u "$(id -u)" -o pid=,args= |
+        awk '{ pid = $1; n = split($2, parts, "/"); print pid, parts[n] }'
+}
+
 if [[ "${1-}" == "--all" ]]; then
-    ps -u "$(id -u)" -o pid=,comm= | collect | report "все процессы пользователя"
+    names | collect | report "все процессы пользователя"
 else
-    ps -u "$(id -u)" -o pid=,comm= |
+    names |
         awk -v re="$SESSION_RE" '$2 ~ re' |
         collect | report "сессия без прикладных программ"
 fi
