@@ -845,7 +845,7 @@ back on the way out. Brightness, volume, refresh rate and idle timeouts are deli
 | Key | Action |
 | --- | --- |
 | `Super` + `Return` | terminal (kitty) |
-| `Super` + `T` | scratchpad terminal |
+| `Super` + `T` | timers and alarms |
 | `Super` + `E` | file manager (yazi in kitty) |
 | `Super` + `Shift` + `Y` | Thunar, for dragging files into other apps |
 | `Super` + `Q` | close window |
@@ -1582,7 +1582,7 @@ HDA-кодека, автосон USB кроме устройств ввода, S
 | Клавиши | Действие |
 | --- | --- |
 | `Super` + `Return` | терминал (kitty) |
-| `Super` + `T` | выпадающий терминал |
+| `Super` + `T` | таймеры и будильники |
 | `Super` + `E` | файловый менеджер (yazi в kitty) |
 | `Super` + `Shift` + `Y` | Thunar, для перетаскивания файлов |
 | `Super` + `Q` | закрыть окно |
