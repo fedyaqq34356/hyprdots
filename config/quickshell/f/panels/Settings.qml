@@ -12,6 +12,8 @@ Scope {
 
     property bool shown: false
 
+    WeatherHold { active: root.shown }
+
     function toggle() { root.shown = !root.shown; }
     function close()  { root.shown = false; }
 
@@ -342,6 +344,51 @@ Scope {
                                 hint: modelData.hint
                                 checked: Prefs[modelData.key]
                                 onToggled: (value) => Prefs.set(modelData.key, value)
+                            }
+                        }
+
+                        SettingsToggle {
+                            width: parent.width
+                            mono: root.mono
+                            title: I18n.t("set.weather")
+                            hint: I18n.t("set.weatherHint")
+                            checked: Prefs.weatherEnabled
+                            onToggled: (value) => Prefs.set("weatherEnabled", value)
+                        }
+
+                        Column {
+                            width: parent.width
+                            spacing: 6
+                            opacity: Prefs.weatherEnabled ? 1 : 0.35
+
+                            Row {
+                                width: parent.width
+
+                                Text {
+                                    text: I18n.t("set.weatherEvery")
+                                    color: Colors.fgDim
+                                    opacity: 0.7
+                                    font.family: root.mono
+                                    font.pixelSize: 11
+                                }
+
+                                Item { width: parent.width - 190; height: 1 }
+
+                                Text {
+                                    text: Prefs.weatherEveryMin + I18n.t("set.minShort")
+                                    color: Colors.fg
+                                    font.family: root.mono
+                                    font.pixelSize: 11
+                                }
+                            }
+
+                            Slider {
+                                width: parent.width
+                                enabled: Prefs.weatherEnabled
+                                value: (Prefs.weatherEveryMin - 15) / 165
+                                onMoved: (value) => Prefs.set(
+                                    "weatherEveryMin",
+                                    Math.round(15 + value * 165))
                             }
                         }
 

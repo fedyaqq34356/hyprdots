@@ -33,11 +33,36 @@ Scope {
             color: "transparent"
             mask: Region { item: strip }
 
+            readonly property string barStyle: BarConfig.s("barStyle")
+            readonly property bool solidZones: barStyle === "solid"
+            readonly property bool pills: BarConfig.s("distinctPills")
+
             component Island: Item {
                 id: island
 
                 property bool hovered: false
                 property int introDelay: 0
+
+                property Blobs blobField: null
+                readonly property bool blobbed:
+                    island.blobField !== null && BarConfig.s("blob")
+
+                readonly property bool isBlob: true
+                readonly property real blobOffsetY: intro.y
+
+                function blobSync() {
+                    if (island.blobField)
+                        island.blobField.requestSync();
+                }
+
+                onXChanged: island.blobSync()
+                onYChanged: island.blobSync()
+                onWidthChanged: island.blobSync()
+                onHeightChanged: island.blobSync()
+                onScaleChanged: island.blobSync()
+                onVisibleChanged: island.blobSync()
+                onBlobOffsetYChanged: island.blobSync()
+                Component.onDestruction: island.blobSync()
 
                 property real radius: BarConfig.s("radius")
                 property color color: Qt.rgba(
@@ -50,7 +75,8 @@ Scope {
 
                 default property alias content: body.data
 
-                scale: hovered && BarConfig.s("hoverGrow") ? 1.04 : 1.0
+                scale: hovered && BarConfig.s("hoverGrow")
+                    ? (island.blobbed ? 1.07 : 1.04) : 1.0
 
                 Behavior on color { ColorAnimation { duration: Motion.base } }
                 Behavior on borderColor { ColorAnimation { duration: Motion.base } }
@@ -66,6 +92,7 @@ Scope {
                 Rectangle {
                     id: plate
                     anchors.fill: parent
+                    visible: !island.blobbed || win.pills
                     radius: island.radius
                     color: island.color
                     antialiasing: true
@@ -88,13 +115,28 @@ Scope {
                 }
 
                 HoverHandler {
-                    onHoveredChanged: island.hovered = hovered
+                    onHoveredChanged: {
+                        island.hovered = hovered;
+                        if (!island.blobField)
+                            return;
+                        if (hovered)
+                            island.blobField.hoverItem = island;
+                        else if (island.blobField.hoverItem === island)
+                            island.blobField.hoverItem = null;
+                    }
                 }
 
-                opacity: BarConfig.s("intro") ? 0 : 1
-                transform: Translate { id: intro; y: BarConfig.s("intro") ? -42 : 0 }
+                readonly property bool intros:
+                    BarConfig.s("intro") && !BarConfig.introPlayed
 
-                Component.onCompleted: if (BarConfig.s("intro")) introAnim.start()
+                opacity: island.intros ? 0 : 1
+                transform: Translate { id: intro; y: island.intros ? -42 : 0 }
+
+                Component.onCompleted: {
+                    island.blobSync();
+                    if (island.intros)
+                        introAnim.start();
+                }
 
                 SequentialAnimation {
                     id: introAnim
@@ -265,10 +307,47 @@ Scope {
                 }
             }
 
+            Timer {
+                interval: 1200
+                running: !BarConfig.introPlayed
+                onTriggered: BarConfig.introPlayed = true
+            }
+
             Modules {
                 id: modules
                 tipHost: tips
                 panels: root.panels
+            }
+
+            component ZoneBlobs: Blobs {
+                z: -1
+                visible: BarConfig.s("blob") && count > 0
+
+                fuse: win.solidZones
+                    ? BarConfig.s("islandGap") * 0.9 + 4
+                    : BarConfig.s("blobFuse")
+                corner: BarConfig.s("radius")
+
+                fillColor: Colors.bg
+                fillAlpha: BarConfig.s("fill") / 100
+                hoverColor: Colors.bg
+                hoverAlpha: BarConfig.s("fillHover") / 100
+                strokeColor: Colors.outline
+                strokeAlpha: BarConfig.s("border")
+                    ? BarConfig.s("borderAlpha") / 100 : 0
+                stroke: BarConfig.s("border") ? 1.5 : 0
+
+                shadow: BarConfig.s("shadow")
+            }
+
+            component GlideTransition: Transition {
+                enabled: BarConfig.s("blob") && BarConfig.s("blobGlide")
+                NumberAnimation {
+                    properties: "x"
+                    duration: Motion.slow
+                    easing.type: Easing.Bezier
+                    easing.bezierCurve: Motion.glide
+                }
             }
 
             Item {
@@ -286,6 +365,9 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: BarConfig.s("islandGap")
 
+                    move: GlideTransition {}
+                    add: GlideTransition {}
+
                     Repeater {
                         model: BarConfig.zones.left
 
@@ -294,9 +376,15 @@ Scope {
                             required property int index
                             isle: modelData
                             position: index
+                            blobField: leftBlob
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
+                }
+
+                ZoneBlobs {
+                    id: leftBlob
+                    host: leftZone
                 }
 
                 Row {
@@ -304,6 +392,9 @@ Scope {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: BarConfig.s("islandGap")
+
+                    move: GlideTransition {}
+                    add: GlideTransition {}
 
                     Repeater {
                         model: BarConfig.zones.center
@@ -313,9 +404,15 @@ Scope {
                             required property int index
                             isle: modelData
                             position: index + 2
+                            blobField: centerBlob
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
+                }
+
+                ZoneBlobs {
+                    id: centerBlob
+                    host: centerZone
                 }
 
                 Row {
@@ -325,6 +422,9 @@ Scope {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: BarConfig.s("islandGap")
 
+                    move: GlideTransition {}
+                    add: GlideTransition {}
+
                     Repeater {
                         model: BarConfig.zones.right
 
@@ -333,9 +433,15 @@ Scope {
                             required property int index
                             isle: modelData
                             position: index + 3
+                            blobField: rightBlob
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
+                }
+
+                ZoneBlobs {
+                    id: rightBlob
+                    host: rightZone
                 }
             }
 

@@ -15,6 +15,8 @@ Scope {
 
     property bool locked: false
 
+    WeatherHold { active: root.locked }
+
     signal unlocked()
 
     readonly property string shot:
@@ -702,99 +704,104 @@ Scope {
                 }
             }
 
-            Rectangle {
+            Item {
+                id: nowCard
+
                 visible: Media.has && Media.label !== ""
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.bottomMargin: 40
                 anchors.leftMargin: 40
 
-                width: nowRow.implicitWidth + 36
-                height: 76
-                radius: Shape.card
-                antialiasing: true
-                color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.5)
+                width: 348
+                height: 96
 
-                Sheen {
+                Glass {
                     anchors.fill: parent
                     radius: Shape.card
-                    edgeOpacity: 0.18
+                    elevation: 2
+                    specular: false
                 }
 
                 Row {
-                    id: nowRow
-                    anchors.centerIn: parent
-                    spacing: 14
+                    anchors.fill: parent
+                    anchors.leftMargin: Shape.padBase
+                    anchors.rightMargin: Shape.padBase
+                    spacing: 16
 
-                    ClippingRectangle {
-                        width: 50
-                        height: 50
-                        radius: Shape.chip
+                    Item {
+                        id: discSlot
+
+                        width: 64
+                        height: 64
                         anchors.verticalCenter: parent.verticalCenter
-                        color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
-                                       Colors.bgAlt.b, 0.6)
 
-                        Image {
-                            id: lockCover
-                            anchors.fill: parent
-                            source: Media.art
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            sourceSize.width: 256
-                            visible: Media.art !== "" && status === Image.Ready
+                        Bloom {
+                            target: disc
+                            tint: Colors.accent
+                            amount: Media.playing ? 0.20 : 0.07
+                            radius: disc.width / 2
+                            inset: -14
+                            blurMax: 32
                         }
 
-                        Text {
-                            anchors.centerIn: parent
-                            visible: !lockCover.visible
-                            text: Media.playing ? "󰝚" : "󰎈"
+                        ProgressRing {
+                            anchors.fill: parent
+                            visible: Media.hasPosition
+                            value: Math.max(0, Math.min(1, Media.progress))
                             color: Colors.accent
-                            font.family: root.mono
-                            font.pixelSize: 18
+                            trackColor: Qt.rgba(Colors.outline.r, Colors.outline.g,
+                                                Colors.outline.b, 0.22)
+                            thickness: 2.5
+                            inset: 1
+                        }
+
+                        Vinyl {
+                            id: disc
+
+                            anchors.centerIn: parent
+                            width: parent.width - 12
+                            height: width
+                            art: Media.art
+                            spinning: Media.playing
+                            grooves: 6
+                            labelRatio: 0.58
                         }
                     }
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 5
+                        width: parent.width - discSlot.width - parent.spacing
+                        spacing: 6
 
-                        Text {
+                        Marquee {
+                            width: parent.width
                             text: Media.title === "" ? Media.label : Media.title
                             color: Colors.fg
-                            font.family: root.mono
-                            font.pixelSize: 12
-                            font.weight: Font.DemiBold
-                            elide: Text.ElideRight
-                            width: Math.min(implicitWidth, 320)
+                            family: root.mono
+                            pixelSize: 12
+                            weight: Font.DemiBold
                         }
 
                         Text {
                             visible: text !== ""
+                            width: parent.width
                             text: Media.artist
                             color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                           Colors.fgDim.b, 0.65)
+                                           Colors.fgDim.b, 0.7)
                             font.family: root.mono
                             font.pixelSize: 10
                             elide: Text.ElideRight
-                            width: Math.min(implicitWidth, 320)
                         }
 
-                        Rectangle {
-                            visible: Media.hasPosition
-                            width: Math.min(320, Math.max(120, nowRow.implicitWidth - 80))
-                            height: 3
-                            radius: 1.5
-                            color: Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                           Colors.outline.b, 0.25)
-
-                            Rectangle {
-                                width: parent.width
-                                       * Math.max(0, Math.min(1, Media.progress))
-                                height: parent.height
-                                radius: parent.radius
-                                color: Colors.accent
-                                Behavior on width { NumberAnimation { duration: Motion.base } }
-                            }
+                        Text {
+                            visible: text !== ""
+                            text: Media.source.toLowerCase()
+                            color: Colors.accentAlt
+                            font.family: root.mono
+                            font.pixelSize: 9
+                            font.letterSpacing: 2
+                            opacity: 0.75
                         }
                     }
                 }

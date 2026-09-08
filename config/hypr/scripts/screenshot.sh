@@ -176,6 +176,48 @@ case "$MODE" in
         notify "Colour" "$HEX copied" -i "$SWATCH" -t 3000 -a screenshot
         (sleep 6; rm -f "$SWATCH") >/dev/null 2>&1 &
         ;;
+    lens)
+        have curl || {
+            notify "Lens" "Missing: pacman -S curl" -t 4000 -a screenshot
+            exit 1
+        }
+
+        SLURP_STYLE=(-d -b 000000aa -c efbd90ff -s efbd9033 -w 3)
+
+        GEOM=$(pick_region) || {
+            notify "Lens" "No region selected" -t 2000 -a screenshot -r 9993
+            exit 1
+        }
+        if [ -z "$GEOM" ]; then
+            notify "Lens" "No region selected" -t 2000 -a screenshot -r 9993
+            exit 1
+        fi
+        unfreeze
+
+        SHOT=$(mktemp -t lens-XXXXXX.png)
+        trap 'unfreeze; rm -f "$SHOT"' EXIT
+
+        grim -g "$GEOM" "$SHOT" || exit 1
+        scrub_meta "$SHOT"
+
+        notify "Lens" "Загружаю…" -i "$SHOT" -t 2000 -a screenshot -r 9994
+
+        IMG=$(curl -s --max-time 40 -F "files[]=@$SHOT" \
+                   "https://uguu.se/upload" 2>/dev/null \
+              | jq -r '.files[0].url // empty' 2>/dev/null)
+
+        if [ -z "$IMG" ]; then
+            notify "Lens" "Хостинг не ответил — проверь сеть" \
+                   -t 4000 -a screenshot -r 9994
+            exit 1
+        fi
+
+        scan_secrets "$SHOT" &
+
+        ENC=$(jq -rn --arg u "$IMG" '$u | @uri')
+        xdg-open "https://lens.google.com/uploadbyurl?url=$ENC" >/dev/null 2>&1 &
+        notify "Lens" "Открываю результат" -t 2500 -a screenshot -r 9994
+        ;;
     ocr)
         have tesseract || {
             notify "OCR" "Missing: pacman -S tesseract tesseract-data-eng" -t 4000
@@ -216,7 +258,7 @@ case "$MODE" in
         notify "OCR" "$PREVIEW" -t 4000 -a screenshot -r 9993
         ;;
     *)
-        echo "usage: screenshot.sh [region|window|output|all|edit|color|ocr]" >&2
+        echo "usage: screenshot.sh [region|window|output|all|edit|color|ocr|lens]" >&2
         exit 2
         ;;
 esac

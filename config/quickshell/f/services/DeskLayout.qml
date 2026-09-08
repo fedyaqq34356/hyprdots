@@ -51,7 +51,7 @@ Singleton {
             title: I18n.t("desk.visualizer"),
             glyph: "󰗆",
             faces: ["bars", "mirror", "flame", "grid", "dots", "tape",
-                    "wave", "line", "radial", "orb"],
+                    "wave", "line", "radial", "orb", "cover"],
             size: 1.0
         },
         "timer": {
@@ -159,12 +159,14 @@ Singleton {
         root.save();
     }
 
-    function resize(key, delta) {
+    function resize(key, delta, minSize, maxSize) {
         const item = root.items.find(it => it.key === key);
         if (!item)
             return;
+        const lo = minSize === undefined ? 0.5 : minSize;
+        const hi = maxSize === undefined ? 3.0 : maxSize;
         root.update(key, {
-            size: Math.max(0.5, Math.min(3.0, item.size + delta))
+            size: Math.max(lo, Math.min(hi, item.size + delta))
         });
         root.save();
     }

@@ -25,6 +25,8 @@ Rectangle {
         modelData.expireTimeout > 0 ? modelData.expireTimeout : 5000
 
     readonly property string kind: NotifKind.of(modelData)
+
+    WeatherHold { active: card.kind === "weather" && card.visible }
     readonly property string shot: NotifKind.shotPath(modelData)
     readonly property int headHeight: 54
 

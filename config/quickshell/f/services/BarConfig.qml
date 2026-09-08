@@ -182,12 +182,20 @@ Singleton {
         borderAlpha:   { type: "int", def: 32,  min: 0,  max: 100 },
         shadow:        { type: "bool", def: true },
         border:        { type: "bool", def: true },
+        barStyle:      { type: "pick", def: "modular",
+                         values: ["modular", "solid"] },
+        distinctPills: { type: "bool", def: false },
+        blob:          { type: "bool", def: true },
+        blobFuse:      { type: "int", def: 4,   min: 0,  max: 30 },
+        blobGlide:     { type: "bool", def: true },
         intro:         { type: "bool", def: true },
         hoverGrow:     { type: "bool", def: true },
         tooltips:      { type: "bool", def: true }
     })
 
     property var style: ({})
+
+    property bool introPlayed: false
 
     function s(name) {
         if (root.style && root.style[name] !== undefined)
