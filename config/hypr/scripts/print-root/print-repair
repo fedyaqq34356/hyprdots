@@ -1,0 +1,48 @@
+#!/bin/bash
+set -u
+
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+cmd="${1:-}"
+arg="${2:-}"
+
+case "$cmd" in
+modprobe)
+    modprobe usblp 2>/dev/null
+    exit 0
+    ;;
+
+ccpd)
+    rc-service ccpd stop >/dev/null 2>&1
+    for _ in 1 2 3 4 5; do
+        pidof ccpd >/dev/null 2>&1 || break
+        sleep 0.3
+    done
+    pidof ccpd >/dev/null 2>&1 && killall -9 ccpd 2>/dev/null
+    rc-service ccpd start >/dev/null 2>&1
+    exit $?
+    ;;
+
+enable)
+    [[ "$arg" =~ ^[A-Za-z0-9_-]+$ ]] || exit 1
+    cupsenable "$arg" 2>/dev/null
+    cupsaccept "$arg" 2>/dev/null
+    exit 0
+    ;;
+
+hotplug)
+    sleep 2
+    "$0" ccpd
+    for p in $(lpstat -p 2>/dev/null | awk '/^printer/ { print $2 }'); do
+        cupsenable "$p" 2>/dev/null
+        cupsaccept "$p" 2>/dev/null
+    done
+    exit 0
+    ;;
+
+*)
+    echo "print-repair: неизвестная команда '$cmd'" >&2
+    exit 64
+    ;;
+esac
