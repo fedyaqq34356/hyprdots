@@ -32,3 +32,4 @@ singleton Updates Updates.qml
 singleton Vpn Vpn.qml
 singleton Weather Weather.qml
 singleton Wellbeing Wellbeing.qml
+singleton Printing Printing.qml
