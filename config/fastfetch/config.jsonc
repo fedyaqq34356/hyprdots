@@ -3,34 +3,32 @@
     "logo": {
         "source": "artix",
         "padding": { "top": 1, "right": 3 },
-        "color": {
-            "1": "38;5;141",
-            "2": "38;5;105"
-        }
+        "color": { "1": "4", "2": "8" }
     },
     "display": {
         "separator": "  ",
-        "color": { "keys": "38;5;141", "title": "38;5;141" }
+        "key": { "width": 2 },
+        "color": { "keys": "8", "title": "4" }
     },
     "modules": [
         {
             "type": "title",
             "format": "{user-name}@{host-name}",
-            "color": { "user": "38;5;183", "at": "38;5;61", "host": "38;5;141" }
+            "color": { "user": "4", "at": "8", "host": "8" }
         },
-        "separator",
-        { "type": "os",      "key": "󰣇  os",     "keyColor": "38;5;105" },
-        { "type": "kernel",  "key": "   kern",   "keyColor": "38;5;105" },
-        { "type": "shell",   "key": "   shell",  "keyColor": "38;5;105" },
-        { "type": "uptime",  "key": "󰅐  up",     "keyColor": "38;5;105" },
-        "separator",
-        { "type": "cpu",     "key": "   cpu",   "keyColor": "38;5;141",
+        "break",
+        { "type": "os",      "key": "󰣇", "keyColor": "8" },
+        { "type": "kernel",  "key": " ", "keyColor": "8" },
+        { "type": "shell",   "key": " ", "keyColor": "8" },
+        { "type": "uptime",  "key": "󰅐", "keyColor": "8" },
+        "break",
+        { "type": "cpu",     "key": " ", "keyColor": "8",
           "showPeCoreCount": false },
-        { "type": "gpu",     "key": "󰍛  gpu",    "keyColor": "38;5;141" },
-        { "type": "memory",  "key": "   ram",   "keyColor": "38;5;141" },
-        { "type": "disk",    "key": "󰋊  disk",   "keyColor": "38;5;141",
+        { "type": "gpu",     "key": "󰍛", "keyColor": "8" },
+        { "type": "memory",  "key": " ", "keyColor": "8" },
+        { "type": "disk",    "key": "󰋊", "keyColor": "8",
           "folders": "/" },
-        "separator",
+        "break",
         { "type": "colors",  "symbol": "circle", "paddingLeft": 2 }
     ]
 }
