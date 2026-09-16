@@ -9,6 +9,14 @@ kitty = true
 input_path  = "~/.config/matugen/templates/kitty-colors.conf"
 output_path = "~/.config/kitty/colors.conf"
 
+[templates.zsh]
+input_path  = "~/.config/matugen/templates/zsh-colors.zsh"
+output_path = "~/.config/zsh/colors.zsh"
+
+[templates.starship]
+input_path  = "~/.config/matugen/templates/starship.toml"
+output_path = "~/.config/starship.toml"
+
 [templates.cava]
 input_path  = "~/.config/matugen/templates/cava.conf"
 output_path = "~/.config/cava/config"
