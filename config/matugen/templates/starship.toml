@@ -1,0 +1,105 @@
+format = """
+$directory$git_branch$git_status${custom.venv}$nix_shell$cmd_duration$jobs$status
+$character"""
+
+add_newline = false
+palette = "matugen"
+
+[palettes.matugen]
+fg     = "{{colors.on_surface.default.hex}}"
+dim    = "{{colors.on_surface_variant.default.hex}}"
+faint  = "{{colors.outline.default.hex}}"
+accent = "{{colors.primary.default.hex}}"
+alt    = "{{colors.tertiary.default.hex}}"
+warn   = "{{colors.secondary.default.hex}}"
+bad    = "{{colors.error.default.hex}}"
+
+[directory]
+style              = "bold accent"
+format             = "[$path]($style)"
+truncation_length  = 3
+truncate_to_repo   = true
+home_symbol        = ""
+read_only          = " "
+read_only_style    = "faint"
+repo_root_style    = "bold accent"
+repo_root_format   = "[$repo_root]($repo_root_style)[$path](dim)"
+
+[git_branch]
+symbol = ""
+style  = "alt"
+format = " [$branch]($style)"
+
+[git_status]
+disabled   = false
+style      = "warn"
+format     = " [$all_status$ahead_behind]($style)"
+conflicted = "="
+ahead      = "↑${count}"
+behind     = "↓${count}"
+diverged   = "↕↑${ahead_count}↓${behind_count}"
+up_to_date = ""
+untracked  = "?${count}"
+stashed    = "$"
+modified   = "!${count}"
+staged     = "+${count}"
+renamed    = "»${count}"
+deleted    = "✘${count}"
+
+[python]
+disabled = true
+
+[custom.venv]
+description = "точка, когда активна virtualenv"
+when         = "test -n \"$VIRTUAL_ENV\""
+command      = "echo ●"
+style        = "alt"
+format       = " [$output]($style)"
+shell        = ["sh"]
+
+[nix_shell]
+disabled     = false
+symbol       = ""
+style        = "accent"
+format       = " [●]($style)"
+heuristic    = true
+
+[cmd_duration]
+disabled     = false
+min_time     = 2000
+format       = " [$duration]($style)"
+style        = "faint"
+show_milliseconds = false
+
+[jobs]
+symbol           = "●"
+style            = "warn"
+format           = " [$symbol$number]($style)"
+number_threshold = 2
+symbol_threshold = 1
+
+[status]
+disabled    = false
+style       = "bad"
+symbol      = ""
+format      = " [$status]($style)"
+map_symbol  = false
+pipestatus  = false
+
+[character]
+success_symbol = "[>](accent)"
+error_symbol   = "[>](bad)"
+vimcmd_symbol  = "[<](alt)"
+
+[nodejs]
+disabled = true
+[rust]
+disabled = true
+[package]
+disabled = true
+[battery]
+disabled = true
+[time]
+disabled = true
+[os]
+disabled = true
