@@ -172,7 +172,7 @@ Scope {
                 NumberAnimation {
                     duration: Motion.slow
                     easing.type: Easing.Bezier
-                    easing.bezierCurve: Motion.snap
+                    easing.bezierCurve: Motion.expo
                 }
             }
 
