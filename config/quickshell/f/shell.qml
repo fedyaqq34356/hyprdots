@@ -65,6 +65,7 @@ ShellRoot {
     LazyLoader { id: overviewL; Overview {} }
     LazyLoader { id: notifCenterL; loading: true; NotifCenter {} }
     LazyLoader { id: filesL; Files {} }
+    LazyLoader { id: printL; PrintPanel {} }
     LazyLoader { id: mediaL; MediaPanel {} }
     LazyLoader { id: calendarL; loading: true; Calendar {} }
     LazyLoader { id: sysRingsL; SysRings {} }
@@ -83,6 +84,7 @@ ShellRoot {
     readonly property var overview: overviewL.item
     readonly property var notifCenter: notifCenterL.item
     readonly property var files: filesL.item
+    readonly property var printPanel: printL.item
     readonly property var media: mediaL.item
     readonly property var calendar: calendarL.item
     readonly property var sysRings: sysRingsL.item
@@ -111,6 +113,22 @@ ShellRoot {
                  + " age=" + (Weather.fetchedAt > 0
                      ? Math.round((Date.now() - Weather.fetchedAt) / 1000) + "s"
                      : "never");
+        }
+    }
+
+    IpcHandler {
+        target: "printing"
+
+        function file(path: string): string {
+            if (!path)
+                return "нужен путь к файлу";
+            panel(printL).open(path);
+            return "ок";
+        }
+
+        function open(): string {
+            panel(printL).toggle();
+            return "ок";
         }
     }
 
@@ -195,6 +213,12 @@ ShellRoot {
         appid: "quickshell"
         name: "files"
         onPressed: panel(filesL).toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "print"
+        onPressed: panel(printL).toggle()
     }
 
     GlobalShortcut {
