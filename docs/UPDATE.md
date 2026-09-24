@@ -13,6 +13,17 @@
 
 </div>
 
+### Latest — the dynamic island · `Super` + `Shift` + `I`
+
+<img src="../assets/island/island-media.gif" alt="The dynamic island opening into a player card" width="100%">
+
+The bar clock became a pill that grows into whatever is happening: music with the cover and a live
+spectrum, notifications, timers in a left slot, alarms, volume, brightness, layout, workspaces,
+headphones, charging, low batteries, Wi-Fi and VPN. It is on by default after a fresh install.
+Also new in this round: per-monitor bar settings, a monoline bar style, bar autohide, window
+rounding driven from the shell, Chromium themed from the wallpaper, and notification action buttons.
+The full tour with every animation is at the top of the [README](../README.md).
+
 <table>
 <tr>
 <td valign="top" width="50%">

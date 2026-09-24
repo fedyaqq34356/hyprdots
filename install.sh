@@ -83,7 +83,7 @@ PACMAN_PKGS=(
     hyprland hyprlock hyprpaper hypridle hyprpolkitagent xdg-desktop-portal-hyprland
     kitty rofi-wayland cava fastfetch yazi
     starship zoxide fzf eza bat ripgrep lazygit thunar
-    brightnessctl playerctl pipewire pipewire-pulse wireplumber
+    brightnessctl playerctl pipewire pipewire-pulse wireplumber upower bluez bluez-utils
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
     waybar fuzzel mako networkmanager foot nnn udisks2
     qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
@@ -307,8 +307,9 @@ cat <<EOF
 ${GREEN}${BOLD}Done.${RESET}
   1. log out and start Hyprland
   2. press ${BOLD}Super+W${RESET} to pick a wallpaper — the whole desktop is recoloured from it
-  3. press ${BOLD}Super+Shift+L${RESET} to see the lock screen
-  4. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
+  3. press ${BOLD}Super+Shift+I${RESET} to tune the dynamic island — it replaces the bar clock and reacts to music, volume, notifications and timers
+  4. press ${BOLD}Super+Shift+L${RESET} to see the lock screen
+  5. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
 
   backup of the previous configuration: ${BACKUP_DIR/#$HOME/\~}
 EOF
