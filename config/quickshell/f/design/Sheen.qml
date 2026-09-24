@@ -1,5 +1,6 @@
 import QtQuick
 import "root:/design"
+import "root:/services"
 
 Item {
     id: sheen
@@ -21,16 +22,16 @@ Item {
         visible: sheen.depth
         radius: sheen.radius
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Colors.light(0.070 * sheen.strength) }
-            GradientStop { position: 0.40; color: Colors.light(0.012 * sheen.strength) }
-            GradientStop { position: 0.72; color: Colors.shadow(0.030 * sheen.strength) }
-            GradientStop { position: 1.0; color: Colors.shadow(0.110 * sheen.strength) }
+            GradientStop { position: 0.0; color: Prefs.apple ? Qt.rgba(1, 1, 1, 0.04 * sheen.strength) : Colors.light(0.070 * sheen.strength) }
+            GradientStop { position: 0.40; color: Prefs.apple ? Qt.rgba(1, 1, 1, 0.0) : Colors.light(0.012 * sheen.strength) }
+            GradientStop { position: 0.72; color: Prefs.apple ? Qt.rgba(0, 0, 0, 0.0) : Colors.shadow(0.030 * sheen.strength) }
+            GradientStop { position: 1.0; color: Prefs.apple ? Qt.rgba(0, 0, 0, 0.0) : Colors.shadow(0.110 * sheen.strength) }
         }
     }
 
     Grain {
         anchors.fill: parent
-        visible: sheen.grain
+        visible: sheen.grain && !Prefs.apple
         amount: sheen.grainOpacity
     }
 
@@ -59,7 +60,7 @@ Item {
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.5; color: Colors.shadow(0.30 * sheen.strength) }
+            GradientStop { position: 0.5; color: Prefs.apple ? "transparent" : Colors.shadow(0.30 * sheen.strength) }
             GradientStop { position: 1.0; color: "transparent" }
         }
     }
@@ -71,7 +72,7 @@ Item {
         color: "transparent"
         antialiasing: true
         border.width: 1
-        border.color: Colors.alpha(sheen.edge, sheen.edgeOpacity)
+        border.color: Prefs.apple ? Qt.rgba(1, 1, 1, 0.09) : Colors.alpha(sheen.edge, sheen.edgeOpacity)
         Behavior on border.color { ColorAnimation { duration: Motion.base } }
     }
 }

@@ -64,20 +64,30 @@ Scope {
             amount: root.shown ? 0.20 : 0
         }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+            cornerTo: Shape.modal
+        }
+
         Glass {
             id: card
 
             anchors.centerIn: parent
+            transform: Translate { x: emerge.dx; y: emerge.dy }
             width: 520
             height: Math.min(parent.height - 80, body.implicitHeight + head.height + 76)
             radius: Shape.modal
             elevation: 3
             edge: Colors.accent
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.95
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.95)
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
@@ -196,6 +206,17 @@ Scope {
                         width: parent.width
                         glyph: "󰸌"
                         title: I18n.t("set.secLook")
+
+                        SettingsChoice {
+                            width: parent.width
+                            label: I18n.t("set.design")
+                            current: Prefs.design
+                            options: [
+                                { value: "native", label: I18n.t("set.designNative") },
+                                { value: "apple", label: I18n.t("set.designApple") }
+                            ]
+                            onPicked: (value) => Prefs.set("design", value)
+                        }
 
                         SettingsChoice {
                             width: parent.width

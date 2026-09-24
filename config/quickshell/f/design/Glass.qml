@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import "root:/design"
+import "root:/services"
 
 Item {
     id: glass
@@ -32,7 +33,7 @@ Item {
         anchors.fill: parent
         anchors.topMargin: glass.contactDrop
         anchors.bottomMargin: -glass.contactDrop
-        visible: glass.elevation > 0
+        visible: glass.elevation > 0 && !Prefs.apple
         radius: glass.radius
         color: Colors.shadow(glass.contactAlpha)
         antialiasing: true
@@ -42,7 +43,8 @@ Item {
         id: body
         anchors.fill: parent
         radius: glass.radius
-        color: Colors.alpha(glass.tint, glass.tintOpacity)
+        color: Prefs.apple ? Qt.rgba(0, 0, 0, 0.9)
+                           : Colors.alpha(glass.tint, glass.tintOpacity)
         antialiasing: true
 
         Behavior on color { ColorAnimation { duration: Motion.slow } }
@@ -50,9 +52,9 @@ Item {
         layer.enabled: glass.elevation > 0
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: Colors.shadow(glass.shadowAlpha)
-            shadowBlur: glass.shadowBlur
-            shadowVerticalOffset: glass.shadowDrop
+            shadowColor: Prefs.apple ? Qt.rgba(0, 0, 0, 0.5) : Colors.shadow(glass.shadowAlpha)
+            shadowBlur: Prefs.apple ? 1.0 : glass.shadowBlur
+            shadowVerticalOffset: Prefs.apple ? glass.shadowDrop + 8 : glass.shadowDrop
         }
     }
 
@@ -60,10 +62,10 @@ Item {
         anchors.fill: body
         radius: glass.radius
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Colors.light(0.080) }
-            GradientStop { position: 0.42; color: Colors.light(0.014) }
-            GradientStop { position: 0.75; color: Colors.shadow(0.035) }
-            GradientStop { position: 1.0; color: Colors.shadow(0.120) }
+            GradientStop { position: 0.0; color: Prefs.apple ? Qt.rgba(1, 1, 1, 0.045) : Colors.light(0.080) }
+            GradientStop { position: 0.42; color: Prefs.apple ? Qt.rgba(1, 1, 1, 0.0) : Colors.light(0.014) }
+            GradientStop { position: 0.75; color: Prefs.apple ? Qt.rgba(0, 0, 0, 0.0) : Colors.shadow(0.035) }
+            GradientStop { position: 1.0; color: Prefs.apple ? Qt.rgba(0, 0, 0, 0.0) : Colors.shadow(0.120) }
         }
     }
 
@@ -73,7 +75,7 @@ Item {
         anchors.fill: body
         clip: true
         property bool armed: false
-        visible: glass.specular && armed
+        visible: glass.specular && armed && !Prefs.apple
 
         Connections {
             target: pointer
@@ -104,6 +106,10 @@ Item {
                 const ctx = getContext("2d");
                 ctx.reset();
                 const r = width / 2;
+
+                if (!isFinite(r) || r <= 0)
+                    return;
+
                 const g = ctx.createRadialGradient(r, r, r * 0.05, r, r, r);
                 g.addColorStop(0.0, Colors.light(0.090));
                 g.addColorStop(0.40, Colors.light(0.034));
@@ -116,7 +122,7 @@ Item {
 
     Grain {
         anchors.fill: body
-        visible: glass.grain
+        visible: glass.grain && !Prefs.apple
         amount: glass.grainOpacity
     }
 
@@ -143,7 +149,7 @@ Item {
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0.0; color: "transparent" }
-            GradientStop { position: 0.5; color: Colors.shadow(0.34) }
+            GradientStop { position: 0.5; color: Prefs.apple ? "transparent" : Colors.shadow(0.34) }
             GradientStop { position: 1.0; color: "transparent" }
         }
     }
@@ -154,8 +160,20 @@ Item {
         color: "transparent"
         antialiasing: true
         border.width: 1
-        border.color: Colors.alpha(glass.edge, pointer.hovered ? 0.32 : 0.16)
+        border.color: Prefs.apple ? Qt.rgba(1, 1, 1, 0.07)
+                                  : Colors.alpha(glass.edge, pointer.hovered ? 0.32 : 0.16)
         Behavior on border.color { ColorAnimation { duration: Motion.base } }
+    }
+
+    Rectangle {
+        anchors.fill: body
+        anchors.margins: -1
+        visible: false
+        radius: glass.radius + 1
+        color: "transparent"
+        antialiasing: true
+        border.width: 1
+        border.color: Qt.rgba(0, 0, 0, 0.45)
     }
 
     Item {

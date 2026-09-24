@@ -32,8 +32,8 @@ Rectangle {
     border.width: 1
     border.color: critical
         ? Qt.rgba(row.edge.r, row.edge.g, row.edge.b, 0.45)
-        : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b,
-                  hover.hovered ? 0.22 : 0.10)
+        : Qt.rgba(row.avatar.r, row.avatar.g, row.avatar.b,
+                  hover.hovered ? 0.34 : 0.18)
     Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
     HoverHandler { id: hover }
@@ -63,43 +63,54 @@ Rectangle {
         leave.start();
     }
 
-    Rectangle {
-        anchors.left: parent.left
-        anchors.leftMargin: 5
-        anchors.verticalCenter: parent.verticalCenter
-        width: 3
-        height: parent.height * 0.5
-        radius: Shape.detail / 2
-        antialiasing: true
-        color: row.critical ? row.edge : row.avatar
-        opacity: row.critical ? 1 : 0.75
-        Behavior on color { ColorAnimation { duration: Motion.fast } }
-    }
-
-    Rectangle {
+    Item {
         id: iconBox
         anchors.left: parent.left
-        anchors.leftMargin: 15
+        anchors.leftMargin: 13
         anchors.verticalCenter: parent.verticalCenter
-        width: 32
-        height: 32
-        radius: Shape.chip
-        color: row.critical
-            ? Qt.rgba(row.edge.r, row.edge.g, row.edge.b, 0.18)
-            : Qt.rgba(row.avatar.r, row.avatar.g, row.avatar.b, 0.16)
+        width: 34
+        height: 34
+
+        readonly property bool portrait: row.entry.image !== ""
+
+        Rectangle {
+            anchors.fill: parent
+            radius: iconBox.portrait ? width / 2 : Shape.chip
+            antialiasing: true
+            color: row.critical
+                ? Qt.rgba(row.edge.r, row.edge.g, row.edge.b, 0.18)
+                : Qt.rgba(row.avatar.r, row.avatar.g, row.avatar.b, 0.16)
+            border.width: iconBox.portrait ? 1 : 0
+            border.color: Qt.rgba(row.avatar.r, row.avatar.g, row.avatar.b, 0.45)
+        }
+
+        ClippingRectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            visible: iconBox.portrait
+            radius: width / 2
+            color: "transparent"
+
+            Image {
+                anchors.fill: parent
+                source: iconBox.portrait ? row.entry.image : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                sourceSize.width: 68
+            }
+        }
 
         IconImage {
             anchors.centerIn: parent
-            visible: row.hasArt
-            implicitSize: 18
-            source: !row.hasArt ? ""
-                : (row.entry.image !== "" ? row.entry.image
-                                          : Quickshell.iconPath(row.entry.icon, ""))
+            visible: !iconBox.portrait && row.hasArt
+            implicitSize: 19
+            source: (iconBox.portrait || !row.hasArt)
+                ? "" : Quickshell.iconPath(row.entry.icon, "")
         }
 
         Text {
             anchors.centerIn: parent
-            visible: !row.hasArt
+            visible: !iconBox.portrait && !row.hasArt
             text: NotifHistory.appLetter(row.entry.app)
             color: row.critical ? row.edge : row.avatar
             font.family: row.mono

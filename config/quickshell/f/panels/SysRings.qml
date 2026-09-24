@@ -43,8 +43,21 @@ Scope {
                     onClicked: root.close()
                 }
 
-                Keys.onEscapePressed: root.close()
-                Component.onCompleted: forceActiveFocus()
+                FocusScope {
+                    anchors.fill: parent
+                    focus: true
+
+                    Keys.onEscapePressed: root.close()
+                    Component.onCompleted: forceActiveFocus()
+                }
+
+                Emerge {
+                    id: emerge
+                    card: card
+                    win: null
+                    open: root.shown
+                    cache: false
+                }
 
                 Rectangle {
                     id: card
@@ -60,11 +73,13 @@ Scope {
 
                     MouseArea { anchors.fill: parent }
 
-                    opacity: root.shown ? 1 : 0
-                    scale: root.shown ? 1 : 0.9
+                    opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+                    scale: emerge.on ? 1 : (root.shown ? 1 : 0.9)
+                    transform: Translate { x: emerge.dx; y: emerge.dy }
 
-                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                    Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: 200 } }
                     Behavior on scale {
+                        enabled: !emerge.on
                         SpringAnimation {
                             spring: Motion.panelSpring
                             damping: Motion.panelDamping

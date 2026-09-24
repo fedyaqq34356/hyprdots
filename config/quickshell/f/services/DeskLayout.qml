@@ -11,6 +11,57 @@ Singleton {
     property bool editing: false
     property int selected: -1
 
+    readonly property int grid: 64
+
+    readonly property int gridPull: 9
+    readonly property int guidePull: 12
+
+    property real guideX: -1
+    property real guideY: -1
+    property string guideScreen: ""
+
+    function clearGuides() {
+        root.guideX = -1;
+        root.guideY = -1;
+        root.guideScreen = "";
+    }
+
+    onEditingChanged: {
+        if (!root.editing)
+            root.clearGuides();
+    }
+
+    function magnet(axis, px, field, key, screen) {
+        const marks = [field / 2];
+
+        for (const it of root.items) {
+            if (it.key === key)
+                continue;
+            if (it.screen !== "" && screen !== "" && it.screen !== screen)
+                continue;
+            marks.push((axis === "x" ? it.x : it.y) * field);
+        }
+
+        let best = -1;
+        let bestGap = root.guidePull;
+        for (const m of marks) {
+            const gap = Math.abs(px - m);
+            if (gap < bestGap) {
+                bestGap = gap;
+                best = m;
+            }
+        }
+
+        if (best >= 0)
+            return { at: best, guide: best };
+
+        const cell = Math.round(px / root.grid) * root.grid;
+        if (Math.abs(px - cell) <= root.gridPull)
+            return { at: cell, guide: -1 };
+
+        return { at: px, guide: -1 };
+    }
+
     readonly property var registry: ({
         "clock": {
             title: I18n.t("bar.clock"),

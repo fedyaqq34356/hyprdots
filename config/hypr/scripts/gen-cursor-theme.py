@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 THEME_NAME = "Matugen-Cursor"
+TRIGGER = Path.home() / ".config/matugen/out/cursor-trigger.txt"
 COLORS_CONF = Path.home() / ".config/hypr/config/colors.conf"
 BUILD_DIR = Path.home() / ".cache/cursor-build"
 INSTALL_DIR = Path.home() / ".local/share/icons"
@@ -15,7 +16,32 @@ INSTALL_DIR = Path.home() / ".local/share/icons"
 DEFAULT_FILL = "#feb879"
 DEFAULT_EDGE = "#18120e"
 
+def read_trigger() -> tuple[str, str] | None:
+    """Палитра из шаблона, к которому прицеплен этот хук.
+
+    Читать colors.conf нельзя: это выход *другого* шаблона, а matugen 4.1
+    пишет шаблоны в недетерминированном порядке. Замер трёх прогонов подряд
+    показал, что курсорный хук выигрывает гонку примерно в трети случаев — и
+    тогда тема собирается из палитры предыдущих обоев. Свой собственный
+    output-файл к моменту post_hook записан всегда.
+    """
+    if not TRIGGER.is_file():
+        return None
+
+    found = dict(
+        re.findall(r"^\s*(\w+)\s*=\s*(#[0-9a-fA-F]{6})\s*$",
+                   TRIGGER.read_text(), re.MULTILINE)
+    )
+    fill, edge = found.get("accent"), found.get("surface")
+    if not fill or not edge:
+        return None
+    return fill.lower(), edge.lower()
+
 def read_palette() -> tuple[str, str]:
+    trigger = read_trigger()
+    if trigger is not None:
+        return trigger
+
     if not COLORS_CONF.is_file():
         return DEFAULT_FILL, DEFAULT_EDGE
 
@@ -285,11 +311,12 @@ def apply_gtk() -> None:
             ini.write_text(new)
 
     if shutil.which("gsettings"):
-        subprocess.run(
-            ["gsettings", "set", "org.gnome.desktop.interface",
-             "cursor-theme", THEME_NAME],
-            capture_output=True,
-        )
+        for value in ("Adwaita", THEME_NAME):
+            subprocess.run(
+                ["gsettings", "set", "org.gnome.desktop.interface",
+                 "cursor-theme", value],
+                capture_output=True,
+            )
 
 def write_theme(shapes: dict) -> Path:
     src = BUILD_DIR / "src"

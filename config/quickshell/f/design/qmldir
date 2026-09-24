@@ -2,6 +2,7 @@ Bloom Bloom.qml
 Blobs Blobs.qml
 Glass Glass.qml
 Grain Grain.qml
+MorphSpring MorphSpring.qml
 PhaseHold PhaseHold.qml
 Sheen Sheen.qml
 Spring Spring.qml
@@ -10,3 +11,5 @@ singleton Fonts Fonts.qml
 singleton Motion Motion.qml
 singleton Phase Phase.qml
 singleton Shape Shape.qml
+Emerge Emerge.qml
+singleton Emergence Emergence.qml

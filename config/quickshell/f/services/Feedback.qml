@@ -14,6 +14,11 @@ Singleton {
     property bool showBar: true
     property bool flat: false
 
+    property string channel: "sink"
+
+    property int way: 0
+    property real lastValue: -1
+
     property int pulse: 0
 
     readonly property var sink: Pipewire.defaultAudioSink
@@ -29,7 +34,13 @@ Singleton {
         onTriggered: root.shown = false
     }
 
-    function flash(icon, value, withBar, label, isFlat) {
+    function flash(icon, value, withBar, label, isFlat, channel) {
+        const from = root.channel === channel ? root.lastValue : -1;
+        root.way = (isFlat === true || from < 0)
+            ? 0 : (value > from ? 1 : (value < from ? -1 : root.way));
+        root.lastValue = value;
+
+        root.channel = channel === undefined ? "sink" : channel;
         root.icon = icon;
         root.value = value;
         root.showBar = withBar;
@@ -52,14 +63,14 @@ Singleton {
             if (root.sink.audio.muted)
                 return;
             root.flash("󰕾", root.sink.audio.volume, true,
-                       root.percent(root.sink.audio.volume));
+                       root.percent(root.sink.audio.volume), false, "sink");
         }
 
         function onMutedChanged() {
             const m = root.sink.audio.muted;
             root.flash(m ? "󰝟" : "󰕾", root.sink.audio.volume, true,
                        m ? I18n.t("audio.mutedShort") : root.percent(root.sink.audio.volume),
-                       m);
+                       m, "sink");
         }
     }
 
@@ -71,14 +82,14 @@ Singleton {
             const m = root.source.audio.muted;
             root.flash(m ? "󰍭" : "󰍬", root.source.audio.volume, true,
                        m ? I18n.t("audio.micOff") : root.percent(root.source.audio.volume),
-                       m);
+                       m, "source");
         }
 
         function onVolumeChanged() {
             if (root.source.audio.muted)
                 return;
             root.flash("󰍬", root.source.audio.volume, true,
-                       root.percent(root.source.audio.volume));
+                       root.percent(root.source.audio.volume), false, "source");
         }
     }
 
@@ -88,7 +99,7 @@ Singleton {
 
         function onValueChanged() {
             root.flash("󰃞", Brightness.value, true,
-                       root.percent(Brightness.value));
+                       root.percent(Brightness.value), false, "light");
         }
     }
 }

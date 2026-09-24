@@ -7,8 +7,8 @@ import "root:/services"
 Singleton {
     id: root
 
-    readonly property string display: Prefs.fontDisplay
-    readonly property string mono: "JetBrainsMono Nerd Font"
+    readonly property string display: Prefs.apple ? "SF Pro Display" : Prefs.fontDisplay
+    readonly property string mono: Prefs.apple ? "SF Pro Display" : "JetBrainsMono Nerd Font"
     readonly property string glyph: "JetBrainsMono Nerd Font"
 
     readonly property var displayChoices: [

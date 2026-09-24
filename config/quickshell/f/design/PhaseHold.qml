@@ -7,6 +7,7 @@ QtObject {
     property bool active: false
 
     property bool held: false
+    property bool slow: false
 
     onActiveChanged: hold.sync()
 
@@ -14,9 +15,19 @@ QtObject {
         if (hold.active === hold.held)
             return;
         hold.held = hold.active;
-        Phase.holders += hold.active ? 1 : -1;
+        if (hold.slow)
+            Phase.slowHolders += hold.active ? 1 : -1;
+        else
+            Phase.holders += hold.active ? 1 : -1;
     }
 
     Component.onCompleted: hold.sync()
-    Component.onDestruction: if (hold.held) Phase.holders -= 1;
+    Component.onDestruction: {
+        if (!hold.held)
+            return;
+        if (hold.slow)
+            Phase.slowHolders -= 1;
+        else
+            Phase.holders -= 1;
+    }
 }

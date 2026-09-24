@@ -7,7 +7,7 @@ import "root:/services"
 Singleton {
     id: root
 
-    readonly property int knob: root.compress(Prefs.cornerRadius)
+    readonly property int knob: Prefs.apple ? 13 : root.compress(Prefs.cornerRadius)
 
     function compress(value) {
         const v = Number(value);
@@ -22,6 +22,8 @@ Singleton {
     readonly property int modal: Scaler.s(root.knob * 8 / 3)
 
     readonly property int detail: Scaler.s(root.knob / 2)
+
+    readonly property int window: Scaler.s(root.knob * 5 / 2)
 
     readonly property int padTight: Scaler.s(10)
     readonly property int padBase: Scaler.s(16)

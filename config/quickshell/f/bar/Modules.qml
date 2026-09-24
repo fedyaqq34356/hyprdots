@@ -15,9 +15,11 @@ Item {
 
     property var tipHost: null
 
+    property string screenName: ""
+
     readonly property string mono: Fonts.mono
-    readonly property int fontSize: BarConfig.s("fontSize")
-    readonly property int glyphSize: BarConfig.s("glyphSize")
+    readonly property int fontSize: BarConfig.s("fontSize", kit.screenName)
+    readonly property int glyphSize: BarConfig.s("glyphSize", kit.screenName)
 
     property var panels: ({})
 
@@ -26,13 +28,19 @@ Item {
         return loader && loader.item ? loader.item : null;
     }
 
-    function panel(name) {
+    function panelDo(name, fn) {
         const loader = kit.panels ? kit.panels[name] : null;
         if (!loader)
-            return null;
-        if (!loader.item)
-            loader.active = true;
-        return loader.item;
+            return;
+        if (loader.item) {
+            fn(loader.item);
+            return;
+        }
+        loader.active = true;
+        Qt.callLater(() => {
+            if (loader.item)
+                fn(loader.item);
+        });
     }
 
     function component(type) {
@@ -95,7 +103,7 @@ Item {
     component Tip: HoverHandler {
         property string text: ""
         onHoveredChanged: {
-            if (!kit.tipHost || !BarConfig.s("tooltips"))
+            if (!kit.tipHost || !BarConfig.s("tooltips", kit.screenName))
                 return;
             if (hovered) kit.tipHost.show(parent, text);
             else kit.tipHost.hide(parent);
@@ -440,7 +448,7 @@ Item {
                 z: -1
                 onClicked: function (mouse) {
                     if (mouse.button === Qt.RightButton) Media.next();
-                    else kit.panel("media")?.toggle();
+                    else kit.panelDo("media", p => p.toggle());
                 }
             }
 
@@ -568,7 +576,7 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: kit.panel("calendar")?.toggle()
+                onClicked: kit.panelDo("calendar", p => p.toggle())
             }
         }
     }
@@ -653,7 +661,7 @@ Item {
 
             TapHandler {
                 cursorShape: Qt.PointingHandCursor
-                onTapped: kit.panel("net")?.toggle("wifi")
+                onTapped: kit.panelDo("net", p => p.toggle("wifi"))
             }
         }
     }
@@ -687,7 +695,7 @@ Item {
                 anchors.fill: parent
                 anchors.margins: -4
                 cursorShape: Qt.PointingHandCursor
-                onClicked: kit.panel("net")?.toggle("bt")
+                onClicked: kit.panelDo("net", p => p.toggle("bt"))
             }
         }
     }
@@ -1115,7 +1123,7 @@ Item {
 
             TapHandler {
                 cursorShape: Qt.PointingHandCursor
-                onTapped: kit.panel("notifCenter")?.toggle()
+                onTapped: kit.panelDo("notifCenter", p => p.toggle())
             }
         }
     }
@@ -1349,7 +1357,7 @@ Item {
                 anchors.fill: parent
                 anchors.margins: -3
                 cursorShape: Qt.PointingHandCursor
-                onClicked: kit.panel("calendar")?.toggle()
+                onClicked: kit.panelDo("calendar", p => p.toggle())
             }
         }
     }
@@ -1377,7 +1385,7 @@ Item {
 
             TapHandler {
                 cursorShape: Qt.PointingHandCursor
-                onTapped: kit.panel("timer")?.toggle()
+                onTapped: kit.panelDo("timer", p => p.toggle())
             }
         }
     }

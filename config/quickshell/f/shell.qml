@@ -11,6 +11,7 @@ import "root:/panels"
 import "root:/services"
 
 ShellRoot {
+    id: root
 
     Connections {
         target: Quickshell
@@ -74,6 +75,7 @@ ShellRoot {
     LazyLoader { id: guideL; Guide {} }
     LazyLoader { id: eqL; Eq {} }
     LazyLoader { id: barBuilderL; BarBuilder {} }
+    LazyLoader { id: islandL; IslandPanel {} }
 
     readonly property var launcher: launcherL.item
     readonly property var clipboard: clipboardL.item
@@ -93,6 +95,7 @@ ShellRoot {
     readonly property var guide: guideL.item
     readonly property var eq: eqL.item
     readonly property var barBuilder: barBuilderL.item
+    readonly property var islandPanel: islandL.item
 
     Lock {
         id: lock
@@ -122,12 +125,12 @@ ShellRoot {
         function file(path: string): string {
             if (!path)
                 return "нужен путь к файлу";
-            panel(printL).open(path);
+            panelDo(printL, p => p.open(path));
             return "ок";
         }
 
         function open(): string {
-            panel(printL).toggle();
+            panelDo(printL, p => p.toggle());
             return "ок";
         }
     }
@@ -137,14 +140,46 @@ ShellRoot {
         command: [Quickshell.env("HOME") + "/.local/bin/qs-solo"]
     }
 
-    function panel(loader) {
-        if (!loader.item)
-            loader.active = true;
-        return loader.item;
+    function panelDo(loader, fn) {
+        if (loader.item) {
+            fn(loader.item);
+            return;
+        }
+        loader.active = true;
+        Qt.callLater(() => {
+            if (loader.item)
+                fn(loader.item);
+        });
     }
+    Process { id: roundingProc }
+
+    function pushWindowRounding() {
+        roundingProc.running = false;
+        roundingProc.command = [
+            "sh", "-c",
+            "printf '$winRounding = %s\\n' \"$1\" "
+                + "> \"$HOME/.config/hypr/config/shape.conf\" && "
+                + "hyprctl keyword decoration:rounding \"$1\"",
+            "sh", String(Shape.window)
+        ];
+        roundingProc.running = true;
+    }
+
+    Connections {
+        target: Prefs
+        function onCornerRadiusChanged() { root.pushWindowRounding(); }
+    }
+
+    Component.onCompleted: root.pushWindowRounding()
+
     FocusTrail {}
     Greeting {}
     Dim {}
+
+    LazyLoader {
+        active: IslandConfig.s("enabled")
+        Island {}
+    }
 
     LazyLoader {
         id: deskLoader
@@ -190,7 +225,7 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "launcher"
-        onPressed: panel(launcherL).toggle()
+        onPressed: panelDo(launcherL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -206,37 +241,37 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "notifCenter"
-        onPressed: panel(notifCenterL).toggle()
+        onPressed: panelDo(notifCenterL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "files"
-        onPressed: panel(filesL).toggle()
+        onPressed: panelDo(filesL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "print"
-        onPressed: panel(printL).toggle()
+        onPressed: panelDo(printL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "launcherCalc"
-        onPressed: panel(launcherL).toggleCalc()
+        onPressed: panelDo(launcherL, p => p.toggleCalc())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "clipboard"
-        onPressed: panel(clipboardL).toggle()
+        onPressed: panelDo(clipboardL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "wallpapers"
-        onPressed: panel(wallpapersL).toggle()
+        onPressed: panelDo(wallpapersL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -284,25 +319,25 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "overview"
-        onPressed: panel(overviewL).toggle()
+        onPressed: panelDo(overviewL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "media"
-        onPressed: panel(mediaL).toggle()
+        onPressed: panelDo(mediaL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "calendar"
-        onPressed: panel(calendarL).toggle()
+        onPressed: panelDo(calendarL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "sysRings"
-        onPressed: panel(sysRingsL).toggle()
+        onPressed: panelDo(sysRingsL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -326,19 +361,19 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "wifi"
-        onPressed: panel(netL).toggle("wifi")
+        onPressed: panelDo(netL, p => p.toggle("wifi"))
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "bluetooth"
-        onPressed: panel(netL).toggle("bt")
+        onPressed: panelDo(netL, p => p.toggle("bt"))
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "powerMenu"
-        onPressed: panel(powerMenuL).toggle()
+        onPressed: panelDo(powerMenuL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -362,7 +397,7 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "audioPanel"
-        onPressed: panel(audioPanelL).toggle()
+        onPressed: panelDo(audioPanelL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -406,13 +441,13 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "settings"
-        onPressed: panel(settingsL).toggle()
+        onPressed: panelDo(settingsL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "timer"
-        onPressed: panel(timerL).toggle()
+        onPressed: panelDo(timerL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -424,20 +459,20 @@ ShellRoot {
             else if (Timers.soonest)
                 Timers.toggle(Timers.soonest.id);
             else
-                panel(timerL).open("count");
+                panelDo(timerL, p => p.open("count"));
         }
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "eq"
-        onPressed: panel(eqL).toggle()
+        onPressed: panelDo(eqL, p => p.toggle())
     }
 
     GlobalShortcut {
         appid: "quickshell"
         name: "guide"
-        onPressed: panel(guideL).open()
+        onPressed: panelDo(guideL, p => p.open())
     }
 
     GlobalShortcut {
@@ -449,7 +484,13 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "barBuilder"
-        onPressed: panel(barBuilderL).toggle()
+        onPressed: panelDo(barBuilderL, p => p.toggle())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "island"
+        onPressed: panelDo(islandL, p => p.toggle())
     }
 
     GlobalShortcut {

@@ -60,6 +60,11 @@ input_path  = "~/.config/matugen/templates/librewolf-userchrome.css"
 output_path = "~/.config/matugen/out/librewolf-userchrome.css"
 post_hook   = "python3 $HOME/.config/hypr/scripts/apply-browser-theme.py"
 
+[templates.chromium]
+input_path  = "~/.config/matugen/templates/chromium-colors.json"
+output_path = "~/.config/matugen/out/chromium-colors.json"
+post_hook   = "python3 $HOME/.config/hypr/scripts/gen-chromium-theme.py"
+
 [templates.cursor]
 input_path  = "~/.config/matugen/templates/cursor-trigger.txt"
 output_path = "~/.config/matugen/out/cursor-trigger.txt"

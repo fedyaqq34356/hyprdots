@@ -53,6 +53,8 @@ Singleton {
         file.writeAdapter();
     }
 
+    signal added(var entry)
+
     function add(n) {
         const entry = {
             id: String(n.id),
@@ -67,6 +69,7 @@ Singleton {
 
         root.commit([entry].concat(root.items).slice(0, root.limit),
                     root.seenCount);
+        root.added(entry);
     }
 
     function removeAt(index) {

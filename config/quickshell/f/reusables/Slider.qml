@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import "root:/design"
 import "root:/services"
 
@@ -17,7 +18,8 @@ Rectangle {
 
     height: 6
     radius: height / 2
-    color: Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.2)
+    color: Prefs.apple ? Colors.alpha(Colors.fg, 0.16)
+                       : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.2)
 
     Rectangle {
         width: parent.width * Math.max(0, Math.min(1, control.value))
@@ -34,13 +36,23 @@ Rectangle {
     Rectangle {
         id: knob
 
-        width: 14
-        height: 14
-        radius: 7
+        width: Prefs.apple ? 20 : 14
+        height: width
+        radius: width / 2
         anchors.verticalCenter: parent.verticalCenter
         x: parent.width * Math.max(0, Math.min(1, control.value)) - width / 2
-        color: control.tint
-        opacity: hover.hovered || control.dragging ? 1 : 0
+        color: Prefs.apple ? "white" : control.tint
+        opacity: Prefs.apple || hover.hovered || control.dragging ? 1 : 0
+
+        RectangularShadow {
+            z: -1
+            anchors.fill: parent
+            visible: Prefs.apple
+            radius: parent.radius
+            blur: 6
+            offset.y: 2
+            color: Qt.rgba(0, 0, 0, 0.4)
+        }
         scale: control.dragging ? 1.15 : 1
 
         Behavior on opacity { NumberAnimation { duration: Motion.fast } }

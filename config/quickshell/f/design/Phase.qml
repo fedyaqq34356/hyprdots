@@ -19,6 +19,24 @@ Singleton {
         onTriggered: root.t = (Date.now() - root.epoch) / 1000
     }
 
+    property real ts: 0
+    property int slowHolders: 0
+    readonly property bool slowLive: root.slowHolders > 0
+
+    Timer {
+        interval: 33
+        repeat: true
+        running: root.slowLive
+        onTriggered: root.ts = (Date.now() - root.epoch) / 1000
+    }
+
+    function slowWave(period, offset) {
+        const o = offset === undefined ? 0 : offset;
+        let f = (root.ts / period + o) % 1;
+        if (f < 0) f += 1;
+        return 0.5 - 0.5 * Math.cos(2 * Math.PI * f);
+    }
+
     function angle(period, offset) {
         return root.ramp(period, offset) * 360;
     }

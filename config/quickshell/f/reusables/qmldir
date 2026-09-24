@@ -1,4 +1,5 @@
 Field Field.qml
+LivingShape LivingShape.qml
 HandClock HandClock.qml
 HoldButton HoldButton.qml
 IconButton IconButton.qml
@@ -19,3 +20,5 @@ BeatRing BeatRing.qml
 Spectrum Spectrum.qml
 FaceBadge FaceBadge.qml
 WeatherHold WeatherHold.qml
+OptionRow OptionRow.qml
+ArtTint ArtTint.qml

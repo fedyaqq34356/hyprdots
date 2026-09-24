@@ -13,6 +13,33 @@ Scope {
     property bool shown: false
     property string tab: "layout"
 
+    property string target: ""
+
+    readonly property var screenNames: {
+        const out = [];
+        const list = Quickshell.screens;
+        for (let i = 0; i < list.length; i++)
+            out.push(list[i].name);
+        return out;
+    }
+
+    function retarget() {
+        if (!BarConfig.perScreen) {
+            root.target = "";
+        } else if (root.target === ""
+                   || root.screenNames.indexOf(root.target) < 0) {
+            root.target = root.screenNames.length > 0
+                ? root.screenNames[0] : "";
+        }
+    }
+
+    Connections {
+        target: BarConfig
+        function onPerScreenChanged() { root.retarget(); }
+    }
+
+    Component.onCompleted: root.retarget()
+
     property int expanded: -1
 
     property string pickZone: ""
@@ -23,6 +50,7 @@ Scope {
         root.shown = false;
         root.pickIsland = -1;
         root.expanded = -1;
+        BarConfig.writeNow();
     }
 
     onShownChanged: Sfx.panel(root.shown)
@@ -62,6 +90,13 @@ Scope {
             }
         }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+        }
+
         FocusScope {
             id: card
             anchors.centerIn: parent
@@ -78,10 +113,12 @@ Scope {
                 tintOpacity: 0.96
             }
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.96
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.96)
+            transform: Translate { x: emerge.dx; y: emerge.dy }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
@@ -161,7 +198,7 @@ Scope {
                         glyph: "󰑐"
                         tip: I18n.t("barc.reset")
                         tint: Colors.bad
-                        onActivated: BarConfig.reset()
+                        onActivated: BarConfig.reset(root.target)
                     }
 
                     IconButton {
@@ -186,10 +223,156 @@ Scope {
                                Colors.outline.b, 0.18)
             }
 
+            Item {
+                id: whichBar
+                anchors.top: headLine.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: Shape.padLoose
+                anchors.rightMargin: Shape.padLoose
+                anchors.topMargin: 12
+                height: root.screenNames.length > 1 ? 30 : 0
+                visible: height > 0
+
+                Row {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 8
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: splitText.implicitWidth + 40
+                        height: 26
+                        radius: Shape.chip
+                        antialiasing: true
+                        color: BarConfig.perScreen
+                            ? Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                      Colors.accent.b, 0.20)
+                            : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                      Colors.fgDim.b, 0.07)
+                        Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 7
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: BarConfig.perScreen ? "󰍺" : "󰕮"
+                                color: BarConfig.perScreen ? Colors.accent : Colors.fgDim
+                                font.family: Fonts.glyph
+                                font.pixelSize: 12
+                            }
+
+                            Text {
+                                id: splitText
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: I18n.t("barc.perScreen")
+                                color: BarConfig.perScreen ? Colors.accent : Colors.fgDim
+                                font.family: Fonts.display
+                                font.pixelSize: 11
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                BarConfig.setPerScreen(!BarConfig.perScreen,
+                                                       root.screenNames);
+                                Sfx.tick();
+                            }
+                        }
+                    }
+
+                    Repeater {
+                        model: BarConfig.perScreen ? root.screenNames : []
+
+                        Rectangle {
+                            required property string modelData
+
+                            readonly property bool chosen: root.target === modelData
+
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: scrText.implicitWidth + 22
+                            height: 26
+                            radius: Shape.chip
+                            antialiasing: true
+                            color: chosen
+                                ? Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
+                                          Colors.accentAlt.b, 0.22)
+                                : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                          Colors.fgDim.b, 0.07)
+                            Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+                            Text {
+                                id: scrText
+                                anchors.centerIn: parent
+                                text: parent.modelData
+                                color: parent.chosen ? Colors.accentAlt : Colors.fgDim
+                                font.family: Fonts.mono
+                                font.pixelSize: 10
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.target = parent.modelData;
+                                    root.expanded = -1;
+                                    Sfx.tapAlt();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: BarConfig.perScreen && root.screenNames.length > 1
+                    width: copyText.implicitWidth + 24
+                    height: 26
+                    radius: Shape.chip
+                    antialiasing: true
+                    color: "transparent"
+                    border.width: 1
+                    border.color: Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
+                                          Colors.accentAlt.b, 0.32)
+
+                    readonly property string other: {
+                        for (let i = 0; i < root.screenNames.length; i++) {
+                            if (root.screenNames[i] !== root.target)
+                                return root.screenNames[i];
+                        }
+                        return "";
+                    }
+
+                    Text {
+                        id: copyText
+                        anchors.centerIn: parent
+                        text: I18n.t("barc.copyFrom") + " " + parent.other
+                        color: Colors.accentAlt
+                        opacity: 0.85
+                        font.family: Fonts.mono
+                        font.pixelSize: 10
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            BarConfig.copyCfg(parent.other, root.target);
+                            Sfx.tapAlt();
+                        }
+                    }
+                }
+            }
+
             Row {
                 id: zones
                 visible: root.tab === "layout"
-                anchors.top: headLine.bottom
+                anchors.top: whichBar.visible ? whichBar.bottom : headLine.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -203,6 +386,12 @@ Scope {
                     Item {
                         id: zoneCol
                         required property string modelData
+
+                        readonly property string nextZone: {
+                            const order = BarConfig.zoneNames;
+                            const i = order.indexOf(zoneCol.modelData);
+                            return order[(i + 1) % order.length];
+                        }
 
                         width: (zones.width - zones.spacing * 2) / 3
                         height: zones.height
@@ -233,7 +422,7 @@ Scope {
                                 spacing: 10
 
                                 Repeater {
-                                    model: BarConfig.zones[zoneCol.modelData]
+                                    model: BarConfig.islands(zoneCol.modelData, root.target)
 
                                     Rectangle {
                                         id: isleBox
@@ -280,7 +469,7 @@ Scope {
                                                     glyph: "󰁝"
                                                     tint: Colors.accent
                                                     onActivated: BarConfig.moveIsland(
-                                                        zoneCol.modelData, isleBox.modelData.key, -1)
+                                                        zoneCol.modelData, isleBox.modelData.key, -1, root.target)
                                                 }
 
                                                 IconButton {
@@ -288,30 +477,32 @@ Scope {
                                                     glyph: "󰁅"
                                                     tint: Colors.accent
                                                     onActivated: BarConfig.moveIsland(
-                                                        zoneCol.modelData, isleBox.modelData.key, 1)
+                                                        zoneCol.modelData, isleBox.modelData.key, 1, root.target)
                                                 }
 
                                                 IconButton {
                                                     width: 22; height: 22
                                                     glyph: "󰁔"
-                                                    tip: I18n.t("barc.zoneRight")
+                                                    tip: root.zoneTitles[zoneCol.nextZone]
                                                     tint: Colors.accentAlt
-                                                    onActivated: {
-                                                        const order = BarConfig.zoneNames;
-                                                        const i = order.indexOf(zoneCol.modelData);
-                                                        BarConfig.islandToZone(
-                                                            zoneCol.modelData,
-                                                            isleBox.modelData.key,
-                                                            order[(i + 1) % order.length]);
-                                                    }
+                                                    onActivated: BarConfig.islandToZone(
+                                                        zoneCol.modelData,
+                                                        isleBox.modelData.key,
+                                                        zoneCol.nextZone, root.target)
                                                 }
 
                                                 IconButton {
                                                     width: 22; height: 22
                                                     glyph: "󰩹"
                                                     tint: Colors.bad
-                                                    onActivated: BarConfig.removeIsland(
-                                                        zoneCol.modelData, isleBox.modelData.key)
+                                                    onActivated: {
+                                                        root.expanded = -1;
+                                                        if (root.pickIsland === isleBox.modelData.key)
+                                                            root.pickIsland = -1;
+                                                        BarConfig.removeIsland(
+                                                            zoneCol.modelData,
+                                                            isleBox.modelData.key, root.target);
+                                                    }
                                                 }
                                             }
 
@@ -394,7 +585,7 @@ Scope {
                                                                 onActivated: BarConfig.moveItem(
                                                                     zoneCol.modelData,
                                                                     isleBox.modelData.key,
-                                                                    modRow.modelData.key, -1)
+                                                                    modRow.modelData.key, -1, root.target)
                                                             }
 
                                                             IconButton {
@@ -404,7 +595,7 @@ Scope {
                                                                 onActivated: BarConfig.moveItem(
                                                                     zoneCol.modelData,
                                                                     isleBox.modelData.key,
-                                                                    modRow.modelData.key, 1)
+                                                                    modRow.modelData.key, 1, root.target)
                                                             }
 
                                                             IconButton {
@@ -421,10 +612,14 @@ Scope {
                                                                 width: 20; height: 20
                                                                 glyph: "󰩹"
                                                                 tint: Colors.bad
-                                                                onActivated: BarConfig.removeItem(
-                                                                    zoneCol.modelData,
-                                                                    isleBox.modelData.key,
-                                                                    modRow.modelData.key)
+                                                                onActivated: {
+                                                                    if (modRow.open)
+                                                                        root.expanded = -1;
+                                                                    BarConfig.removeItem(
+                                                                        zoneCol.modelData,
+                                                                        isleBox.modelData.key,
+                                                                        modRow.modelData.key, root.target);
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -443,6 +638,8 @@ Scope {
                                                                 required property string modelData
                                                                 width: modRow.width - 10
                                                                 name: modelData
+                                                                label: BarConfig.optTitle(modelData)
+                                                                valueLabel: v => BarConfig.valueTitle(v)
                                                                 spec: modRow.spec.opts[modelData]
                                                                 value: BarConfig.opt(modRow.modelData,
                                                                                      modelData)
@@ -450,7 +647,7 @@ Scope {
                                                                     zoneCol.modelData,
                                                                     isleBox.modelData.key,
                                                                     modRow.modelData.key,
-                                                                    modelData, v)
+                                                                    modelData, v, root.target)
                                                             }
                                                         }
                                                     }
@@ -516,7 +713,7 @@ Scope {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
-                                    BarConfig.addIsland(zoneCol.modelData);
+                                    BarConfig.addIsland(zoneCol.modelData, root.target);
                                     Sfx.tapAlt();
                                 }
                             }
@@ -527,7 +724,7 @@ Scope {
 
             ScrollView {
                 visible: root.tab === "style"
-                anchors.top: headLine.bottom
+                anchors.top: whichBar.visible ? whichBar.bottom : headLine.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -535,25 +732,67 @@ Scope {
                 anchors.topMargin: 14
                 clip: true
 
-                Grid {
-                    columns: 2
-                    columnSpacing: 26
-                    rowSpacing: 10
+                Column {
+                    id: styleCol
                     width: card.width - Shape.padLoose * 2
+                    spacing: 18
+
+                    readonly property real colWidth: (styleCol.width - 26) / 2
 
                     Repeater {
-                        model: Object.keys(BarConfig.styleSpec)
+                        model: BarConfig.styleGroups
 
-                        OptionRow {
-                            required property string modelData
-                            width: (card.width - Shape.padLoose * 2 - 26) / 2
-                            name: modelData
-                            spec: BarConfig.styleSpec[modelData]
-                            value: BarConfig.s(modelData)
-                            onCommit: v => BarConfig.setStyle(modelData, v)
+                        Column {
+                            id: styleSection
+                            required property var modelData
+                            width: styleCol.width
+                            spacing: 8
+
+                            visible: !styleSection.modelData.when
+                                || BarConfig.s("barStyle", root.target) === styleSection.modelData.when
+
+                            Text {
+                                text: BarConfig.styleGroupTitle(parent.modelData.key)
+                                color: Colors.fgDim
+                                opacity: 0.5
+                                font.family: Fonts.mono
+                                font.pixelSize: 9
+                                font.letterSpacing: 2
+                            }
+
+                            Grid {
+                                columns: 2
+                                columnSpacing: 26
+                                rowSpacing: 10
+                                width: styleCol.width
+
+                                Repeater {
+                                    model: parent.parent.modelData.names
+
+                                    OptionRow {
+                                        required property string modelData
+                                        width: styleCol.colWidth
+                                        name: modelData
+                                        label: BarConfig.optTitle(modelData)
+                                        valueLabel: v => BarConfig.valueTitle(v)
+                                        spec: BarConfig.styleSpec[modelData]
+                                        value: BarConfig.s(modelData, root.target)
+                                        onCommit: v => BarConfig.setStyle(modelData, v, root.target)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            visible: root.pickIsland >= 0
+            onClicked: {
+                root.pickIsland = -1;
+                Sfx.tapAlt();
             }
         }
 
@@ -669,7 +908,7 @@ Scope {
                                             onClicked: {
                                                 BarConfig.addItem(root.pickZone,
                                                                   root.pickIsland,
-                                                                  parent.modelData);
+                                                                  parent.modelData, root.target);
                                                 root.pickIsland = -1;
                                                 Sfx.tapAlt();
                                             }
@@ -683,189 +922,5 @@ Scope {
             }
         }
 
-        MouseArea {
-            anchors.fill: parent
-            visible: root.pickIsland >= 0
-            z: -1
-            onClicked: root.pickIsland = -1
-        }
-    }
-
-    component OptionRow: Item {
-        id: opt
-
-        property string name: ""
-        property var spec: null
-        property var value: null
-
-        signal commit(var v)
-
-        implicitHeight: 28
-        height: implicitHeight
-
-        Text {
-            id: optName
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: opt.name
-            color: Colors.fgDim
-            opacity: 0.75
-            font.family: Fonts.mono
-            font.pixelSize: 11
-        }
-
-        Rectangle {
-            visible: opt.spec && opt.spec.type === "bool"
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: 38
-            height: 20
-            radius: 10
-            antialiasing: true
-            color: opt.value
-                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.85)
-                : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.18)
-            Behavior on color { ColorAnimation { duration: Motion.fast } }
-
-            Rectangle {
-                width: 14
-                height: 14
-                radius: 7
-                antialiasing: true
-                anchors.verticalCenter: parent.verticalCenter
-                x: opt.value ? parent.width - width - 3 : 3
-                color: opt.value ? Colors.accentText : Colors.fgDim
-                Behavior on x {
-                    NumberAnimation {
-                        duration: Motion.fast
-                        easing.type: Easing.Bezier
-                        easing.bezierCurve: Motion.snap
-                    }
-                }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    opt.commit(!opt.value);
-                    Sfx.tick();
-                }
-            }
-        }
-
-        Row {
-            visible: opt.spec && opt.spec.type === "int"
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 8
-
-            Slider {
-                id: dial
-                anchors.verticalCenter: parent.verticalCenter
-                width: 110
-                value: {
-                    if (!opt.spec || opt.spec.type !== "int") return 0;
-                    const span = opt.spec.max - opt.spec.min;
-                    return span > 0 ? (opt.value - opt.spec.min) / span : 0;
-                }
-                onMoved: v => {
-                    const span = opt.spec.max - opt.spec.min;
-                    opt.commit(Math.round(opt.spec.min + v * span));
-                }
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 34
-                horizontalAlignment: Text.AlignRight
-                text: opt.value
-                color: Colors.fg
-                font.family: Fonts.mono
-                font.pixelSize: 11
-            }
-        }
-
-        Row {
-            visible: opt.spec && opt.spec.type === "pick"
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 4
-
-            Repeater {
-                model: opt.spec && opt.spec.values ? opt.spec.values : []
-
-                Rectangle {
-                    required property var modelData
-
-                    readonly property bool chosen: opt.value === modelData
-
-                    width: segText.implicitWidth + 16
-                    height: 22
-                    radius: Shape.detail
-                    antialiasing: true
-
-                    color: chosen
-                        ? Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                  Colors.accent.b, 0.85)
-                        : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                  Colors.fgDim.b, 0.14)
-                    Behavior on color { ColorAnimation { duration: Motion.fast } }
-
-                    Text {
-                        id: segText
-                        anchors.centerIn: parent
-                        text: modelData
-                        color: parent.chosen ? Colors.accentText : Colors.fgDim
-                        font.family: Fonts.mono
-                        font.pixelSize: 10
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            opt.commit(modelData);
-                            Sfx.tick();
-                        }
-                    }
-                }
-            }
-        }
-
-        Rectangle {
-            visible: opt.spec && opt.spec.type === "text"
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: 150
-            height: 24
-            radius: Shape.detail
-            antialiasing: true
-            color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
-            border.width: 1
-            border.color: field.activeFocus
-                ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.6)
-                : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.2)
-
-            TextInput {
-                id: field
-                anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                verticalAlignment: TextInput.AlignVCenter
-                color: Colors.fg
-                font.family: Fonts.mono
-                font.pixelSize: 11
-                clip: true
-
-                text: activeFocus ? text : (opt.value === undefined ? "" : String(opt.value))
-
-                onEditingFinished: opt.commit(text)
-                Keys.onReturnPressed: {
-                    opt.commit(text);
-                    focus = false;
-                }
-            }
-        }
     }
 }

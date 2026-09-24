@@ -119,6 +119,13 @@ Scope {
             }
         }
 
+        Emerge {
+            id: emerge
+            card: shell
+            win: win
+            open: root.shown
+        }
+
         FocusScope {
             id: shell
             anchors.centerIn: parent
@@ -126,10 +133,11 @@ Scope {
             height: 640
             focus: true
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.95
-            transform: Translate { y: root.shown ? 0 : 22
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.95)
+            transform: Translate { x: emerge.dx; y: emerge.on ? emerge.dy : (root.shown ? 0 : 22)
                 Behavior on y {
+                    enabled: !emerge.on
                     NumberAnimation {
                         duration: Motion.slow
                         easing.type: Easing.Bezier
@@ -138,8 +146,9 @@ Scope {
                 }
             }
 
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping

@@ -16,6 +16,7 @@ Row {
         font.family: root.family
         font.pixelSize: root.pixelSize
         font.weight: root.weight
+        font.features: { "tnum": 1 }
         text: "0"
     }
 
@@ -27,7 +28,14 @@ Row {
             required property int index
             readonly property string ch: root.text.charAt(index)
 
-            width: metrics.width
+            TextMetrics {
+                id: own
+                font.family: root.family
+                font.pixelSize: root.pixelSize
+                font.weight: root.weight
+                text: cell.ch
+            }
+            width: /[0-9]/.test(cell.ch) ? metrics.width : Math.max(1, own.advanceWidth)
             height: metrics.height * 1.25
             clip: true
 
@@ -41,6 +49,7 @@ Row {
                 font.family: root.family
                 font.pixelSize: root.pixelSize
                 font.weight: root.weight
+                font.features: { "tnum": 1 }
             }
 
             Text {
@@ -53,6 +62,7 @@ Row {
                 font.family: root.family
                 font.pixelSize: root.pixelSize
                 font.weight: root.weight
+                font.features: { "tnum": 1 }
             }
 
             onChChanged: {

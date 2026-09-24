@@ -267,6 +267,13 @@ Scope {
             blurMax: 64
         }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+        }
+
         ClippingRectangle {
             id: card
 
@@ -276,10 +283,12 @@ Scope {
             radius: Shape.modal
             color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.97)
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.95
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.95)
+            transform: Translate { x: emerge.dx; y: emerge.dy }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping

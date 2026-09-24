@@ -15,10 +15,9 @@ Rectangle {
 
     readonly property bool critical:
         modelData.urgency === NotificationUrgency.Critical
-    readonly property color edge: critical ? Colors.bad : Colors.accent
+    readonly property color edge: critical ? Colors.bad : card.appTint
 
     readonly property int entryTime: critical ? 300 : 560
-    readonly property real entryOvershoot: critical ? 1.7 : 0.45
     readonly property real entryPeak: critical ? 1.07 : 1.02
 
     readonly property int lifetime:
@@ -28,16 +27,27 @@ Rectangle {
 
     WeatherHold { active: card.kind === "weather" && card.visible }
     readonly property string shot: NotifKind.shotPath(modelData)
-    readonly property int headHeight: 54
 
     readonly property color appTint: NotifHistory.appColor(modelData.appName)
 
+    readonly property var acts: {
+        const a = card.modelData.actions;
+        const out = [];
+        for (let i = 0; a && i < a.length; i++) {
+            if (a[i].text && a[i].text !== "")
+                out.push(a[i]);
+        }
+        return out;
+    }
+
     property real remaining: 1
     property bool leaving: false
+    property bool hovering: false
 
-    width: 330
-    height: card.headHeight + extra.height
-    radius: Shape.field + 4
+    width: 360
+    height: head.height + extra.height + acts2.height
+
+    radius: Shape.card
 
     Behavior on height {
         NumberAnimation {
@@ -48,14 +58,18 @@ Rectangle {
     }
 
     color: card.critical
-        ? Qt.rgba(Colors.bad.r * 0.35 + Colors.bg.r * 0.65,
-                  Colors.bad.g * 0.35 + Colors.bg.g * 0.65,
-                  Colors.bad.b * 0.35 + Colors.bg.b * 0.65, 0.95)
-        : Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.94)
+        ? Qt.rgba(Colors.bad.r * 0.28 + Colors.bg.r * 0.72,
+                  Colors.bad.g * 0.28 + Colors.bg.g * 0.72,
+                  Colors.bad.b * 0.28 + Colors.bg.b * 0.72, 0.96)
+        : Colors.alpha(Colors.bg, 0.95)
+
     border.width: 1
     border.color: card.critical
-        ? Qt.rgba(Colors.bad.r, Colors.bad.g, Colors.bad.b, 0.55)
-        : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.14)
+        ? Colors.alpha(Colors.bad, 0.55)
+        : Qt.rgba(card.appTint.r, card.appTint.g, card.appTint.b,
+                  card.hovering ? 0.42 : 0.26)
+
+    Behavior on border.color { ColorAnimation { duration: Motion.base } }
 
     Sheen {
         anchors.fill: parent
@@ -64,8 +78,25 @@ Rectangle {
         grainOpacity: 0.025
     }
 
+    ClippingRectangle {
+        anchors.fill: parent
+        radius: card.radius
+        color: "transparent"
+
+        Rectangle {
+            width: parent.width * 0.55
+            height: parent.height
+            opacity: card.critical ? 0.20 : 0.16
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: card.edge }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+        }
+    }
+
     opacity: 0
-    transform: Translate { id: slide; x: 340 }
+    transform: Translate { id: slide; x: 380 }
 
     Component.onCompleted: {
         enter.start();
@@ -77,7 +108,7 @@ Rectangle {
         id: enter
 
         NumberAnimation {
-            target: slide; property: "x"; from: 340; to: 0
+            target: slide; property: "x"; from: 380; to: 0
             duration: card.entryTime
             easing.type: Easing.Bezier
             easing.bezierCurve: card.critical ? Motion.elastic : Motion.expo
@@ -107,7 +138,7 @@ Rectangle {
         onFinished: card.closed()
 
         NumberAnimation {
-            target: slide; property: "x"; to: 340
+            target: slide; property: "x"; to: 380
             duration: 340; easing.type: Easing.InCubic
         }
         NumberAnimation {
@@ -142,63 +173,58 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.leftMargin: 1
-        anchors.rightMargin: 1
-        anchors.bottomMargin: 1
-        height: 3
-        radius: 1.5
+        anchors.leftMargin: card.radius * 0.6
+        anchors.rightMargin: card.radius * 0.6
+        anchors.bottomMargin: 5
+        height: 2
+        radius: 1
         visible: !card.critical
-        color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.10)
+        color: Colors.alpha(Colors.fgDim, 0.10)
 
         Rectangle {
             width: parent.width * Math.max(0, Math.min(1, card.remaining))
             height: parent.height
             radius: parent.radius
             color: card.edge
+            opacity: card.hovering ? 0.45 : 1
+            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
         }
     }
 
     Rectangle {
+        id: alarm
         visible: card.critical
         anchors.fill: parent
         radius: card.radius
         color: "transparent"
         border.width: 2
-        border.color: card.edge
+        border.color: Colors.bad
+
+        SequentialAnimation on opacity {
+            running: card.critical
+            loops: Animation.Infinite
+            NumberAnimation { to: 0.45; duration: 1100; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 1.0;  duration: 1100; easing.type: Easing.InOutSine }
+        }
     }
 
-    Rectangle {
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.leftMargin: 9
-        anchors.topMargin: 13
-        width: 3
-        height: card.headHeight - 26
-        radius: 1.5
-        antialiasing: true
-        color: card.critical ? Colors.bad : card.appTint
-    }
-
-    Row {
+    Item {
         id: head
 
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.leftMargin: 20
-        anchors.rightMargin: 14
-        height: card.headHeight
-        spacing: 11
+        height: Math.max(58, headCol.implicitHeight + 24)
 
-        Rectangle {
+        Item {
             id: badge
 
-            width: 32
-            height: 32
-            radius: Shape.chip
-            antialiasing: true
-            anchors.verticalCenter: parent.verticalCenter
-            color: Qt.rgba(card.appTint.r, card.appTint.g, card.appTint.b, 0.18)
+            width: 36
+            height: 36
+            anchors.left: parent.left
+            anchors.leftMargin: 14
+            anchors.top: parent.top
+            anchors.topMargin: 11
 
             readonly property string icon: {
                 if (card.modelData.image !== "")
@@ -208,55 +234,135 @@ Rectangle {
                 return Quickshell.iconPath(card.modelData.appIcon, "");
             }
 
+            readonly property bool portrait: card.modelData.image !== ""
+
+            Rectangle {
+                anchors.fill: parent
+                radius: badge.portrait ? width / 2 : Shape.chip
+                antialiasing: true
+                color: Qt.rgba(card.appTint.r, card.appTint.g,
+                               card.appTint.b, 0.18)
+                border.width: badge.portrait ? 1 : 0
+                border.color: Colors.alpha(card.appTint, 0.45)
+            }
+
+            ClippingRectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                visible: badge.portrait
+                radius: width / 2
+                color: "transparent"
+
+                Image {
+                    anchors.fill: parent
+                    source: badge.portrait ? badge.icon : ""
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    sourceSize.width: 72
+                }
+            }
+
             Loader {
                 anchors.centerIn: parent
-                active: badge.icon !== ""
+                active: !badge.portrait && badge.icon !== ""
                 sourceComponent: IconImage {
                     source: badge.icon
-                    implicitSize: 20
+                    implicitSize: 21
                 }
             }
 
             Text {
                 anchors.centerIn: parent
-                visible: badge.icon === ""
+                visible: !badge.portrait && badge.icon === ""
                 text: NotifHistory.appLetter(card.modelData.appName)
                 color: card.appTint
                 font.family: Fonts.mono
-                font.pixelSize: 14
+                font.pixelSize: 15
                 font.weight: Font.Bold
             }
         }
 
         Column {
-            width: parent.width - badge.width - parent.spacing
-            spacing: 2
-            anchors.verticalCenter: parent.verticalCenter
+            id: headCol
+            anchors.left: badge.right
+            anchors.leftMargin: 12
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            anchors.top: parent.top
+            anchors.topMargin: 12
+            spacing: 3
 
-            Text {
+            Row {
                 width: parent.width
-                text: card.modelData.summary
-                color: Colors.fg
-                font.family: Fonts.display
-                font.pixelSize: 13
-                font.weight: Font.DemiBold
-                elide: Text.ElideRight
-                maximumLineCount: 1
+                spacing: 8
+
+                Text {
+                    width: parent.width - appName.width - parent.spacing
+                    text: card.modelData.summary
+                    color: Colors.fg
+                    font.family: Fonts.display
+                    font.pixelSize: 13
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                }
+
+                Text {
+                    id: appName
+                    text: card.modelData.appName
+                    color: Colors.alpha(Colors.fgDim, 0.45)
+                    font.family: Fonts.mono
+                    font.pixelSize: 9
+                    y: 3
+                }
             }
 
             Text {
                 width: parent.width
                 visible: text !== ""
-                text: card.modelData.body !== ""
-                      ? card.modelData.body.replace(/<[^>]*>/g, "")
-                      : card.modelData.appName
-                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                               Colors.fgDim.b, 0.68)
+                text: card.modelData.body.replace(/<[^>]*>/g, "").trim()
+                color: Colors.alpha(Colors.fgDim, 0.72)
                 font.family: Fonts.mono
                 font.pixelSize: 10
+                lineHeight: 1.25
+                wrapMode: Text.WordWrap
                 elide: Text.ElideRight
-                maximumLineCount: 1
+                maximumLineCount: 2
             }
+        }
+    }
+
+    Rectangle {
+        id: dismiss
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: 7
+        width: 20
+        height: 20
+        radius: 10
+        antialiasing: true
+        opacity: card.hovering ? 1 : 0
+        visible: opacity > 0.01
+        color: closeHover.hovered ? Colors.alpha(Colors.bad, 0.85)
+                                  : Colors.alpha(Colors.fgDim, 0.16)
+
+        Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+        Behavior on color { ColorAnimation { duration: Motion.fast } }
+
+        Text {
+            anchors.centerIn: parent
+            text: "󰅖"
+            color: closeHover.hovered ? Colors.bg : Colors.fgDim
+            font.family: Fonts.glyph
+            font.pixelSize: 10
+        }
+
+        HoverHandler { id: closeHover }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: card.close()
         }
     }
 
@@ -264,15 +370,17 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: card.headHeight
+        height: head.height
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
 
         onEntered: {
+            card.hovering = true;
             if (!card.leaving && countdown.running)
                 countdown.pause();
         }
         onExited: {
+            card.hovering = false;
             if (countdown.paused)
                 countdown.resume();
         }
@@ -292,8 +400,8 @@ Rectangle {
             id: bodyLoader
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
             sourceComponent: card.kind === "screenshot" ? shotBody
                            : card.kind === "update" ? updateBody
                            : card.kind === "weather" ? weatherBody
@@ -301,23 +409,83 @@ Rectangle {
         }
     }
 
+    Item {
+        id: acts2
+        anchors.top: extra.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: card.acts.length > 0 ? 42 : 12
+
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: 14
+            anchors.top: parent.top
+            spacing: 6
+
+            Repeater {
+                model: card.acts
+
+                Rectangle {
+                    required property var modelData
+
+                    height: 26
+                    width: Math.min(150, actText.implicitWidth + 22)
+                    radius: Shape.chip
+                    antialiasing: true
+                    color: actHover.hovered
+                        ? Colors.alpha(card.edge, 0.28)
+                        : Colors.alpha(Colors.fgDim, 0.09)
+                    border.width: 1
+                    border.color: actHover.hovered
+                        ? Colors.alpha(card.edge, 0.55)
+                        : Colors.alpha(Colors.outline, 0.18)
+
+                    Behavior on color { ColorAnimation { duration: Motion.fast } }
+                    Behavior on border.color { ColorAnimation { duration: Motion.fast } }
+
+                    Text {
+                        id: actText
+                        anchors.centerIn: parent
+                        width: Math.min(implicitWidth, 128)
+                        text: parent.modelData.text
+                        color: actHover.hovered ? Colors.fg : Colors.fgDim
+                        elide: Text.ElideRight
+                        font.family: Fonts.display
+                        font.pixelSize: 11
+                    }
+
+                    HoverHandler { id: actHover }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            parent.modelData.invoke();
+                            card.close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Component {
         id: shotBody
 
         Item {
-            height: 132
+            height: 142
 
             ClippingRectangle {
                 anchors.fill: parent
                 radius: Shape.field
-                color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.6)
+                color: Colors.alpha(Colors.bgAlt, 0.6)
 
                 Image {
                     anchors.fill: parent
                     source: "file://" + card.shot
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
-                    sourceSize.width: 540
+                    sourceSize.width: 560
                     cache: false
                 }
             }
@@ -361,13 +529,15 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 width: countText.implicitWidth + 18
                 height: 24
-                radius: 8
-                color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.18)
+                radius: Shape.chip
+                antialiasing: true
+                color: Colors.alpha(Colors.accent, 0.18)
 
                 Text {
                     id: countText
                     anchors.centerIn: parent
-                    text: Updates.count > 0 ? Updates.count + I18n.t("notif.packages") : I18n.t("state.checking")
+                    text: Updates.count > 0 ? Updates.count + I18n.t("notif.packages")
+                                            : I18n.t("state.checking")
                     color: Colors.accent
                     font.family: Fonts.mono
                     font.pixelSize: 10
@@ -376,7 +546,7 @@ Rectangle {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                width: 130
+                width: 150
                 text: Updates.all.slice(0, 3).map(u => u.name).join(", ")
                 color: Colors.fgDim
                 opacity: 0.6

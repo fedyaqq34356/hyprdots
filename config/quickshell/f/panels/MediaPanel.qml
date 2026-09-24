@@ -20,6 +20,28 @@ Scope {
     readonly property int rays: 44
     readonly property real ringRadius: 124
 
+    property var rayLevels: []
+
+    Connections {
+        target: Cava
+        enabled: root.shown
+        function onSmoothChanged() {
+            const src = Cava.smooth;
+            const n = src ? src.length : 0;
+            const out = new Array(root.rays);
+            const half = root.rays / 2;
+            for (let i = 0; i < root.rays; i++) {
+                if (n === 0) { out[i] = 0; continue; }
+                const pos = i < half ? i / half : (root.rays - i) / half;
+                const f = pos * (n - 1);
+                const a = Math.floor(f);
+                const b = Math.min(n - 1, a + 1);
+                out[i] = src[a] + (src[b] - src[a]) * (f - a);
+            }
+            root.rayLevels = out;
+        }
+    }
+
     function rayLevel(i) {
         const src = Cava.levels;
         if (!src || src.length === 0) return 0;
@@ -71,6 +93,14 @@ Scope {
             }
         }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+            cache: false
+        }
+
         Rectangle {
             id: card
             anchors.horizontalCenter: parent.horizontalCenter
@@ -82,10 +112,11 @@ Scope {
             border.width: 0
             clip: true
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.94
-            transform: Translate { y: root.shown ? 0 : 22
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.94)
+            transform: Translate { x: emerge.dx; y: emerge.on ? emerge.dy : (root.shown ? 0 : 22)
                 Behavior on y {
+                    enabled: !emerge.on
                     NumberAnimation {
                         duration: Motion.slow
                         easing.type: Easing.Bezier
@@ -94,8 +125,9 @@ Scope {
                 }
             }
 
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
@@ -117,10 +149,12 @@ Scope {
             Keys.onLeftPressed: Media.seekTo(Media.progress - 0.02)
             Keys.onRightPressed: Media.seekTo(Media.progress + 0.02)
 
-            Item {
+            ClippingRectangle {
                 anchors.fill: parent
+                radius: card.radius
+                color: "transparent"
                 visible: Media.art !== ""
-                opacity: 0.34
+                opacity: Prefs.apple ? 0.6 : 0.34
 
                 Image {
                     id: backdrop
@@ -138,12 +172,13 @@ Scope {
                     blurEnabled: true
                     blur: 1.0
                     blurMax: 64
-                    saturation: 0.35
+                    saturation: Prefs.apple ? 0.9 : 0.35
                 }
             }
 
             Rectangle {
                 anchors.fill: parent
+                radius: card.radius
                 gradient: Gradient {
                     GradientStop {
                         position: 0.0
@@ -220,7 +255,7 @@ Scope {
                                 rotation: index * (360 / root.rays)
 
                                 Rectangle {
-                                    readonly property real level: root.rayLevel(parent.index)
+                                    readonly property real level: root.rayLevels[parent.index] || 0
 
                                     width: 3
                                     height: 3 + level * 26
@@ -230,9 +265,6 @@ Scope {
                                     color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                                    Colors.accent.b, 0.35 + level * 0.55)
 
-                                    Behavior on height {
-                                        NumberAnimation { duration: 110; easing.type: Easing.OutQuad }
-                                    }
                                 }
                             }
                         }

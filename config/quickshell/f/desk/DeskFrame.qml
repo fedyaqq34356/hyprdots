@@ -11,6 +11,7 @@ Item {
     required property var entry
     required property real fieldWidth
     required property real fieldHeight
+    required property string screenName
 
     readonly property bool editing: DeskLayout.editing
     readonly property bool selected: DeskLayout.selected === entry.key
@@ -47,14 +48,19 @@ Item {
         DeskLayout.resize(frame.entry.key, delta, frame.minSize, frame.maxSize);
     }
 
-    x: entry.x * fieldWidth - width / 2
-    y: entry.y * fieldHeight - height / 2
+    readonly property bool dragging: dragArea.held
+
+    property real dragX: 0
+    property real dragY: 0
+
+    x: dragging ? dragX : entry.x * fieldWidth - width / 2
+    y: dragging ? dragY : entry.y * fieldHeight - height / 2
 
     width: content.width * entry.size
     height: content.height * entry.size
 
-    Behavior on x { enabled: !dragArea.drag.active; NumberAnimation { duration: Motion.base } }
-    Behavior on y { enabled: !dragArea.drag.active; NumberAnimation { duration: Motion.base } }
+    Behavior on x { enabled: !frame.dragging; NumberAnimation { duration: Motion.base } }
+    Behavior on y { enabled: !frame.dragging; NumberAnimation { duration: Motion.base } }
 
     Bloom {
         target: frame
@@ -137,34 +143,96 @@ Item {
         anchors.margins: -10
         enabled: frame.editing
         visible: frame.editing
-        cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-        drag.target: frame
-        drag.threshold: 2
+        cursorShape: dragArea.held ? Qt.ClosedHandCursor : Qt.OpenHandCursor
 
-        property bool moved: false
+        property bool held: false
 
-        onPressed: {
+        property real rawX: 0
+        property real rawY: 0
+        property real pressSceneX: 0
+        property real pressSceneY: 0
+
+        property bool wasStuck: false
+
+        onPressed: (mouse) => {
             DeskLayout.selected = frame.entry.key;
-            dragArea.moved = false;
+            dragArea.held = false;
+            dragArea.wasStuck = false;
+
+            const p = dragArea.mapToItem(frame.parent, mouse.x, mouse.y);
+            dragArea.pressSceneX = p.x;
+            dragArea.pressSceneY = p.y;
+            dragArea.rawX = frame.x;
+            dragArea.rawY = frame.y;
             Sfx.pick();
         }
 
-        onPositionChanged: {
-            if (!drag.active)
+        onPositionChanged: (mouse) => {
+            if (!dragArea.pressed)
                 return;
-            dragArea.moved = true;
-            Sfx.tick();
+
+            const p = dragArea.mapToItem(frame.parent, mouse.x, mouse.y);
+            const dx = p.x - dragArea.pressSceneX;
+            const dy = p.y - dragArea.pressSceneY;
+
+            if (!dragArea.held) {
+                if (Math.abs(dx) < 2 && Math.abs(dy) < 2)
+                    return;
+                frame.dragX = frame.x;
+                frame.dragY = frame.y;
+                dragArea.held = true;
+            }
+
+            dragArea.rawX = frame.entry.x * frame.fieldWidth - frame.width / 2 + dx;
+            dragArea.rawY = frame.entry.y * frame.fieldHeight - frame.height / 2 + dy;
+
+            const cx = dragArea.rawX + frame.width / 2;
+            const cy = dragArea.rawY + frame.height / 2;
+
+            const free = (mouse.modifiers & Qt.AltModifier) !== 0;
+
+            const mx = free ? { at: cx, guide: -1 }
+                            : DeskLayout.magnet("x", cx, frame.fieldWidth,
+                                                frame.entry.key, frame.screenName);
+            const my = free ? { at: cy, guide: -1 }
+                            : DeskLayout.magnet("y", cy, frame.fieldHeight,
+                                                frame.entry.key, frame.screenName);
+
+            frame.dragX = mx.at - frame.width / 2;
+            frame.dragY = my.at - frame.height / 2;
+
+            DeskLayout.guideScreen = frame.screenName;
+            DeskLayout.guideX = mx.guide;
+            DeskLayout.guideY = my.guide;
+
+            const stuck = mx.at !== cx || my.at !== cy;
+            if (stuck && !dragArea.wasStuck)
+                Sfx.pick();
+            else if (!stuck)
+                Sfx.tick();
+            dragArea.wasStuck = stuck;
         }
 
         onReleased: {
-            if (!dragArea.moved)
+            DeskLayout.clearGuides();
+            if (!dragArea.held)
                 return;
+
+            const nx = (frame.dragX + frame.width / 2) / frame.fieldWidth;
+            const ny = (frame.dragY + frame.height / 2) / frame.fieldHeight;
+
             DeskLayout.update(frame.entry.key, {
-                x: (frame.x + frame.width / 2) / frame.fieldWidth,
-                y: (frame.y + frame.height / 2) / frame.fieldHeight
+                x: Math.max(0, Math.min(1, nx)),
+                y: Math.max(0, Math.min(1, ny))
             });
+            dragArea.held = false;
             DeskLayout.save();
             Sfx.fill();
+        }
+
+        onCanceled: {
+            dragArea.held = false;
+            DeskLayout.clearGuides();
         }
 
         onWheel: (wheel) => {

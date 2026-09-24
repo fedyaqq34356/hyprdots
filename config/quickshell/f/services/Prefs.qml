@@ -13,6 +13,8 @@ Singleton {
     readonly property string notifySound: adapter.notifySound
     readonly property string language: adapter.language
     readonly property string fontDisplay: adapter.fontDisplay
+    readonly property string design: adapter.design === undefined ? "native" : adapter.design
+    readonly property bool apple: root.design === "apple"
     readonly property string weatherPlace: adapter.weatherPlace
     readonly property bool weatherEnabled:
         adapter.weatherEnabled === undefined ? true : adapter.weatherEnabled
@@ -91,6 +93,7 @@ Singleton {
             property string notifySound: "Sine"
             property string language: "en"
             property string fontDisplay: "Adwaita Sans"
+            property string design: "native"
             property string weatherPlace: ""
             property bool weatherEnabled: true
             property int weatherEveryMin: 60

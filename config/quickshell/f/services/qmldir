@@ -13,14 +13,18 @@ singleton Focus Focus.qml
 singleton Frecency Frecency.qml
 singleton I18n I18n.qml
 singleton Idle Idle.qml
+singleton IslandConfig IslandConfig.qml
 singleton Keyboard Keyboard.qml
 singleton Media Media.qml
+singleton MicLevel MicLevel.qml
 singleton Network Network.qml
 singleton NotifHistory NotifHistory.qml
 singleton NotifKind NotifKind.qml
 singleton Outbound Outbound.qml
 singleton Peripherals Peripherals.qml
 singleton Prefs Prefs.qml
+singleton Power Power.qml
+singleton Printing Printing.qml
 singleton Recorder Recorder.qml
 singleton Running Running.qml
 singleton Scaler Scaler.qml
@@ -32,4 +36,4 @@ singleton Updates Updates.qml
 singleton Vpn Vpn.qml
 singleton Weather Weather.qml
 singleton Wellbeing Wellbeing.qml
-singleton Printing Printing.qml
+singleton Privacy Privacy.qml

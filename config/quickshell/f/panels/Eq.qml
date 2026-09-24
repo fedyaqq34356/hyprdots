@@ -56,6 +56,14 @@ Scope {
 
         Bloom { target: card }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+            cache: false
+        }
+
         Glass {
             id: card
 
@@ -66,10 +74,12 @@ Scope {
             elevation: 3
             edge: Colors.accent
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.95
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.95)
+            transform: Translate { x: emerge.dx; y: emerge.dy }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
