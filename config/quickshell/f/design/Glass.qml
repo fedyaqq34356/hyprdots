@@ -50,6 +50,7 @@ Item {
         Behavior on color { ColorAnimation { duration: Motion.slow } }
 
         layer.enabled: glass.elevation > 0
+            && !(glass.parent && glass.parent.layer && glass.parent.layer.enabled)
         layer.effect: MultiEffect {
             shadowEnabled: true
             shadowColor: Prefs.apple ? Qt.rgba(0, 0, 0, 0.5) : Colors.shadow(glass.shadowAlpha)
