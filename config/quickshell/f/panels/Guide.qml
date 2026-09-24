@@ -145,7 +145,7 @@ Scope {
             right: true
         }
 
-        exclusiveZone: 0
+        exclusiveZone: -1
         color: "transparent"
 
         Rectangle {
