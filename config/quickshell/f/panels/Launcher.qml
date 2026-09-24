@@ -249,7 +249,7 @@ Scope {
             right: true
         }
 
-        exclusiveZone: 0
+        exclusiveZone: -1
         color: "transparent"
 
         Rectangle {
@@ -276,7 +276,8 @@ Scope {
         Item {
             id: card
             anchors.horizontalCenter: parent.horizontalCenter
-            y: Prefs.apple ? 8 : parent.height * 0.15
+            y: Prefs.apple ? (Prefs.barAtTop ? BarConfig.reserved(win.screen ? win.screen.name : "") : 0) + 8
+                          : parent.height * 0.15
             width: Prefs.apple ? 560 : 660
             height: Prefs.apple ? 430 : 500
 

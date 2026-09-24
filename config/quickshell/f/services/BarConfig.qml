@@ -263,6 +263,10 @@ Singleton {
         return spec ? spec.def : 0;
     }
 
+    function reserved(screen) {
+        return root.s("autohide", screen) ? 0 : root.s("barHeight", screen);
+    }
+
     function setStyle(name, value, screen) {
         const k = root.key(screen);
         const prev = root.cfg(screen);

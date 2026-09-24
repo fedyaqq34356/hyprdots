@@ -30,7 +30,7 @@ Scope {
         WlrLayershell.layer: WlrLayer.Overlay
 
         anchors { top: true; bottom: true; left: true; right: true }
-        exclusiveZone: 0
+        exclusiveZone: -1
         color: "transparent"
 
         mask: Region {}

@@ -34,7 +34,7 @@ Scope {
         focusable: true
 
         anchors { top: true; bottom: true; left: true; right: true }
-        exclusiveZone: 0
+        exclusiveZone: -1
         color: "transparent"
 
         Rectangle {

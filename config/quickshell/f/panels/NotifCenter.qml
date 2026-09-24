@@ -59,7 +59,7 @@ Scope {
         focusable: true
 
         anchors { top: true; bottom: true; left: true; right: true }
-        exclusiveZone: 0
+        exclusiveZone: -1
         color: "transparent"
 
         Rectangle {
@@ -81,8 +81,9 @@ Scope {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.rightMargin: 12
-            anchors.topMargin: 12
-            anchors.bottomMargin: 12
+            anchors.topMargin: 12 + (Prefs.barAtTop ? drawer.reserve : 0)
+            anchors.bottomMargin: 12 + (Prefs.barAtTop ? 0 : drawer.reserve)
+            readonly property int reserve: BarConfig.reserved(Focus.screen ? Focus.screen.name : "")
             focus: true
 
             opacity: root.shown ? 1 : 0
