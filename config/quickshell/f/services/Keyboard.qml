@@ -9,6 +9,12 @@ Singleton {
     id: root
 
     property string layout: ""
+    property var codes: []
+
+    function short(x) {
+        const m = { us: "EN", gb: "EN", ru: "RU", ua: "UA", de: "DE", fr: "FR", pl: "PL" };
+        return m[x.toLowerCase()] || x.slice(0, 2).toUpperCase();
+    }
 
     readonly property string code: {
         const l = layout.toLowerCase();
@@ -29,7 +35,12 @@ Singleton {
                 try {
                     const kb = JSON.parse(text).keyboards;
                     const main = kb.find(k => k.main) || kb[kb.length - 1];
-                    if (main) root.layout = main.active_keymap;
+                    if (main) {
+                        root.layout = main.active_keymap;
+                        root.codes = (main.layout || "").split(",")
+                            .filter(x => x !== "")
+                            .map(x => root.short(x));
+                    }
                 } catch (e) {}
             }
         }

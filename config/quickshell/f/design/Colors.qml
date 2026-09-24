@@ -3,11 +3,14 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "root:/services"
 
 Singleton {
     id: root
 
     readonly property int morph: 650
+
+    readonly property bool apple: Prefs.apple
 
     property color srcBg:           "#18120e"
     property color srcBgAlt:        "#51443a"
@@ -47,22 +50,22 @@ Singleton {
         }
     }
 
-    property color bg: srcBg
+    property color bg: root.apple ? "#000000" : srcBg
     Behavior on bg { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
-    property color bgAlt: srcBgAlt
+    property color bgAlt: root.apple ? "#2c2c2e" : srcBgAlt
     Behavior on bgAlt { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
-    property color fg: srcFg
+    property color fg: root.apple ? "#f5f5f7" : srcFg
     Behavior on fg { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
-    property color fgDim: srcFgDim
+    property color fgDim: root.apple ? "#aeaeb2" : srcFgDim
     Behavior on fgDim { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
-    property color outline: srcOutline
+    property color outline: root.apple ? "#636366" : srcOutline
     Behavior on outline { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
-    property color outlineFaint: srcOutlineFaint
+    property color outlineFaint: root.apple ? "#38383a" : srcOutlineFaint
     Behavior on outlineFaint { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
     property color accent: srcAccent
@@ -84,7 +87,7 @@ Singleton {
     property color accentText: srcAccentText
     Behavior on accentText { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
-    property color bad: srcBad
+    property color bad: root.apple ? "#ff453a" : srcBad
     Behavior on bad { ColorAnimation { duration: root.morph; easing.type: Easing.InOutCubic } }
 
     function step(a, b, t) {
@@ -123,8 +126,13 @@ Singleton {
     readonly property real statusLight:
         Math.max(0.55, Math.min(0.80, bad.hslLightness))
 
-    readonly property color warn: Qt.hsla(0.11, statusSat, statusLight, 1)
-    readonly property color good: Qt.hsla(0.36, statusSat, statusLight, 1)
+    readonly property color warn: root.apple ? "#ff9f0a" : Qt.hsla(0.11, statusSat, statusLight, 1)
+    readonly property color good: root.apple ? "#30d158" : Qt.hsla(0.36, statusSat, statusLight, 1)
+
+    readonly property color selection:
+        Qt.hsla(Math.max(0, root.accent.hslHue),
+                Math.min(0.72, Math.max(0.5, root.accent.hslSaturation)),
+                0.52, 1)
 
     readonly property color accentWash: root.step(root.bg, root.accent, 0.10)
     readonly property color accentSoft: root.step(root.bg, root.accent, 0.22)

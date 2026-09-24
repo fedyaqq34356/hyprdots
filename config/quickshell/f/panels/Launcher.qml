@@ -255,7 +255,7 @@ Scope {
         Rectangle {
             anchors.fill: parent
             color: "#000000"
-            opacity: root.shown ? 0.35 : 0
+            opacity: root.shown ? (Prefs.apple ? 0.12 : 0.35) : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
 
             MouseArea {
@@ -264,17 +264,29 @@ Scope {
             }
         }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+            dock: true
+            cornerTo: 30
+        }
+
         Item {
             id: card
             anchors.horizontalCenter: parent.horizontalCenter
-            y: parent.height * 0.15
-            width: 660
-            height: 500
+            y: Prefs.apple ? 8 : parent.height * 0.15
+            width: Prefs.apple ? 560 : 660
+            height: Prefs.apple ? 430 : 500
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.94
-            transform: Translate { y: root.shown ? 0 : 24
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.94)
+            transform: Translate {
+                x: emerge.dx
+                y: emerge.on ? emerge.dy : (root.shown ? 0 : 24)
                 Behavior on y {
+                    enabled: !emerge.on
                     NumberAnimation {
                         duration: Motion.slow
                         easing.type: Easing.Bezier
@@ -283,8 +295,9 @@ Scope {
                 }
             }
 
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
@@ -298,7 +311,7 @@ Scope {
             Glass {
                 z: -1
                 anchors.fill: parent
-                radius: Shape.modal
+                radius: Prefs.apple ? 30 : Shape.modal
                 elevation: 3
                 tint: Colors.bg
                 tintOpacity: 0.90
@@ -711,10 +724,11 @@ Scope {
                         radius: Shape.field
                         antialiasing: true
                         color: "transparent"
-                        border.width: 1
+                        border.width: Prefs.apple ? 0 : 1
                         border.color: index === list.currentIndex
                             ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.32)
                             : "transparent"
+                        readonly property bool on: index === list.currentIndex
                         Behavior on color { ColorAnimation { duration: Motion.fast } }
                         Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
@@ -745,7 +759,18 @@ Scope {
                             opacity: index === list.currentIndex ? 1 : 0
                             Behavior on opacity { NumberAnimation { duration: Motion.fast } }
 
-                            gradient: Gradient {
+                            Rectangle {
+                                anchors.fill: parent
+                                visible: Prefs.apple
+                                radius: 11
+                                antialiasing: true
+                                color: Colors.selection
+                            }
+
+                            color: "transparent"
+                            gradient: Prefs.apple ? null : fadeFill
+                            Gradient {
+                                id: fadeFill
                                 orientation: Gradient.Horizontal
                                 GradientStop {
                                     position: 0.0
@@ -768,6 +793,7 @@ Scope {
                             radius: 1.5
                             antialiasing: true
                             color: Colors.accent
+                            visible: !Prefs.apple
                             height: index === list.currentIndex ? 24 : 0
                             opacity: index === list.currentIndex ? 1 : 0
 
@@ -793,7 +819,8 @@ Scope {
                                 radius: Shape.chip
                                 antialiasing: true
                                 anchors.verticalCenter: parent.verticalCenter
-                                color: index === list.currentIndex
+                                color: Prefs.apple ? "transparent"
+                                    : index === list.currentIndex
                                     ? Qt.rgba(Colors.accent.r, Colors.accent.g,
                                               Colors.accent.b, 0.16)
                                     : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
@@ -815,7 +842,7 @@ Scope {
 
                                 Text {
                                     text: modelData.name
-                                    color: Colors.fg
+                                    color: Prefs.apple && appRow.on ? "white" : Colors.fg
                                     font.family: Fonts.display
                                     font.pixelSize: 14
                                     font.weight: index === list.currentIndex
@@ -827,10 +854,12 @@ Scope {
                                 Text {
                                     visible: text !== ""
                                     text: modelData.genericName || modelData.comment || ""
-                                    color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                                   Colors.fgDim.b, 0.65)
+                                    color: Prefs.apple && appRow.on
+                                        ? Qt.rgba(1, 1, 1, 0.75)
+                                        : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                                  Colors.fgDim.b, 0.65)
                                     font.family: Fonts.mono
-                                    font.pixelSize: 10
+                                    font.pixelSize: Prefs.apple ? 11 : 10
                                     elide: Text.ElideRight
                                     width: parent.width
                                 }
@@ -842,7 +871,7 @@ Scope {
                             anchors.rightMargin: 14
                             anchors.verticalCenter: parent.verticalCenter
                             text: "\u{f0311}"
-                            color: Colors.accent
+                            color: Prefs.apple ? "white" : Colors.accent
                             font.family: Fonts.mono
                             font.pixelSize: 13
                             opacity: index === list.currentIndex ? 0.8 : 0

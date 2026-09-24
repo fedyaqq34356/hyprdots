@@ -183,42 +183,107 @@ Singleton {
         shadow:        { type: "bool", def: true },
         border:        { type: "bool", def: true },
         barStyle:      { type: "pick", def: "modular",
-                         values: ["modular", "solid"] },
+                         values: ["modular", "solid", "bar"] },
         distinctPills: { type: "bool", def: false },
+
+        monoWidth:   { type: "int", def: 100, min: 20, max: 100 },
+        monoInset:   { type: "int", def: 0,   min: 0,  max: 12 },
+        monoRadius:  { type: "int", def: 0,   min: 0,  max: 40 },
+        monoFill:    { type: "int", def: 88,  min: 0,  max: 100 },
+        monoBorder:  { type: "bool", def: false },
+        monoRule:    { type: "bool", def: true },
         blob:          { type: "bool", def: true },
         blobFuse:      { type: "int", def: 4,   min: 0,  max: 30 },
         blobGlide:     { type: "bool", def: true },
         intro:         { type: "bool", def: true },
         hoverGrow:     { type: "bool", def: true },
-        tooltips:      { type: "bool", def: true }
+        tooltips:      { type: "bool", def: true },
+
+        autohide:      { type: "bool", def: false },
+        autohideDelay: { type: "int", def: 600, min: 100, max: 3000 },
+        autohidePeek:  { type: "int", def: 4,   min: 1,   max: 20 }
     })
 
-    property var style: ({})
+    readonly property var styleGroups: [
+        { key: "shape",  names: ["barStyle", "distinctPills", "radius",
+                                 "barHeight", "islandHeight", "islandPadding",
+                                 "itemSpacing", "islandGap", "edgeMargin"] },
+        { key: "mono",   when: "bar",
+                         names: ["monoWidth", "monoInset", "monoRadius",
+                                 "monoFill", "monoBorder", "monoRule"] },
+        { key: "paint",  names: ["fill", "fillHover", "border", "borderAlpha",
+                                 "shadow"] },
+        { key: "type",   names: ["fontSize", "glyphSize"] },
+        { key: "motion", names: ["blob", "blobFuse", "blobGlide", "intro",
+                                 "hoverGrow", "tooltips"] },
+        { key: "hide",   names: ["autohide", "autohideDelay", "autohidePeek"] }
+    ]
+
+    function styleGroupTitle(key) { return I18n.t("barc.sec." + key); }
+
+    function optTitle(name) {
+        const key = "barc.o." + name;
+        const t = I18n.t(key);
+        return t === key ? name : t;
+    }
+
+    function valueTitle(value) {
+        const key = "barc.v." + value;
+        const t = I18n.t(key);
+        return t === key ? value : t;
+    }
+
+    property bool perScreen: false
+
+    property var cfgs: ({
+        "*": { zones: { left: [], center: [], right: [] }, style: ({}) }
+    })
+
+    readonly property string sharedKey: "*"
+    readonly property var zoneNames: ["left", "center", "right"]
+
+    function key(screen) {
+        if (!root.perScreen || !screen)
+            return root.sharedKey;
+        return root.cfgs[screen] !== undefined ? screen : root.sharedKey;
+    }
+
+    function cfg(screen) {
+        const c = root.cfgs[root.key(screen)];
+        return c ? c : root.cfgs[root.sharedKey];
+    }
 
     property bool introPlayed: false
 
-    function s(name) {
-        if (root.style && root.style[name] !== undefined)
-            return root.style[name];
+    function s(name, screen) {
+        const c = root.cfg(screen);
+        if (c && c.style && c.style[name] !== undefined)
+            return c.style[name];
         const spec = root.styleSpec[name];
         return spec ? spec.def : 0;
     }
 
-    function setStyle(name, value) {
-        const next = Object.assign({}, root.style);
-        next[name] = value;
-        root.style = next;
-        root.save();
+    function setStyle(name, value, screen) {
+        const k = root.key(screen);
+        const prev = root.cfg(screen);
+        const style = {};
+        for (const n in prev.style)
+            style[n] = prev.style[n];
+        style[name] = value;
+        root.replaceCfg(k, { zones: prev.zones, style: style });
     }
 
-    function resetStyle() {
-        root.style = ({});
-        root.save();
+    function resetStyle(screen) {
+        const k = root.key(screen);
+        const prev = root.cfg(screen);
+        root.replaceCfg(k, { zones: prev.zones, style: ({}) });
     }
 
-    property var zones: ({ left: [], center: [], right: [] })
-
-    readonly property var zoneNames: ["left", "center", "right"]
+    function islands(zone, screen) {
+        const c = root.cfg(screen);
+        const z = c && c.zones ? c.zones[zone] : null;
+        return z ? z : [];
+    }
 
     function defaults() {
         function m(type, opts) {
@@ -249,36 +314,103 @@ Singleton {
     property int keySeed: 1
     function nextKey() { return root.keySeed++; }
 
-    function islands(zone) {
-        const z = root.zones[zone];
-        return z ? z : [];
-    }
-
-    function mutate(fn) {
-        const next = {
-            left: root.zones.left.slice(),
-            center: root.zones.center.slice(),
-            right: root.zones.right.slice()
-        };
-        fn(next);
-        root.zones = next;
+    function replaceCfg(k, nextCfg) {
+        const all = {};
+        for (const name in root.cfgs)
+            all[name] = root.cfgs[name];
+        all[k] = nextCfg;
+        root.cfgs = all;
         root.save();
     }
 
-    function addIsland(zone) {
-        root.mutate(next => {
+    function cloneCfg(c) {
+        const zones = {};
+        for (const zone of root.zoneNames) {
+            const src = (c && c.zones && c.zones[zone]) ? c.zones[zone] : [];
+            const list = [];
+            for (let i = 0; i < src.length; i++) {
+                const items = [];
+                for (let j = 0; j < src[i].items.length; j++) {
+                    const it = src[i].items[j];
+                    const opts = {};
+                    for (const n in it.opts)
+                        opts[n] = it.opts[n];
+                    items.push({ key: root.nextKey(), type: it.type, opts: opts });
+                }
+                list.push({ key: root.nextKey(), items: items });
+            }
+            zones[zone] = list;
+        }
+        const style = {};
+        if (c && c.style) {
+            for (const n in c.style)
+                style[n] = c.style[n];
+        }
+        return { zones: zones, style: style };
+    }
+
+    function setPerScreen(on, screens) {
+        if (on) {
+            const all = {};
+            for (const name in root.cfgs)
+                all[name] = root.cfgs[name];
+            const base = root.cfgs[root.sharedKey];
+            const list = screens ? screens : [];
+            for (let i = 0; i < list.length; i++) {
+                if (all[list[i]] === undefined)
+                    all[list[i]] = root.cloneCfg(base);
+            }
+            root.cfgs = all;
+        }
+        root.perScreen = on;
+        root.save();
+    }
+
+    function sameIslands(a, b) {
+        if (a === b)
+            return true;
+        if (!a || !b || a.length !== b.length)
+            return false;
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i])
+                return false;
+        }
+        return true;
+    }
+
+    function mutate(screen, fn) {
+        const k = root.key(screen);
+        const prev = root.cfg(screen);
+        const prevZones = prev.zones;
+        const next = {
+            left: prevZones.left.slice(),
+            center: prevZones.center.slice(),
+            right: prevZones.right.slice()
+        };
+        fn(next);
+
+        for (const zone of root.zoneNames) {
+            if (root.sameIslands(prevZones[zone], next[zone]))
+                next[zone] = prevZones[zone];
+        }
+
+        root.replaceCfg(k, { zones: next, style: prev.style });
+    }
+
+    function addIsland(zone, screen) {
+        root.mutate(screen, next => {
             next[zone] = next[zone].concat([{ key: root.nextKey(), items: [] }]);
         });
     }
 
-    function removeIsland(zone, key) {
-        root.mutate(next => {
+    function removeIsland(zone, key, screen) {
+        root.mutate(screen, next => {
             next[zone] = next[zone].filter(i => i.key !== key);
         });
     }
 
-    function moveIsland(zone, key, delta) {
-        root.mutate(next => {
+    function moveIsland(zone, key, delta, screen) {
+        root.mutate(screen, next => {
             const list = next[zone].slice();
             const i = list.findIndex(x => x.key === key);
             const j = i + delta;
@@ -291,10 +423,10 @@ Singleton {
         });
     }
 
-    function islandToZone(zone, key, target) {
+    function islandToZone(zone, key, target, screen) {
         if (zone === target)
             return;
-        root.mutate(next => {
+        root.mutate(screen, next => {
             const found = next[zone].find(i => i.key === key);
             if (!found)
                 return;
@@ -303,8 +435,8 @@ Singleton {
         });
     }
 
-    function addItem(zone, islandKey, type) {
-        root.mutate(next => {
+    function addItem(zone, islandKey, type, screen) {
+        root.mutate(screen, next => {
             next[zone] = next[zone].map(isle => {
                 if (isle.key !== islandKey)
                     return isle;
@@ -318,8 +450,8 @@ Singleton {
         });
     }
 
-    function removeItem(zone, islandKey, itemKey) {
-        root.mutate(next => {
+    function removeItem(zone, islandKey, itemKey, screen) {
+        root.mutate(screen, next => {
             next[zone] = next[zone].map(isle => {
                 if (isle.key !== islandKey)
                     return isle;
@@ -328,8 +460,8 @@ Singleton {
         });
     }
 
-    function moveItem(zone, islandKey, itemKey, delta) {
-        root.mutate(next => {
+    function moveItem(zone, islandKey, itemKey, delta, screen) {
+        root.mutate(screen, next => {
             next[zone] = next[zone].map(isle => {
                 if (isle.key !== islandKey)
                     return isle;
@@ -346,8 +478,8 @@ Singleton {
         });
     }
 
-    function setItemOpt(zone, islandKey, itemKey, name, value) {
-        root.mutate(next => {
+    function setItemOpt(zone, islandKey, itemKey, name, value, screen) {
+        root.mutate(screen, next => {
             next[zone] = next[zone].map(isle => {
                 if (isle.key !== islandKey)
                     return isle;
@@ -365,16 +497,30 @@ Singleton {
         });
     }
 
-    function reset() {
-        root.keySeed = 1;
-        root.zones = root.defaults();
-        root.style = ({});
-        root.save();
+    function reset(screen) {
+        root.replaceCfg(root.key(screen),
+                        { zones: root.defaults(), style: ({}) });
     }
 
-    function save() {
-        store.zones = root.zones;
-        store.style = root.style;
+    function copyCfg(fromScreen, toScreen) {
+        if (fromScreen === toScreen)
+            return;
+        root.replaceCfg(root.key(toScreen),
+                        root.cloneCfg(root.cfg(fromScreen)));
+    }
+
+    Timer {
+        id: flush
+        interval: 400
+        onTriggered: root.writeNow()
+    }
+
+    function save() { flush.restart(); }
+
+    function writeNow() {
+        flush.stop();
+        store.perScreen = root.perScreen;
+        store.cfgs = root.cfgs;
         file.writeAdapter();
     }
 
@@ -413,35 +559,69 @@ Singleton {
         return out;
     }
 
+    function readZones(raw) {
+        if (!raw || !raw.left)
+            return root.defaults();
+        return {
+            left: root.readIslands(raw.left),
+            center: root.readIslands(raw.center),
+            right: root.readIslands(raw.right)
+        };
+    }
+
+    function readStyle(raw) {
+        const out = {};
+        if (raw) {
+            for (const k in raw)
+                out[k] = raw[k];
+        }
+        return out;
+    }
+
     FileView {
         id: file
         path: Quickshell.statePath("bar.json")
 
         onLoaded: {
-            const raw = store.zones;
-            if (!raw || !raw.left) {
-                root.zones = root.defaults();
-            } else {
-                root.zones = {
-                    left: root.readIslands(raw.left),
-                    center: root.readIslands(raw.center),
-                    right: root.readIslands(raw.right)
+            const out = {};
+            let any = false;
+
+            const raw = store.cfgs;
+            if (raw) {
+                for (const k in raw) {
+                    const c = raw[k];
+                    if (!c)
+                        continue;
+                    out[k] = {
+                        zones: root.readZones(c.zones),
+                        style: root.readStyle(c.style)
+                    };
+                    any = true;
+                }
+            }
+
+            if (!any) {
+                out[root.sharedKey] = {
+                    zones: root.readZones(store.zones),
+                    style: root.readStyle(store.style)
                 };
             }
 
-            const st = {};
-            if (store.style) {
-                for (const k in store.style)
-                    st[k] = store.style[k];
-            }
-            root.style = st;
+            if (out[root.sharedKey] === undefined)
+                out[root.sharedKey] = { zones: root.defaults(), style: ({}) };
+
+            root.cfgs = out;
+            root.perScreen = store.perScreen === true;
 
             let max = 0;
-            for (const zone of root.zoneNames) {
-                for (const isle of root.zones[zone]) {
-                    max = Math.max(max, isle.key);
-                    for (const it of isle.items)
-                        max = Math.max(max, it.key);
+            for (const name in root.cfgs) {
+                const zones = root.cfgs[name].zones;
+                for (const zone of root.zoneNames) {
+                    for (const isle of zones[zone]) {
+                        max = Math.max(max, isle.key);
+                        for (const it of isle.items)
+                            max = Math.max(max, it.key);
+                    }
                 }
             }
             root.keySeed = max + 1;
@@ -450,13 +630,17 @@ Singleton {
         onLoadFailed: (error) => {
             if (error !== FileViewError.FileNotFound)
                 return;
-            root.zones = root.defaults();
-            root.style = ({});
+            root.cfgs = ({
+                "*": { zones: root.defaults(), style: ({}) }
+            });
+            root.perScreen = false;
             root.save();
         }
 
         JsonAdapter {
             id: store
+            property var cfgs: ({})
+            property bool perScreen: false
             property var zones: ({})
             property var style: ({})
         }

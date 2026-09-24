@@ -21,3 +21,4 @@ SettingsSection SettingsSection.qml
 SettingsToggle SettingsToggle.qml
 SettingsChoice SettingsChoice.qml
 PrintPanel PrintPanel.qml
+IslandPanel IslandPanel.qml

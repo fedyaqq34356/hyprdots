@@ -22,6 +22,7 @@ Item {
     property real hoverMix: 1
 
     property bool shadow: true
+    property color shadowColor: Qt.rgba(0, 0, 0, 0.32)
 
     readonly property real pad: Math.max(8, fuse * 2 + 6)
 
@@ -154,7 +155,8 @@ Item {
         layer.enabled: field.shadow
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: Qt.rgba(0, 0, 0, 0.32)
+            shadowColor: field.shadowColor
+            Behavior on shadowColor { ColorAnimation { duration: Motion.slow } }
             shadowBlur: 0.55
             shadowVerticalOffset: 3
         }

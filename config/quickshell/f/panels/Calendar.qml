@@ -163,6 +163,13 @@ Scope {
 
         Bloom { target: card }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+        }
+
         Glass {
             id: card
 
@@ -174,10 +181,12 @@ Scope {
             edge: Colors.accent
             focus: true
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.94
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.94)
+            transform: Translate { x: emerge.dx; y: emerge.dy }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
@@ -412,9 +421,9 @@ Scope {
                             border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                                   Colors.accent.b, 0.45)
 
-                            scale: 1.0 + Phase.wave(3.8) * 0.3
+                            scale: 1.0 + Phase.slowWave(3.8) * 0.3
 
-                            PhaseHold { active: root.shown && tick.today }
+                            PhaseHold { active: root.shown && tick.today; slow: true }
                         }
 
                         HoverHandler {
