@@ -25,6 +25,61 @@ and the lock screen recolour themselves around it.
 <br>
 <br>
 
+<img src="assets/island/island-hero.jpg" alt="The dynamic island expanded into a music card" width="100%">
+
+<sub><b>The dynamic island</b> takes the place of the bar clock and grows into whatever is happening — <code>Super</code> + <code>Shift</code> + <code>I</code> to tune it</sub>
+
+<table>
+<tr>
+<td colspan="2"><img src="assets/island/island-media.gif" alt="Music starts: the cover slides out of the island, then the island opens into a player card" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub>music — the cover and a live spectrum settle into the corner, the card opens on hover</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-notif.gif" alt="A message arriving in the island"></td>
+<td><img src="assets/island/island-timer.gif" alt="A timer counting down in the left slot, then ringing"></td>
+</tr>
+<tr>
+<td align="center"><sub>a message unfolds out of the pill and folds back into it</sub></td>
+<td align="center"><sub>a timer ticks in the left slot, then rings</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-volume.gif" alt="Volume changes in the island"></td>
+<td><img src="assets/island/island-bright.gif" alt="Brightness changes in the island"></td>
+</tr>
+<tr>
+<td align="center"><sub>volume</sub></td>
+<td align="center"><sub>brightness</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-bt.gif" alt="Headphones connecting and disconnecting"></td>
+<td><img src="assets/island/island-power.gif" alt="Charger plugged in, then a low battery warning"></td>
+</tr>
+<tr>
+<td align="center"><sub>headphones connect with their charge, then drop off</sub></td>
+<td align="center"><sub>charger in, then a low battery</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-peri.gif" alt="A mouse running low on charge"></td>
+<td><img src="assets/island/island-workspace.gif" alt="Switching workspaces"></td>
+</tr>
+<tr>
+<td align="center"><sub>a mouse or keyboard running low</sub></td>
+<td align="center"><sub>workspaces — the number lives inside the active dot</sub></td>
+</tr>
+<tr>
+<td colspan="2"><img src="assets/island/island-layout.gif" alt="Switching the keyboard layout" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub>keyboard layout</sub></td>
+</tr>
+</table>
+
+<br>
+
+<sub><b>The rest of the desktop</b></sub>
+
 <img src="assets/hero.jpg" alt="The desktop" width="100%">
 
 <img src="assets/bar.png" alt="The bar" width="100%">
@@ -467,6 +522,46 @@ to stop.
 
 </details>
 
+<details open>
+<summary><b>The dynamic island</b> — <sub>one pill in place of the clock that turns into whatever is happening</sub></summary>
+
+
+The island sits in the middle of the bar where the clock was, and by default the bar gives it the
+whole row: the zones step aside, the space stays reserved. At rest it is a narrow pill with the
+clock, or with the workspace dots when nothing else is going on — the active dot carries the
+workspace number inside it.
+
+Everything else happens by growing out of that pill. Width and height move on springs, content
+slides in from below while the old content leaves upward, and every event gives the island a small
+bump first — the body answers before the shape does.
+
+**What it shows**, most important first: a ringing alarm → screen recording → volume and brightness →
+a new notification → a running timer → music → the clock. Each source can be switched off on its
+own.
+
+- **Music** — the album cover with a radial spectrum sits in the right corner while the clock stays
+  in the middle. Hover the island and it opens into a player card: title, artist, a seek bar,
+  previous / play / next. The waveform and the edge glow take the colour of the cover art.
+- **Notifications** unfold into a card with the app icon, the sender and two lines of text, then fold
+  back. While the island shows them, the ordinary popup is not drawn a second time.
+- **Timers** move into a left slot beside the pill — a ring that fills, the last minute in digits.
+  When one ends, the island opens red with snooze and dismiss. A print job takes the same slot while
+  the printer works.
+- **Volume, brightness, layout, workspace** — a one-line event that swaps in for a moment and leaves.
+- **Headphones, a charger, a low battery, a mouse or keyboard running low, Wi-Fi and VPN** — each
+  gets its own small scene: a charge ring, a battery that fills, a fan that finds the network.
+
+Swipe the open island upward to close it; hover will not reopen it until the cursor leaves.
+
+`Super` + `Shift` + `I` opens its settings: shape (none / pill / card), inside the bar or floating,
+top or bottom edge, alignment, which monitor, offsets, the size of both shapes, fill, per-event
+colour, how long events stay and how long it waits before opening. Every knob applies live.
+
+To see every scene without the hardware: `qs -c f ipc call island play bt` (also `btoff`, `power`,
+`low`, `peri`, `net`, `vpn`, `notif`, `osd`); `qs -c f ipc call island pin true` keeps it open.
+
+</details>
+
 <details>
 <summary><b>The bar</b> — <sub>what every island is and why it is there</sub></summary>
 
@@ -825,6 +920,7 @@ back on the way out. Brightness, volume, refresh rate and idle timeouts are deli
 | `Super` + `Shift` + `N` | notification centre |
 | `Super` + `Ctrl` + `N` | do not disturb |
 | `Super` + `P` | power menu |
+| `Super` + `Shift` + `I` | dynamic island settings |
 | `Super` + `Shift` + `L` | lock screen |
 
 **Added recently**
@@ -1212,6 +1308,46 @@ QML, только спорило бы с ним.
 
 </details>
 
+<details open>
+<summary><b>Динамический остров</b> — <sub>одна пилюля вместо часов, которая превращается в то, что происходит</sub></summary>
+
+
+Остров стоит посередине бара, на месте часов, и по умолчанию бар отдаёт ему всю строку: зоны
+расступаются, место остаётся зарезервированным. В покое это узкая пилюля с часами или с точками
+рабочих столов, когда больше ничего не происходит, — номер стола живёт внутри активной точки.
+
+Всё остальное вырастает из этой пилюли. Ширина и высота идут пружиной, новое содержимое приезжает
+снизу, пока старое уезжает вверх, а на любое событие остров сначала слегка подскакивает — тело
+отзывается раньше формы.
+
+**Что он показывает**, от важного к второстепенному: звонящий будильник → запись экрана →
+громкость и яркость → новое уведомление → идущий таймер → музыка → часы. Каждый источник
+выключается отдельно.
+
+- **Музыка** — обложка с радиальным спектром встаёт в правый угол, часы остаются в середине.
+  Наведите курсор — остров раскрывается в карточку плеера: название, исполнитель, полоса
+  перемотки, назад / пауза / вперёд. Волна и свечение кромки берут цвет обложки.
+- **Уведомления** разворачиваются в карточку со значком приложения, отправителем и двумя строками
+  текста и сворачиваются обратно. Пока их показывает остров, обычная всплывашка не рисуется второй раз.
+- **Таймеры** уходят в левый кружок рядом с пилюлей — кольцо заполняется, последняя минута идёт
+  цифрами. Когда время вышло, остров раскрывается красным с кнопками «отложить» и «выключить».
+  Пока печатает принтер, тот же кружок занимает очередь печати.
+- **Громкость, яркость, раскладка, рабочий стол** — одна строка, которая подменяет середину на
+  мгновение и уходит.
+- **Наушники, зарядка, севшая батарея, разряженная мышь или клавиатура, Wi-Fi и VPN** — у каждого
+  своя маленькая сцена: кольцо заряда, наполняющаяся батарейка, веер, который ловит сеть.
+
+Смахните раскрытый остров вверх — он закроется, и наведение не откроет его снова, пока курсор не уйдёт.
+
+`Super` + `Shift` + `I` открывает его настройки: форма (нет / пилюля / карточка), внутри бара или
+отдельно, верхняя или нижняя кромка, выравнивание, монитор, смещения, размеры обеих форм, заливка,
+цвет по событию, сколько событие держится и сколько остров ждёт перед раскрытием. Всё применяется сразу.
+
+Посмотреть все сцены без железа: `qs -c f ipc call island play bt` (а ещё `btoff`, `power`, `low`,
+`peri`, `net`, `vpn`, `notif`, `osd`); `qs -c f ipc call island pin true` держит остров раскрытым.
+
+</details>
+
 <details>
 <summary><b>Панель</b> — <sub>что такое каждый островок и зачем он там</sub></summary>
 
@@ -1562,6 +1698,7 @@ HDA-кодека, автосон USB кроме устройств ввода, S
 | `Super` + `Shift` + `N` | центр уведомлений |
 | `Super` + `Ctrl` + `N` | не беспокоить |
 | `Super` + `P` | меню выключения |
+| `Super` + `Shift` + `I` | настройки динамического острова |
 | `Super` + `Shift` + `L` | заблокировать экран |
 
 **Добавлено недавно**
