@@ -25,7 +25,11 @@ Scope {
             if (Dnd.active)
                 return;
 
-            n.tracked = true;
+            const eaten = IslandConfig.s("enabled") && IslandConfig.on("notif")
+                       && IslandConfig.s("eatPopups");
+
+            if (!eaten)
+                n.tracked = true;
 
             if (n.transient)
                 return;

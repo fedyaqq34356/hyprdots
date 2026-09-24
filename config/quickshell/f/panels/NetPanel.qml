@@ -210,6 +210,14 @@ Scope {
             }
         }
 
+        Emerge {
+            id: emerge
+            card: cardHost
+            win: win
+            open: root.shown
+            cache: false
+        }
+
         Item {
             id: cardHost
             anchors.horizontalCenter: parent.horizontalCenter
@@ -217,10 +225,11 @@ Scope {
             width: card.width
             height: card.height
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.94
-            transform: Translate { y: root.shown ? 0 : 26
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.94)
+            transform: Translate { x: emerge.dx; y: emerge.on ? emerge.dy : (root.shown ? 0 : 26)
                 Behavior on y {
+                    enabled: !emerge.on
                     NumberAnimation {
                         duration: Motion.slow
                         easing.type: Easing.Bezier
@@ -229,8 +238,9 @@ Scope {
                 }
             }
 
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 SpringAnimation {
                     spring: Motion.panelSpring
                     damping: Motion.panelDamping
@@ -577,13 +587,35 @@ Scope {
                         spacing: 12
                         visible: !root.radioOn || root.allEntries.length === 0
 
-                        Text {
+                        Item {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.wifiTab ? "󰤮" : "󰂲"
-                            color: Colors.fgDim
-                            opacity: 0.22
-                            font.family: root.mono
-                            font.pixelSize: 54
+                            width: 54
+                            height: 54
+
+                            readonly property bool searching:
+                                root.radioOn
+                                && (root.wifiTab ? Network.busy : Bt.scanning)
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: root.wifiTab ? "󰤮" : "󰂲"
+                                color: Colors.fgDim
+                                opacity: parent.searching ? 0 : 0.22
+                                visible: opacity > 0.01
+                                font.family: root.mono
+                                font.pixelSize: 54
+                                Behavior on opacity {
+                                    NumberAnimation { duration: Motion.base }
+                                }
+                            }
+
+                            LivingShape {
+                                anchors.centerIn: parent
+                                width: 48
+                                height: 48
+                                tint: root.tint
+                                running: parent.searching
+                            }
                         }
 
                         Text {

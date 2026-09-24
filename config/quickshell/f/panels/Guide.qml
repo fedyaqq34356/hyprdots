@@ -155,6 +155,13 @@ Scope {
             Behavior on opacity { NumberAnimation { duration: Motion.slow } }
         }
 
+        Emerge {
+            id: emerge
+            card: card
+            win: win
+            open: root.shown
+        }
+
         Glass {
             id: card
 
@@ -165,10 +172,12 @@ Scope {
             elevation: 3
             tintOpacity: 0.92
 
-            opacity: root.shown ? 1 : 0
-            scale: root.shown ? 1 : 0.94
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
+            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            scale: emerge.on ? 1 : (root.shown ? 1 : 0.94)
+            transform: Translate { x: emerge.dx; y: emerge.dy }
+            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
             Behavior on scale {
+                enabled: !emerge.on
                 NumberAnimation {
                     duration: Motion.slow
                     easing.type: Easing.Bezier

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import "root:/design"
+import "root:/services"
 
 Item {
     id: bloom
@@ -19,7 +20,7 @@ Item {
     width: bloom.target ? Math.max(0, bloom.target.width - bloom.inset) : 0
     height: bloom.target ? Math.max(0, bloom.target.height - bloom.inset) : 0
 
-    visible: bloom.amount > 0.001
+    visible: bloom.amount > 0.001 && !Prefs.apple
 
     Rectangle {
         id: halo

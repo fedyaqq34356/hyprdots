@@ -8,7 +8,7 @@ Rectangle {
 
     property string glyph: ""
     property color tint: "#ffffff"
-    property string mono: Fonts.mono
+    property string mono: Fonts.glyph
     property string tip: ""
     property bool spinning: false
 
@@ -16,14 +16,16 @@ Rectangle {
 
     width: 36
     height: 36
-    radius: Shape.chip
+    radius: Prefs.apple ? width / 2 : Shape.chip
     antialiasing: true
 
-    color: hover.hovered ? Qt.rgba(button.tint.r, button.tint.g, button.tint.b, 0.22)
-                         : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.6)
+    color: Prefs.apple
+        ? Colors.alpha(Colors.fg, hover.hovered ? (tap.pressed ? 0.26 : 0.18) : 0.10)
+        : hover.hovered ? Qt.rgba(button.tint.r, button.tint.g, button.tint.b, 0.22)
+                        : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.6)
     Behavior on color { ColorAnimation { duration: Motion.fast } }
 
-    border.width: 1
+    border.width: Prefs.apple ? 0 : 1
     border.color: hover.hovered
         ? Qt.rgba(button.tint.r, button.tint.g, button.tint.b, 0.4)
         : Qt.rgba(Colors.outline.r, Colors.outline.g, Colors.outline.b, 0.16)
@@ -51,7 +53,8 @@ Rectangle {
         height: parent.height + 14
         radius: parent.radius + 7
         color: Qt.rgba(button.tint.r, button.tint.g, button.tint.b, 0.55)
-        opacity: hover.hovered ? (tap.pressed ? 0.55 : 0.32) : 0
+        opacity: Prefs.apple ? 0 : hover.hovered ? (tap.pressed ? 0.55 : 0.32) : 0
+        visible: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: Motion.base } }
 
         layer.enabled: true
@@ -118,8 +121,8 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         text: button.glyph
-        color: hover.hovered ? button.tint : Colors.fgDim
-        opacity: hover.hovered ? 1 : 0.7
+        color: Prefs.apple ? Colors.fg : hover.hovered ? button.tint : Colors.fgDim
+        opacity: Prefs.apple ? 1 : hover.hovered ? 1 : 0.7
         font.family: button.mono
         font.pixelSize: 14
 

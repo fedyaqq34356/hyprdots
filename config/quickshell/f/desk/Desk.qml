@@ -88,7 +88,7 @@ Scope {
                     ctx.reset();
                     ctx.strokeStyle = Colors.fgDim;
                     ctx.lineWidth = 1;
-                    const step = 64;
+                    const step = DeskLayout.grid;
                     for (let x = step; x < width; x += step) {
                         ctx.beginPath();
                         ctx.moveTo(x + 0.5, 0);
@@ -118,6 +118,33 @@ Scope {
                     entry: modelData
                     fieldWidth: win.width
                     fieldHeight: win.height
+                    screenName: win.modelData.name
+                }
+            }
+
+            Item {
+                anchors.fill: parent
+                visible: DeskLayout.editing
+                         && DeskLayout.guideScreen === win.modelData.name
+
+                Rectangle {
+                    x: Math.round(DeskLayout.guideX)
+                    width: 1
+                    height: parent.height
+                    color: Colors.accent
+                    opacity: DeskLayout.guideX >= 0 ? 0.75 : 0
+                    visible: opacity > 0.01
+                    Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+                }
+
+                Rectangle {
+                    y: Math.round(DeskLayout.guideY)
+                    height: 1
+                    width: parent.width
+                    color: Colors.accent
+                    opacity: DeskLayout.guideY >= 0 ? 0.75 : 0
+                    visible: opacity > 0.01
+                    Behavior on opacity { NumberAnimation { duration: Motion.fast } }
                 }
             }
 

@@ -15,6 +15,13 @@ Singleton {
     function acquire() { root.users++; }
     function release() { root.users = Math.max(0, root.users - 1); }
 
+    property int lurkers: 0
+
+    function watch()   { root.lurkers++; }
+    function unwatch() { root.lurkers = Math.max(0, root.lurkers - 1); }
+
+    readonly property bool awake: root.users > 0 || root.lurkers > 0
+
     property bool cups: false
     property var printers: []
     property var jobs: []
@@ -118,7 +125,7 @@ Singleton {
         root.alert.code !== "" && root.faultCodes.indexOf(root.alert.code) !== -1
 
     function refresh() {
-        if (root.users <= 0)
+        if (!root.awake)
             return;
         status.running = true;
         if (root.capt.needed && root.selected !== "") {
@@ -129,10 +136,12 @@ Singleton {
     }
 
     onUsersChanged: if (root.users > 0) root.refresh()
+    onLurkersChanged: if (root.lurkers > 0) root.refresh()
 
     Timer {
-        running: root.users > 0
-        interval: root.jobs.length > 0 ? 1500 : 5000
+        running: root.awake
+        interval: root.jobs.length > 0 ? 1500
+                                       : (root.users > 0 ? 5000 : 20000)
         repeat: true
         triggeredOnStart: true
         onTriggered: root.refresh()

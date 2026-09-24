@@ -34,7 +34,45 @@ Singleton {
     readonly property real heavyDamping: 0.62
     readonly property real heavyMass:    1.4
 
+    readonly property real isleOpenResponse:  0.46
+    readonly property real isleOpenDamping:   0.72
+    readonly property int  isleCloseMs:       300
+
+    readonly property real isleWidthResponse: 0.38
+    readonly property real isleWidthDamping:  0.86
+
+    readonly property real isleHoverResponse: 0.38
+    readonly property real isleHoverDamping:  0.80
+    readonly property real isleHoverScale:    1.028
+    readonly property real islePeekResponse:  0.30
+    readonly property real islePeekDamping:   0.50
+    readonly property real islePeekScale:     1.04
+    readonly property int  islePeekHoldMs:    90
+
+    readonly property int  isleRevealDelay:   80
+    readonly property int  isleRevealMs:      280
+    readonly property int  isleHideMs:        150
+
+    readonly property var  isleContent:       [0.22, 1.00, 0.36, 1.00, 1, 1]
+    readonly property int  isleContentMs:     340
+
+    readonly property real isleJelly:      0.052
+    readonly property real isleJellyCap:   0.070
+    readonly property real isleJellyCross: 0.62
+
+    readonly property real isleTapScale:    0.965
+    readonly property real isleTapResponse: 0.22
+    readonly property real isleTapDamping:  0.70
+
+    readonly property int  isleGlossMs:    760
+    readonly property real isleGlossAlpha: 0.16
+
+    readonly property int  isleThrobMs:    1100
+    readonly property real isleThrobScale: 1.022
+
     readonly property int stagger: 28
+
+    function mix(a, b, t) { return a + (b - a) * t; }
 
     function delay(index) {
         return Math.min(index, 12) * root.stagger;
