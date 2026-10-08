@@ -75,12 +75,14 @@ Item {
 
             const sc = it.scale === undefined ? 1 : it.scale;
             const oy = it.blobOffsetY === undefined ? 0 : it.blobOffsetY;
+            const sx = it.blobScaleX === undefined ? 1 : it.blobScaleX;
+            const sy = it.blobScaleY === undefined ? 1 : it.blobScaleY;
 
             field.setRect(n,
                           it.x + it.width / 2 + p,
                           it.y + it.height / 2 + oy + p,
-                          it.width * sc / 2,
-                          it.height * sc / 2);
+                          it.width * sc * sx / 2,
+                          it.height * sc * sy / 2);
 
             if (it === field.hoverItem)
                 hover = n;

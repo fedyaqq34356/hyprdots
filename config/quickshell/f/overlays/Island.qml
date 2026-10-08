@@ -1,13 +1,9 @@
 import Quickshell
 import Quickshell.Hyprland
-import Quickshell.Wayland
-import Quickshell.Widgets
 import Quickshell.Io
-import Quickshell.Services.Pipewire
 import QtQuick
-import QtQuick.Effects
 import "root:/design"
-import "root:/reusables"
+import "root:/gtavi"
 import "root:/services"
 
 Scope {
@@ -24,69 +20,17 @@ Scope {
         id: flashLife
         interval: IslandConfig.s("dwellMs")
         onTriggered: {
+            if (root.hoverHold || demoLife.running || root.replyOn !== "") {
+                flashLife.restart();
+                return;
+            }
             root.flashKind = "";
             root.stacked = 0;
-            root.demo = ({});
         }
     }
 
-    property var demo: ({})
-    property bool pinned: false
-
-    IpcHandler {
-        target: "island"
-
-        function play(kind: string): void { root.playDemo(kind); }
-        function pin(on: bool): void { root.pinned = on; }
-    }
-
-    function playDemo(kind) {
-        switch (kind) {
-        case "bt":
-            root.demo = { bt: { name: "Sony Pulse Elite", battery: 0.82, on: true } };
-            root.btOn = true;
-            root.flash("bt", "󰋋", "Sony Pulse Elite", -1);
-            break;
-        case "btoff":
-            root.demo = { bt: { name: "Sony Pulse Elite", battery: -1, on: false } };
-            root.btOn = false;
-            root.flash("bt", "󰂲", I18n.t("isle.bt.gone"), -1);
-            break;
-        case "power":
-            root.demo = { power: { pct: 64, charging: true } };
-            root.flash("power", "󰂄", "64%", 0.64);
-            break;
-        case "low":
-            root.demo = { power: { pct: 9, charging: false } };
-            root.flash("power", "󰂃", "9%", 0.09);
-            break;
-        case "peri":
-            root.demo = { peri: { pct: 12, model: "MX Master 3S" } };
-            root.flash("peri", "󰍽", "MX Master 3S  12%", 0.12);
-            break;
-        case "net":
-            root.flash("net", "󰤨", Network.ssid !== "" ? Network.ssid : "Home", -1);
-            break;
-        case "vpn":
-            root.flash("vpn", "󰦝", "wg0", -1);
-            break;
-        case "notif":
-            root.notifSummary = "Остров";
-            root.notifBody = "Так выглядит уведомление";
-            root.notifApp = "Telegram";
-            root.notifTint = NotifHistory.appColor("Telegram");
-            root.flash("notif", "󰂚", root.notifSummary, -1);
-            break;
-        case "osd":
-            Feedback.pulse++;
-            break;
-        default:
-            root.flash(kind, "󰋽", kind, -1);
-        }
-    }
-
-    function flash(kind, glyph, text, fraction) {
-        if (!IslandConfig.s("enabled") || !IslandConfig.on(kind))
+    function flash(kind, glyph, text, fraction, force) {
+        if (!IslandConfig.s("enabled") || (!force && !IslandConfig.on(kind)))
             return;
         if (root.flashKind !== "" && root.flashKind !== kind)
             root.stacked = Math.min(9, root.stacked + 1);
@@ -95,253 +39,38 @@ Scope {
         root.flashText = text;
         root.flashFraction = fraction === undefined ? -1 : fraction;
         flashLife.restart();
+        root.flashed(kind);
     }
 
-    Connections {
-        target: Feedback
-        function onPulseChanged() {
-            root.flash("osd", Feedback.icon !== "" ? Feedback.icon : "󰕾",
-                       Feedback.label !== "" ? Feedback.label
-                                             : Feedback.percent(Feedback.value),
-                       Feedback.showBar && !Feedback.flat
-                           ? Feedback.value : -1);
-        }
-    }
+    property var holds: ({})
+    readonly property bool hoverHold: Object.keys(root.holds).length > 0
 
-    property string lastLayout: ""
-    Connections {
-        target: Keyboard
-        function onCodeChanged() {
-            const was = root.lastLayout;
-            root.lastLayout = Keyboard.code;
-            if (was === "")
-                return;
-            root.flash("keys", "󰌌", Keyboard.code.toUpperCase(), -1);
-        }
-    }
-
-    property int lastDesk: -1
-    Connections {
-        target: Hyprland
-        function onFocusedWorkspaceChanged() {
-            const w = Hyprland.focusedWorkspace;
-            if (!w)
-                return;
-            const was = root.lastDesk;
-            root.lastDesk = w.id;
-            if (was < 0)
-                return;
-            root.flash("desk", "󰧨",
-                       w.name && w.name !== "" ? w.name : String(w.id), -1);
-        }
-    }
-
-    property string lastSink: ""
-
-    Connections {
-        target: Pipewire
-        function onDefaultAudioSinkChanged() {
-            const s = Pipewire.defaultAudioSink;
-            const name = s ? s.name : "";
-            const was = root.lastSink;
-            root.lastSink = name;
-            if (was === "" || name === "" || name === was)
-                return;
-            const label = s.description || s.nickname || s.name;
-            const n = (s.name + " " + label).toLowerCase();
-            const glyph = /blue|headphone|headset|наушн/.test(n) ? "󰋋"
-                        : /hdmi|displayport/.test(n) ? "󰡁" : "󰓃";
-            root.flash("route", glyph, label, -1);
-        }
-    }
-
-    Component.onCompleted: {
-        if (root.printWatch)
-            Printing.watch();
-        const s = Pipewire.defaultAudioSink;
-        root.lastSink = s ? s.name : "";
-    }
-
-    Binding {
-        target: Privacy
-        property: "watching"
-        value: IslandConfig.s("enabled") && IslandConfig.s("privacy")
-    }
-
-    Connections {
-        target: Dnd
-        function onActiveChanged() {
-            root.flash("focus", Dnd.active ? "󰂛" : "󰂚",
-                       I18n.t(Dnd.active ? "isle.focus.on" : "isle.focus.off"), -1);
-        }
-    }
-
-    property string notifSummary: ""
-    property string notifBody: ""
-    property string notifApp: ""
-    property color notifTint: Colors.accent
-
-    Connections {
-        target: NotifHistory
-        function onAdded(entry) {
-            root.notifSummary = entry && entry.summary ? entry.summary : "";
-            root.notifBody = entry && entry.body ? entry.body : "";
-            root.notifApp = entry && entry.app ? entry.app : "";
-            root.notifTint = NotifHistory.appColor(root.notifApp);
-            root.flash("notif", "󰂚", root.notifSummary, -1);
-        }
-    }
-
-    property bool btOn: false
-    property int lastBt: -1
-
-    Connections {
-        target: Bt
-        function onConnectedCountChanged() {
-            const was = root.lastBt;
-            root.lastBt = Bt.connectedCount;
-            if (was < 0)
-                return;
-            if (Bt.connectedCount > was) {
-                const d = Bt.primary;
-                root.btOn = true;
-                root.flash("bt", Bt.icon(d), Bt.label(d), -1);
-            } else if (Bt.connectedCount < was) {
-                root.btOn = false;
-                root.flash("bt", "󰂲", I18n.t("isle.bt.gone"), -1);
-            }
-        }
-    }
-
-    Connections {
-        target: Peripherals
-        function onLowChanged() {
-            if (!Peripherals.low)
-                return;
-            root.flash("peri", Peripherals.glyph,
-                       (Peripherals.model !== "" ? Peripherals.model + "  "
-                                                 : "") + Peripherals.percent + "%",
-                       Peripherals.percent / 100);
-        }
-        function onCriticalChanged() {
-            if (!Peripherals.critical)
-                return;
-            root.flash("peri", Peripherals.glyph,
-                       (Peripherals.model !== "" ? Peripherals.model + "  "
-                                                 : "") + Peripherals.percent + "%",
-                       Peripherals.percent / 100);
-        }
-    }
-
-    readonly property bool charging: Power.charging
-    readonly property int batteryPct: Power.percent
-
-    property int lastPower: -1
-    property bool warnedLow: false
-
-    Connections {
-        target: Power
-
-        function onChargingChanged() {
-            const was = root.lastPower;
-            root.lastPower = Power.charging ? 1 : 0;
-            if (was < 0 || !Power.present)
-                return;
-            if (Power.charging)
-                root.warnedLow = false;
-            root.flash("power", Power.glyph, Power.percent + "%",
-                       Power.fraction);
-        }
-
-        function onLowChanged() {
-            if (!Power.low) {
-                root.warnedLow = false;
-                return;
-            }
-            if (root.warnedLow)
-                return;
-            root.warnedLow = true;
-            root.flash("power", "󰂃", Power.percent + "%", Power.fraction);
-        }
-    }
-
-    property string lastSsid: ""
-    property bool primedNet: false
-
-    Connections {
-        target: Network
-        function onSsidChanged() { root.netMoved(); }
-        function onConnectedChanged() { root.netMoved(); }
-    }
-
-    function netMoved() {
-        const now = Network.connected ? Network.ssid : "";
-        if (now === root.lastSsid)
-            return;
-        const was = root.lastSsid;
-        root.lastSsid = now;
-        if (!root.primedNet) {
-            root.primedNet = true;
-            return;
-        }
-        if (now !== "")
-            root.flash("net", Network.glyph, now, -1);
-        else if (was !== "")
-            root.flash("net", "󰤮", I18n.t("isle.net.gone"), -1);
-    }
-
-    property int lastVpn: -1
-
-    Connections {
-        target: Vpn
-        function onUpChanged() {
-            const was = root.lastVpn;
-            root.lastVpn = Vpn.up ? 1 : 0;
-            if (was < 0)
-                return;
-            root.flash("vpn", Vpn.up ? "󰦝" : "󰦞",
-                       Vpn.up ? (Vpn.iface !== "" ? Vpn.iface
-                                                  : I18n.t("isle.vpn.on"))
-                              : I18n.t("isle.vpn.off"), -1);
-        }
-    }
-
-    property int lastJobs: -1
-
-    Connections {
-        target: Printing
-        function onJobsChanged() {
-            const n = Printing.jobs.length;
-            const was = root.lastJobs;
-            root.lastJobs = n;
-            if (was < 0)
-                return;
-            if (n > was)
-                root.flash("print", "󰐪", I18n.t("isle.print.sent"), -1);
-            else if (n === 0 && was > 0)
-                root.flash("print", "󰸞", I18n.t("isle.print.done"), -1);
-        }
-    }
-
-    readonly property bool printWatch:
-        IslandConfig.s("enabled") && IslandConfig.on("print")
-
-    onPrintWatchChanged: {
-        if (root.printWatch)
-            Printing.watch();
+    function hold(screen, on) {
+        const next = Object.assign({}, root.holds);
+        if (on)
+            next[screen] = true;
         else
-            Printing.unwatch();
+            delete next[screen];
+        root.holds = next;
     }
-
-    Component.onDestruction: if (root.printWatch) Printing.unwatch()
 
     readonly property string kind: {
         if (!IslandConfig.s("enabled"))
             return "";
         if (IslandConfig.on("alarm") && Timers.anyRinging)
             return "alarm";
+        if (root.callState === "ring")
+            return "call";
+        if (root.mediaBig)
+            return "media";
+        if (root.demoKind !== "")
+            return root.demoKind;
         if (root.flashKind !== "")
             return root.flashKind;
+        if (root.callState === "live")
+            return "call";
+        if (root.gtaOn)
+            return "gta";
         if (IslandConfig.on("record") && Recorder.active)
             return "record";
         if (IslandConfig.on("timer") && Timers.anyRunning
@@ -361,890 +90,1028 @@ Scope {
     readonly property string leftKind: {
         if (!IslandConfig.s("enabled") || !IslandConfig.s("leftSlot"))
             return "";
+        if (root.launch !== null)
+            return "launch";
+        if (root.downloadPhase !== "")
+            return "download";
         if (IslandConfig.on("print") && Printing.jobs.length > 0)
             return "print";
+        if (IslandConfig.on("task") && (root.taskShown || root.taskResult !== ""))
+            return "task";
         if (IslandConfig.on("timer") && Timers.anyRunning)
             return "timer";
         return "";
+    }
+
+    property bool mediaBig: false
+
+    function toggleMedia() {
+        root.mediaBig = !root.mediaBig && Media.has;
+    }
+
+    Connections {
+        target: Media
+        function onHasChanged() { if (!Media.has) root.mediaBig = false; }
     }
 
     readonly property bool miniMedia:
         IslandConfig.s("enabled") && IslandConfig.on("media")
         && Media.has && Media.playing
 
+    signal shook()
+    signal sparked()
+    signal snapped()
+    signal flashed(string kind)
+    signal poured(real level)
+    signal incoming(var e)
+    signal absorbed()
+    signal deskMoved(int dir)
+    signal chimed()
+
+    function fail(glyph, text) {
+        root.flash("fail", glyph, text, -1, true);
+        root.shook();
+    }
+
+    function done(glyph, text) {
+        root.flash("done", glyph, text, -1, true);
+        root.sparked();
+    }
+
+    Connections {
+        target: IslandBus
+        function onFailed(glyph, text) { root.fail(glyph, text); }
+        function onFinished(glyph, text) { root.done(glyph, text); }
+    }
+
+    property var cmd: ({ ok: true, code: 0, secs: 0, line: "", win: "", big: false })
+
+    readonly property string cmdTook: root.took(root.cmd.secs)
+
+    function took(secs) {
+        const m = Math.floor(secs / 60);
+        const h = Math.floor(m / 60);
+        if (h > 0)
+            return h + ":" + String(m % 60).padStart(2, "0") + ":"
+                 + String(secs % 60).padStart(2, "0");
+        return m > 0 ? m + ":" + String(secs % 60).padStart(2, "0") : secs + "s";
+    }
+
+    function bareAddr(a) {
+        return String(a || "").toLowerCase().replace(/^0x/, "");
+    }
+
+    function watching(win) {
+        const t = Hyprland.activeToplevel;
+        return win !== "" && t && root.bareAddr(t.address) === root.bareAddr(win);
+    }
+
+    function focusWindow(win) {
+        if (win === "")
+            return;
+        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow",
+                                 "address:0x" + root.bareAddr(win)]);
+    }
+
+    function shellDone(id, code, secs, line, win) {
+        root.taskEnd(id, code, secs);
+        if (!IslandConfig.on("shell"))
+            return;
+        if (code === 130 || code === 141 || code === 148)
+            return;
+        const ok = code === 0;
+        if (ok && secs < 10)
+            return;
+        const what = line.trim().replace(/\s+/g, " ");
+        const short = what.length > 42 ? what.slice(0, 41) + "…" : what;
+        root.cmd = {
+            ok: ok, code: code, secs: secs, line: what, win: win,
+            big: secs >= 10 && !root.watching(win)
+        };
+        root.flash("cmd", ok ? "󰄬" : "󰅙",
+                   short + " · " + (ok ? root.took(secs) : code), -1, true);
+        if (ok) {
+            if (!root.cmd.big)
+                root.sparked();
+        } else {
+            root.shook();
+        }
+    }
+
+    property var tasks: ({})
+    property bool taskShown: false
+    property bool taskLong: false
+    property string taskResult: ""
+    property string taskGlyph: "󰣪"
+    property string taskWin: ""
+    property string taskLine: ""
+
+    function taskGlyphFor(line) {
+        const w = line.trim().split(/\s+/);
+        const first = w[0] === "sudo" ? (w[1] || "") : w[0];
+        if (first === "git")
+            return "󰊢";
+        if (/^(yay|paru|pacman|makepkg|pip3?|uv|poetry|npm|pnpm|yarn|bun)$/.test(first)
+            && /(^|\s)(install|add|sync|-S\S*)(\s|$)/.test(line))
+            return "󰏗";
+        if (/^(docker|podman)$/.test(first))
+            return "󰡨";
+        if (/^(rsync|scp|wget|curl)$/.test(first))
+            return "󰇚";
+        if (/^(pytest|cargo)$/.test(first) && /\btest\b/.test(line) || first === "pytest")
+            return "󰙨";
+        return "󰣪";
+    }
+
+    function taskBegin(id, win, line) {
+        if (!IslandConfig.s("enabled") || !IslandConfig.on("task"))
+            return;
+        const next = Object.assign({}, root.tasks);
+        next[id] = { line: line, win: win, at: Date.now() };
+        root.tasks = next;
+        root.taskGlyph = root.taskGlyphFor(line);
+        root.taskWin = win;
+        root.taskLine = line;
+        root.taskResult = "";
+        taskResultLife.stop();
+        taskReveal.restart();
+        taskLongWait.restart();
+    }
+
+    function taskEnd(id, code, secs) {
+        if (!(id in root.tasks))
+            return;
+        const next = Object.assign({}, root.tasks);
+        delete next[id];
+        root.tasks = next;
+        const any = Object.keys(next).length > 0;
+        if (root.taskShown && !any) {
+            if (code === 130 || code === 148) {
+                root.taskShown = false;
+                return;
+            }
+            root.taskResult = code === 0 ? "ok" : "bad";
+            taskResultLife.restart();
+        }
+        if (!any) {
+            taskReveal.stop();
+            taskLongWait.stop();
+            root.taskShown = false;
+            root.taskLong = false;
+        }
+    }
+
+    Timer {
+        interval: 30000
+        repeat: true
+        running: Object.keys(root.tasks).length > 0
+        onTriggered: {
+            const alive = {};
+            for (const t of Hyprland.toplevels.values)
+                alive[root.bareAddr(t.address)] = true;
+            const now = Date.now();
+            for (const id of Object.keys(root.tasks)) {
+                const t = root.tasks[id];
+                if ((t.win !== "" && !alive[root.bareAddr(t.win)])
+                    || now - t.at > 6 * 3600 * 1000)
+                    root.taskEnd(id, 130, 0);
+            }
+        }
+    }
+
+    Timer {
+        id: taskReveal
+        interval: 1200
+        onTriggered: root.taskShown = Object.keys(root.tasks).length > 0
+    }
+
+    Timer {
+        id: taskLongWait
+        interval: 8000
+        onTriggered: root.taskLong = Object.keys(root.tasks).length > 0
+    }
+
+    Timer {
+        id: taskResultLife
+        interval: 1700
+        onTriggered: root.taskResult = ""
+    }
+
+    property string shotPath: ""
+    property real shotAt: 0
+
+    function shot(path) {
+        if (!IslandConfig.s("enabled") || !IslandConfig.on("shot"))
+            return false;
+        root.shotPath = path;
+        root.shotAt = Date.now();
+        root.flash("shot", "󰹑", path.split("/").pop(), -1);
+        root.snapped();
+        return true;
+    }
+
+    property var launch: null
+    property string launchPhase: ""
+    signal launchLanded(int ws)
+
+    Connections {
+        target: IslandBus
+        function onLaunching(info) {
+            if (!IslandConfig.s("enabled"))
+                return;
+            root.launch = info;
+            root.launchPhase = "wait";
+            launchClear.stop();
+            launchGiveUp.restart();
+        }
+        function onWallApplied(path, tone) { root.wallStart(tone); }
+    }
+
+    function launchSeen(cls, ws) {
+        if (!root.launch || root.launchPhase !== "wait")
+            return;
+        if (!Running.matches(root.launch, cls))
+            return;
+        launchGiveUp.stop();
+        root.launchPhase = "ok";
+        launchClear.interval = 1500;
+        launchClear.restart();
+        root.launchLanded(ws);
+    }
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (!root.launch || root.launchPhase !== "wait")
+                return;
+            if (event.name === "openwindow") {
+                const p = event.data.split(",");
+                if (p.length >= 3)
+                    root.launchSeen(p[2], parseInt(p[1]));
+            } else if (event.name === "activewindow") {
+                const c = event.data.split(",")[0];
+                const f = Hyprland.focusedWorkspace;
+                root.launchSeen(c, f ? f.id : -1);
+            }
+        }
+    }
+
+    Timer {
+        id: launchGiveUp
+        interval: 10000
+        onTriggered: {
+            if (!root.launch)
+                return;
+            if (root.launch.running) {
+                root.launchPhase = "ok";
+                launchClear.interval = 900;
+                launchClear.restart();
+                return;
+            }
+            root.launchPhase = "bad";
+            root.flash("fail", "󰅙", root.launch.name + " didn't open", -1, true);
+            launchClear.interval = 2200;
+            launchClear.restart();
+        }
+    }
+
+    Timer {
+        id: launchClear
+        interval: 1500
+        onTriggered: {
+            root.launch = null;
+            root.launchPhase = "";
+        }
+    }
+
+    readonly property string downloadsDir: Quickshell.env("HOME") + "/Downloads"
+    property int downloading: 0
+    property string downloadPath: ""
+    property string downloadPhase: ""
+
+    Process {
+        id: dlProbe
+        command: ["sh", "-c",
+            "find \"$1\" -maxdepth 1 -type f \\( -name '*.part' -o -name '*.crdownload' \\) | wc -l",
+            "sh", root.downloadsDir]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const n = parseInt(this.text.trim()) || 0;
+                const was = root.downloading;
+                root.downloading = n;
+                if (n > 0) {
+                    dlDone.stop();
+                    root.downloadPhase = "busy";
+                } else if (was > 0) {
+                    dlNewest.running = true;
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 1500
+        repeat: true
+        running: IslandConfig.s("enabled")
+        triggeredOnStart: true
+        onTriggered: if (!dlProbe.running) dlProbe.running = true
+    }
+
+    Process {
+        id: dlNewest
+        command: ["sh", "-c",
+            "find \"$1\" -maxdepth 1 -type f ! -name '*.part' ! -name '*.crdownload' -newermt '-20 seconds' "
+            + "-printf '%T@\\t%p\\n' | sort -rn | head -1 | cut -f2-",
+            "sh", root.downloadsDir]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const path = this.text.trim();
+                root.downloadPhase = path !== "" ? "ok" : "";
+                dlDone.restart();
+                if (path === "")
+                    return;
+                root.downloadPath = path;
+                root.flash("download", root.fileGlyph(path), path.split("/").pop(), -1, true);
+            }
+        }
+    }
+
+    Timer { id: dlDone; interval: 1600; onTriggered: root.downloadPhase = "" }
+
+    function fileGlyph(path) {
+        const ext = (path.split(".").pop() || "").toLowerCase();
+        if (["png", "jpg", "jpeg", "webp", "gif", "svg", "avif"].indexOf(ext) >= 0) return "󰋩";
+        if (["mp4", "mkv", "webm", "mov", "avi"].indexOf(ext) >= 0) return "󰈫";
+        if (["mp3", "flac", "ogg", "wav", "m4a", "opus"].indexOf(ext) >= 0) return "󰈣";
+        if (["zip", "tar", "gz", "xz", "zst", "7z", "rar"].indexOf(ext) >= 0) return "󰗄";
+        if (ext === "pdf") return "󰈦";
+        if (["doc", "docx", "odt", "txt", "md"].indexOf(ext) >= 0) return "󰈙";
+        if (["deb", "rpm", "appimage", "exe", "iso"].indexOf(ext) >= 0) return "󰏗";
+        return "󰈔";
+    }
+
+    function openDownload() {
+        if (root.downloadPath === "")
+            return;
+        Quickshell.execDetached(["kitty", "--class", "yazi", "-e", "yazi", root.downloadPath]);
+        root.dismiss();
+    }
+
+    property bool wallBusy: false
+    property color wallTone: Colors.accent
+    signal wallSpread(color tone)
+    signal wallDone(color tone)
+
+    function wallStart(tone) {
+        if (!IslandConfig.s("enabled"))
+            return;
+        root.wallTone = tone;
+        root.wallBusy = true;
+        root.flash("wall", "󰸉", "Applying wallpaper", -1, true);
+        root.wallSpread(tone);
+        wallGiveUp.restart();
+    }
+
+    function wallFinish() {
+        if (!root.wallBusy)
+            return;
+        wallGiveUp.stop();
+        root.wallBusy = false;
+        root.wallTone = Colors.srcAccent;
+        root.flash("wall", "󰏘", "Theme updated", -1, true);
+        root.wallDone(Colors.srcAccent);
+        root.sparked();
+    }
+
+    Connections {
+        target: Colors
+        function onSrcAccentChanged() {
+            if (root.wallBusy)
+                wallSettle.restart();
+        }
+    }
+
+    Timer { id: wallSettle; interval: 380; onTriggered: root.wallFinish() }
+    Timer { id: wallGiveUp; interval: 9000; onTriggered: root.wallFinish() }
+
+    function tone(kind) {
+        switch (kind) {
+        case "done": return "hi";
+        case "fail": return "lo";
+        case "cmd":  return root.cmd.ok ? "hi" : "lo";
+        case "bt":   return root.btOn ? "hi" : "lo";
+        case "power": return Power.plugged ? "hi" : "lo";
+        case "peri": return "lo";
+        case "vpn":  return Vpn.up ? "hi" : "lo";
+        case "net":  return Network.connected ? "hi" : "lo";
+        case "alarm": return "lo";
+        }
+        return "mid";
+    }
+
+    property var skyInfo: ({ kind: "rain", mins: 0, chance: 0 })
+
+    function sky(kind, at, chance, force) {
+        const mins = Math.max(0, Math.round((at - Date.now()) / 60000));
+        const when = mins < 20 ? I18n.t("isle.sky.now")
+                   : mins < 90 ? I18n.t("isle.sky.in") + " " + (Math.round(mins / 10) * 10) + " " + I18n.t("isle.sky.min")
+                   : I18n.t("isle.sky.in") + " ~" + Math.round(mins / 60) + " " + I18n.t("isle.sky.h");
+        root.skyInfo = { kind: kind, mins: mins, chance: chance, when: when };
+        root.flash("weather", kind === "snow" ? "󰖘" : "󰖗",
+                   I18n.t(kind === "snow" ? "isle.sky.snow" : "isle.sky.rain") + " · " + when, -1,
+                   force);
+    }
+
+    function dismiss() {
+        flashLife.stop();
+        root.flashKind = "";
+        root.stacked = 0;
+    }
+
+    property string notifSummary: ""
+    property string notifBody: ""
+    property string notifApp: ""
+    property color notifTint: Colors.accent
+    property string notifImage: ""
+    property string notifIcon: ""
+    property int notifCount: 1
+
+    readonly property string notifIconUrl:
+        root.notifIcon === "" ? ""
+        : root.notifIcon.startsWith("/") || root.notifIcon.startsWith("file:")
+          || root.notifIcon.startsWith("image:")
+          ? root.notifIcon : Quickshell.iconPath(root.notifIcon, true)
+
+    property var notifLive: null
+    property string replyOn: ""
+
+    property var notifStack: []
+    property int notifIndex: 0
+    readonly property int notifTotal: root.notifStack.length
+
+    property string lastNotifKey: ""
+    property real lastNotifAt: 0
+    property int lastNotifCount: 0
+
+    function pushNotif(e) {
+        const key = e.app + "\n" + e.summary;
+        const now = Date.now();
+        const next = root.notifStack.slice();
+        const at = next.findIndex(x => x.key === key);
+        let count = 1;
+        if (at >= 0) {
+            const old = next.splice(at, 1)[0];
+            count = old.count + 1;
+            if (old.live && old.live !== e.live && old.live.tracked)
+                old.live.expire();
+        } else if (key === root.lastNotifKey && now - root.lastNotifAt < 15000) {
+            count = root.lastNotifCount + 1;
+        }
+        e.key = key;
+        e.count = count;
+        next.unshift(e);
+        while (next.length > 5) {
+            const gone = next.pop();
+            if (gone.live && gone.live.tracked)
+                gone.live.expire();
+        }
+        root.lastNotifKey = key;
+        root.lastNotifAt = now;
+        root.lastNotifCount = count;
+        root.notifStack = next;
+        root.notifIndex = 0;
+        root.showNotif();
+    }
+
+    property var cometQueue: []
+    property bool demoAfterComet: false
+
+    function arrive(e) {
+        if (!IslandConfig.s("comet") || !IslandConfig.s("enabled") || !IslandConfig.on("notif")) {
+            root.pushNotif(e);
+            root.flash("notif", "󰂚", root.notifSummary, -1);
+            return;
+        }
+        root.cometQueue = root.cometQueue.concat([e]);
+        root.incoming(e);
+        if (!cometLand.running || root.cometQueue.length >= 3)
+            cometLand.restart();
+    }
+
+    Timer {
+        id: cometLand
+        interval: Motion.isleCometMs
+        onTriggered: {
+            const q = root.cometQueue;
+            root.cometQueue = [];
+            if (q.length === 0)
+                return;
+            for (const e of q)
+                root.pushNotif(e);
+            root.absorbed();
+            root.flash("notif", "󰂚", root.notifSummary, -1, root.demoAfterComet);
+            if (root.demoAfterComet) {
+                root.demoAfterComet = false;
+                root.demoKind = "notif";
+                root.demoWide = true;
+                demoLife.restart();
+            }
+        }
+    }
+
+    function showNotif() {
+        const e = root.notifStack[root.notifIndex];
+        if (!e)
+            return;
+        root.notifSummary = e.summary;
+        root.notifBody = e.body;
+        root.notifApp = e.app;
+        root.notifTint = NotifHistory.appColor(e.app);
+        root.notifImage = e.image;
+        root.notifIcon = e.icon;
+        root.notifCount = e.count;
+        root.notifLive = e.live || null;
+        root.replyOn = "";
+    }
+
+    function scrollNotif(step) {
+        const n = Math.max(0, Math.min(root.notifTotal - 1, root.notifIndex + step));
+        if (n === root.notifIndex)
+            return;
+        root.notifIndex = n;
+        root.showNotif();
+        flashLife.restart();
+    }
+
+    function doneNotif() {
+        const next = root.notifStack.slice();
+        next.splice(root.notifIndex, 1);
+        root.notifStack = next;
+        if (next.length === 0) {
+            root.dismiss();
+            return;
+        }
+        root.notifIndex = Math.min(root.notifIndex, next.length - 1);
+        root.showNotif();
+        flashLife.restart();
+    }
+
+    function dropNotif() {
+        for (const e of root.notifStack) {
+            if (e.live && e.live.tracked)
+                e.live.expire();
+        }
+        root.notifStack = [];
+        root.notifIndex = 0;
+        root.notifLive = null;
+        root.replyOn = "";
+    }
+
+    onFlashKindChanged: if (root.flashKind !== "notif" && root.notifStack.length > 0) root.dropNotif()
+
+    Connections {
+        target: root.notifLive
+        ignoreUnknownSignals: true
+        function onClosed() {
+            root.notifLive = null;
+            root.replyOn = "";
+        }
+    }
+
+    property var call: null
+    property string callState: ""
+    property real callStart: 0
+    property int callSecs: 0
+
+    Timer {
+        running: root.callState === "live"
+        interval: 1000
+        repeat: true
+        onTriggered: root.callSecs = Math.floor((Date.now() - root.callStart) / 1000)
+    }
+
+    Timer {
+        running: root.callState === "ring"
+        interval: 60000
+        onTriggered: root.endCall()
+    }
+
+    Connections {
+        target: root.call ? root.call.live : null
+        ignoreUnknownSignals: true
+        function onClosed() {
+            if (root.callState === "ring")
+                root.endCall();
+        }
+    }
+
+    readonly property string callIconUrl: {
+        const i = root.call ? root.call.icon : "";
+        return i === "" ? "" : i.startsWith("/") || i.startsWith("image:")
+            ? i : Quickshell.iconPath(i, true);
+    }
+
+    readonly property string callClock: {
+        const t = root.callSecs;
+        const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s2 = t % 60;
+        const pad = (n) => (n < 10 ? "0" : "") + n;
+        return (h > 0 ? h + ":" + pad(m) : pad(m)) + ":" + pad(s2);
+    }
+
+    function startCall(c) {
+        root.call = c;
+        root.callSecs = 0;
+        root.callState = "ring";
+    }
+
+    function callAction(re) {
+        const n = root.call ? root.call.live : null;
+        const a = n ? n.actions : null;
+        for (let i = 0; a && i < a.length; i++) {
+            if (re.test(a[i].identifier) || re.test(a[i].text || "")) {
+                a[i].invoke();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function acceptCall() {
+        if (!root.callAction(/accept|answer|pick|принять|ответить/i))
+            root.callAction(/^default$/);
+        root.callStart = Date.now();
+        root.callSecs = 0;
+        root.callState = "live";
+    }
+
+    function declineCall() {
+        if (!root.callAction(/decline|reject|hang|отклон|сбросить/i)) {
+            const n = root.call ? root.call.live : null;
+            if (n && n.tracked)
+                n.dismiss();
+        }
+        root.endCall();
+    }
+
+    function endCall() {
+        const n = root.call ? root.call.live : null;
+        root.callState = "";
+        root.call = null;
+        if (n && n.tracked)
+            n.expire();
+    }
+
+    function focusCall() {
+        const app = root.call ? root.call.app : "";
+        const cls = /telegram/i.test(app) ? "org.telegram.desktop"
+                  : /discord/i.test(app) ? "discord" : app;
+        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "class:(?i)" + cls]);
+    }
+
+    property string clipImage: ""
+    property bool btOn: false
+    property int deskDir: 0
+
+    readonly property bool charging: Power.plugged
+    readonly property int batteryPct: Power.percent
+
+    IslandSources { hub: root }
+
+    property bool gtaOn: false
+    property bool gtaHover: false
+    property string gtaShort: ""
+
+    function gtaText() {
+        const rem = GtaConfig.releaseFallbackMs - Date.now();
+        if (rem <= 0)
+            return "OUT NOW";
+        return Math.floor(rem / 86400000) + "d "
+             + String(Math.floor(rem / 3600000) % 24).padStart(2, "0") + "h";
+    }
+
+    function startGta() {
+        root.gtaShort = root.gtaText();
+        root.gtaOn = true;
+        gtaLife.restart();
+    }
+
+    Timer {
+        id: gtaLife
+        interval: 10000
+        onTriggered: root.gtaHover ? restart() : (root.gtaOn = false)
+    }
+
+    Timer {
+        interval: 30000
+        repeat: true
+        running: root.gtaOn
+        onTriggered: root.gtaShort = root.gtaText()
+    }
+
+    Process {
+        running: true
+        command: ["sh", "-c",
+            "m=\"${XDG_RUNTIME_DIR:-/tmp}/gtavi-island-shown\"; "
+            + "if [ -e \"$m\" ]; then echo seen; else : > \"$m\"; echo first; fi"]
+        stdout: StdioCollector {
+            onStreamFinished: if (text.trim() === "first") gtaDelay.start()
+        }
+    }
+
+    Timer { id: gtaDelay; interval: 2500; onTriggered: root.startGta() }
+
+    IpcHandler {
+        target: "island"
+
+        function demo(kind: string): string { return root.runDemo(kind); }
+        function play(kind: string): void { root.runDemo(kind); }
+        function pin(on: bool): void { root.pinned = on; }
+        function media(): string { root.toggleMedia(); return root.mediaBig ? "open" : "closed"; }
+        function call(action: string): string {
+            if (root.callState === "")
+                return "no call";
+            if (action === "accept" && root.callState === "ring") root.acceptCall();
+            else if (action === "decline" && root.callState === "ring") root.declineCall();
+            else if (action === "end") root.endCall();
+            else return "ring: accept|decline, live: end";
+            return root.callState === "" ? "ended" : root.callState;
+        }
+        function knob(name: string, value: string): string { return root.knob(name, value); }
+        function chime(): void { root.chimed(); }
+        function timer(secs: int, label: string): string {
+            return String(Timers.start(secs, label));
+        }
+        function untimer(id: string): void { Timers.cancel(isNaN(parseInt(id)) ? id : parseInt(id)); }
+
+        function begin(id: string, win: string, line: string): void { root.taskBegin(id, win, line); }
+        function end(id: string, code: int, secs: int, win: string, line: string): void {
+            root.shellDone(id, code, secs, line, win);
+        }
+        function cmd(code: int, secs: int, line: string): void { root.shellDone("", code, secs, line, ""); }
+
+        function shot(path: string): string { return root.shot(path) ? "ok" : "off"; }
+
+        function fail(text: string): void { root.fail("󰅙", text); }
+        function done(text: string): void { root.done("󰄬", text); }
+    }
+
+    function knob(name, value) {
+        const sp = IslandConfig.spec[name];
+        if (!sp)
+            return "no such knob: " + name;
+        let v = value;
+        if (sp.type === "bool")
+            v = value === "true" || value === "1" || value === "on";
+        else if (sp.type === "int")
+            v = parseInt(value);
+        IslandConfig.setStyle(name, v);
+        return name + " = " + v;
+    }
+
+    property var demo: ({})
+    property string demoKind: ""
+    property bool demoWide: false
+    property bool pinned: false
+
+    readonly property var demoKinds: [
+        "media", "osd", "notif", "timer", "alarm", "record", "bt", "btoff",
+        "peri", "power", "low", "net", "vpn", "print", "clip", "clipimg",
+        "keys", "desk", "route", "focus", "cmd", "cmdfail", "task", "taskfail",
+        "shot", "fail", "done", "gta", "rain", "snow", "stack", "call"
+    ]
+
+    Timer {
+        id: demoLife
+        interval: 5200
+        onTriggered: root.endDemo()
+    }
+
+    function endDemo() {
+        root.demo = ({});
+        root.demoKind = "";
+        root.demoWide = false;
+    }
+
+    property int tourAt: -1
+
+    Timer {
+        id: tour
+        interval: 4400
+        repeat: true
+        onTriggered: {
+            root.tourAt++;
+            if (root.tourAt >= root.demoKinds.length) {
+                tour.stop();
+                root.tourAt = -1;
+                root.endDemo();
+                return;
+            }
+            root.showDemo(root.demoKinds[root.tourAt]);
+        }
+    }
+
+    function runDemo(kind) {
+        switch (kind) {
+        case "list":
+            return root.demoKinds.join(" ") + "  |  all stop";
+        case "all":
+            root.tourAt = -1;
+            tour.restart();
+            tour.triggered();
+            return "tour: " + root.demoKinds.length + " kinds, "
+                 + Math.round(tour.interval / 1000) + " s each";
+        case "stop":
+            tour.stop();
+            root.tourAt = -1;
+            demoLife.stop();
+            root.endDemo();
+            root.dismiss();
+            root.endCall();
+            return "stopped";
+        }
+        if (root.demoKinds.indexOf(kind) < 0)
+            return "unknown: " + kind + " (try: demo list)";
+        root.showDemo(kind);
+        return "ok";
+    }
+
+    function showDemo(kind) {
+        root.endDemo();
+        root.dismiss();
+        let card = true;
+        let held = kind;
+        switch (kind) {
+        case "media":
+            root.demo = { media: { title: "Нічний експрес", artist: "Остров · демо",
+                                   art: "", progress: 0.36, length: 214 } };
+            break;
+        case "osd":
+            Feedback.pulse++;
+            held = "";
+            break;
+        case "notif":
+            root.demoAfterComet = IslandConfig.s("comet");
+            root.arrive({ app: "Telegram", summary: "Остров", image: "",
+                          body: "Так выглядит уведомление: заголовок, текст в две строки и цвет приложения.",
+                          icon: "org.telegram.desktop", live: null });
+            if (root.demoAfterComet) {
+                held = "";
+                card = false;
+            }
+            break;
+        case "stack":
+            root.pushNotif({ app: "Почта", summary: "GitHub", image: "", icon: "",
+                             body: "Review requested on #5708", live: null });
+            root.pushNotif({ app: "discord", summary: "#general · Лёша", image: "", icon: "discord",
+                             body: "Кто сегодня на рейд в девять?", live: null });
+            root.pushNotif({ app: "Telegram", summary: "Саша", image: "", icon: "org.telegram.desktop",
+                             body: "Мы уже на месте, ты где?", live: null });
+            root.flash("notif", "󰂚", root.notifSummary, -1, true);
+            held = "notif";
+            break;
+        case "call":
+            root.startCall({ name: "Мама", app: "Telegram", image: "",
+                             icon: "org.telegram.desktop", live: null });
+            held = "";
+            card = false;
+            break;
+        case "timer":
+            root.demo = { timer: { label: "Чай", left: 173, progress: 0.58 } };
+            break;
+        case "alarm":
+        case "gta":
+            break;
+        case "record":
+            root.demo = { record: { clock: "01:24" } };
+            break;
+        case "bt":
+            root.demo = { bt: { name: "Sony Pulse Elite", battery: 0.82, on: true } };
+            root.btOn = true;
+            root.flash("bt", "󰋋", "Sony Pulse Elite", -1, true);
+            break;
+        case "btoff":
+            root.demo = { bt: { name: "Sony Pulse Elite", battery: -1, on: false } };
+            root.btOn = false;
+            root.flash("bt", "󰂲", I18n.t("isle.bt.gone"), -1, true);
+            held = "bt";
+            break;
+        case "power":
+            root.demo = { power: { pct: 64, charging: true } };
+            root.flash("power", "󰂄", "64%", 0.64, true);
+            root.poured(0.64);
+            break;
+        case "rain":
+        case "snow":
+            root.sky(kind, Date.now() + (kind === "rain" ? 40 : 130) * 60000,
+                     kind === "rain" ? 72 : 64, true);
+            held = "weather";
+            break;
+        case "low":
+            root.demo = { power: { pct: 9, charging: false } };
+            root.flash("power", "󰂃", "9%", 0.09, true);
+            held = "power";
+            break;
+        case "peri":
+            root.demo = { peri: { pct: 12, model: "MX Master 3S" } };
+            root.flash("peri", "󰍽", "MX Master 3S  12%", 0.12, true);
+            break;
+        case "net":
+            root.flash("net", "󰤨", Network.ssid !== "" ? Network.ssid : "Home", -1, true);
+            break;
+        case "vpn":
+            root.flash("vpn", "󰦝", "wg0", -1, true);
+            break;
+        case "print":
+            root.demo = { print: { queue: 2, printer: "Canon LBP6000" } };
+            break;
+        case "clip":
+            root.clipImage = "";
+            root.flash("clip", "󰅌", "git push origin main", -1, true);
+            card = false;
+            break;
+        case "clipimg":
+            root.clipImage = "file://" + Quickshell.shellDir + "/assets/grain.png";
+            root.flash("clip", "󰋩", I18n.t("isle.clip.image"), -1, true);
+            held = "clip";
+            break;
+        case "keys":
+            root.flash("keys", "󰌌", Keyboard.code.toUpperCase(), -1, true);
+            card = false;
+            break;
+        case "desk": {
+            const w = Hyprland.focusedWorkspace;
+            root.deskDir = 1;
+            root.deskMoved(1);
+            root.flash("desk", "󰧨", w ? String(w.id) : "1", -1, true);
+            card = false;
+            break;
+        }
+        case "route":
+            root.flash("route", "󰋋", "Sony Pulse Elite", -1, true);
+            card = false;
+            break;
+        case "focus":
+            root.flash("focus", "󰂛", I18n.t("isle.focus.on"), -1, true);
+            card = false;
+            break;
+        case "cmd":
+            root.cmd = { ok: true, code: 0, secs: 252, line: "cargo build --release",
+                         win: "", big: true };
+            root.flash("cmd", "󰄬", "cargo build --release · 4:12", -1, true);
+            break;
+        case "cmdfail":
+            root.cmd = { ok: false, code: 2, secs: 37, line: "make -j8 install",
+                         win: "", big: true };
+            root.flash("cmd", "󰅙", "make -j8 install · 2", -1, true);
+            root.shook();
+            held = "cmd";
+            break;
+        case "task":
+        case "taskfail": {
+            const id = "demo";
+            root.taskBegin(id, "", kind === "task" ? "cargo build" : "git push origin main");
+            root.taskShown = true;
+            root.taskLong = true;
+            taskReveal.stop();
+            taskLongWait.stop();
+            demoTaskEnd.code = kind === "task" ? 0 : 1;
+            demoTaskEnd.restart();
+            card = false;
+            held = "";
+            break;
+        }
+        case "shot":
+            root.shotPath = Quickshell.shellDir + "/assets/grain.png";
+            root.shotAt = Date.now();
+            root.flash("shot", "󰹑", "2026-10-07_12-00-00.png", -1, true);
+            root.snapped();
+            break;
+        case "fail":
+            root.fail("󰅙", "polkit · wrong password");
+            card = false;
+            break;
+        case "done":
+            root.done("󰄬", "yay -Syu · 4:12");
+            card = false;
+            break;
+        }
+        root.demoKind = held;
+        root.demoWide = card && held !== "";
+        demoLife.restart();
+    }
+
+    Timer {
+        id: demoTaskEnd
+        property int code: 0
+        interval: 4800
+        onTriggered: root.taskEnd("demo", demoTaskEnd.code, 3)
+    }
+
     Variants {
         model: Quickshell.screens
 
-        PanelWindow {
-            WlrLayershell.namespace: "qs-island"
-            id: win
-            required property var modelData
-            screen: modelData
-
-            readonly property bool mine:
-                IslandConfig.s("where") === "all"
-                || (Focus.screen && Focus.screen.name === modelData.name)
-
-            readonly property bool blocked: {
-                if (!IslandConfig.s("hideFull"))
-                    return false;
-                const list = ToplevelManager.toplevels
-                    ? ToplevelManager.toplevels.values : [];
-                for (const t of list) {
-                    if (t && t.fullscreen)
-                        return true;
-                }
-                return false;
-            }
-
-            readonly property bool wanted:
-                root.kind !== "" || root.miniMedia || root.leftKind !== ""
-
-            visible: IslandConfig.s("enabled")
-                     && ((win.mine && !win.blocked && win.wanted)
-                         || birth.value > 0.01)
-
-            readonly property bool inBar: IslandConfig.s("inBar")
-            readonly property bool atTop:
-                win.inBar ? Prefs.barAtTop : IslandConfig.s("edge") === "top"
-
-            anchors {
-                top: win.atTop
-                bottom: !win.atTop
-                left: true
-                right: true
-            }
-
-            implicitHeight: 320
-
-            exclusiveZone: -1
-            color: "transparent"
-            mask: Region { item: stage }
-
-            property bool pointerIn: false
-            property bool hovering: false
-
-            onPointerInChanged: {
-                if (win.pointerIn) {
-                    hoverDrop.stop();
-                    hoverPick.restart();
-                } else {
-                    hoverPick.stop();
-                    hoverDrop.restart();
-                }
-            }
-
-            Timer {
-                id: hoverPick
-                interval: 150
-                onTriggered: win.hovering = true
-            }
-
-            Timer {
-                id: hoverDrop
-                interval: 100
-                onTriggered: win.hovering = false
-            }
-
-            property bool forced: false
-
-            Timer {
-                id: force
-                interval: IslandConfig.s("autoWideMs")
-                onTriggered: win.forced = false
-            }
-
-            readonly property bool bigEvent:
-                root.kind === "notif" || root.kind === "alarm"
-                || root.kind === "bt" || root.kind === "peri"
-                || root.kind === "power"
-                || root.kind === "net" || root.kind === "vpn"
-
-            Connections {
-                target: root
-                function onKindChanged() {
-                    if (root.kind === "")
-                        return;
-                    win.bump();
-                    if (!IslandConfig.s("autoWide") || !win.bigEvent)
-                        return;
-                    win.forced = true;
-                    force.restart();
-                    if (IslandConfig.s("sfx"))
-                        Sfx.tick();
-                }
-            }
-
-            readonly property string wideKind: {
-                if (win.bigEvent)
-                    return root.kind;
-                if (root.kind === "timer" || root.kind === "record"
-                    || root.kind === "osd"
-                    || root.kind === "net" || root.kind === "vpn"
-                    || root.kind === "print")
-                    return root.kind;
-                if (Media.has)
-                    return "media";
-                return "";
-            }
-
-            readonly property bool wide:
-                win.wideKind !== ""
-                && (root.pinned || win.forced
-                    || (win.hovering && IslandConfig.s("hoverWide")
-                        && !win.hushed))
-
-            property bool hushed: false
-            onHoveringChanged: if (!win.hovering) win.hushed = false
-
-            readonly property color mediaTint:
-                IslandConfig.s("artTint") && artTint.found ? artTint.color
-                                                           : Colors.accent
-
-            readonly property color bodyColor:
-                IslandConfig.s("black") ? Qt.rgba(0, 0, 0, 1) : Colors.bg
-
-            readonly property color tint: {
-                if (!IslandConfig.s("tintEdge"))
-                    return Colors.outline;
-                if (win.wide && win.wideKind === "media")
-                    return win.mediaTint;
-                switch (root.kind) {
-                case "alarm":  return Colors.bad;
-                case "record": return Colors.bad;
-                case "notif":  return root.notifTint;
-                case "osd":    return Feedback.channel === "source"
-                                      ? Colors.accentAlt : Colors.accent;
-                case "timer":  return Colors.accentAlt;
-                case "desk":   return Colors.accentAlt;
-                case "peri":   return Peripherals.critical ? Colors.bad
-                                                           : Colors.warn;
-                case "power":  return root.charging ? Colors.good
-                                    : (root.batteryPct <= 15 ? Colors.bad
-                                                             : Colors.accent);
-                case "bt":     return root.btOn ? Colors.good : Colors.fgDim;
-                case "vpn":    return Vpn.up ? Colors.good : Colors.fgDim;
-                case "net":    return Network.connected ? Colors.accentAlt
-                                                        : Colors.fgDim;
-                case "print":  return Colors.accentAlt;
-                case "focus":  return Dnd.active ? Qt.rgba(0.37, 0.36, 0.90, 1)
-                                                 : Colors.fgDim;
-                case "route":  return Colors.accent;
-                case "media":  return win.mediaTint;
-                default:       return root.miniMedia ? win.mediaTint
-                                                     : Colors.accent;
-                }
-            }
-
-            MorphSpring {
-                id: morph
-                target: win.wide ? 1 : 0
-            }
-
-            MorphSpring {
-                id: pillWidth
-                springBack: true
-                response: pillWidth.target > pillWidth.value
-                    ? 0.30 : Motion.isleWidthResponse
-                damping: Motion.isleWidthDamping
-                target: Math.max(IslandConfig.s("pillMin"), pill.implicitWidth + 26)
-                epsilon: 0.25
-                Component.onCompleted: pillWidth.land()
-            }
-
-            MorphSpring {
-                id: birth
-                target: win.mine && !win.blocked && win.wanted ? 1 : 0
-            }
-
-            MorphSpring {
-                id: wideTall
-                springBack: true
-                response: Motion.isleWidthResponse
-                damping: 0.78
-                epsilon: 0.25
-                target: win.wideKind === "media" ? IslandConfig.s("mediaHeight")
-                                                 : IslandConfig.s("wideHeight")
-                Component.onCompleted: wideTall.land()
-            }
-
-            property real beat: 0
-
-            Connections {
-                target: Cava
-                enabled: IslandConfig.s("glow") && root.miniMedia && win.visible
-                function onSmoothChanged() {
-                    const l = Cava.smooth;
-                    win.beat = Math.min(1, ((l[0] || 0) + (l[1] || 0)
-                                            + (l[2] || 0)) / 2.4);
-                }
-            }
-
-            Connections {
-                target: root
-                function onMiniMediaChanged() {
-                    if (!root.miniMedia)
-                        win.beat = 0;
-                }
-            }
-
-            MorphSpring {
-                id: dotLife
-                target: stage.minimalOn ? 1 : 0
-            }
-
-            MorphSpring {
-                id: slotLife
-                target: stage.leftOn ? 1 : 0
-            }
-
-            readonly property real rimValue: {
-                if (!IslandConfig.s("rim"))
-                    return -1;
-                if (win.wide && win.wideKind === "media")
-                    return Media.hasPosition ? Media.progress : -1;
-                switch (root.kind) {
-                case "peri":
-                case "power":
-                    return root.flashFraction;
-                case "timer":
-                    return Timers.soonest ? Timers.progress(Timers.soonest) : -1;
-                case "media":
-                    return Media.hasPosition ? Media.progress : -1;
-                }
-                return -1;
-            }
-
-            readonly property bool rimBusy:
-                IslandConfig.s("rim") && !IslandConfig.s("leftSlot")
-                && IslandConfig.on("print") && Printing.jobs.length > 0
-
-            MorphSpring {
-                id: hoverLift
-                springBack: true
-                response: Motion.isleHoverResponse
-                damping: Motion.isleHoverDamping
-                target: win.hovering ? 1 : 0
-            }
-
-            MorphSpring {
-                id: peek
-                springBack: true
-                response: Motion.islePeekResponse
-                damping: Motion.islePeekDamping
-                target: 0
-            }
-
-            Timer {
-                id: peekHold
-                interval: Motion.islePeekHoldMs
-                onTriggered: peek.target = 0
-            }
-
-            function bump() {
-                peek.target = 1;
-                peekHold.restart();
-            }
-
-            Connections {
-                target: Emergence
-                function onLaunched() { if (win.mine) win.bump(); }
-            }
-
-            property bool pressed: false
-
-            MorphSpring {
-                id: press
-                springBack: true
-                response: Motion.isleTapResponse
-                damping: Motion.isleTapDamping
-                target: win.pressed ? 1 : 0
-            }
-
-            readonly property bool throbbing:
-                root.kind === "alarm"
-                || (root.kind === "record" && !win.wide)
-
-            property real throb: 0
-
-            SequentialAnimation {
-                running: win.throbbing && win.visible
-                loops: Animation.Infinite
-                alwaysRunToEnd: true
-                onStopped: win.throb = 0
-
-                NumberAnimation {
-                    target: win; property: "throb"
-                    to: 1; duration: Motion.isleThrobMs * 0.42
-                    easing.type: Easing.OutCubic
-                }
-                NumberAnimation {
-                    target: win; property: "throb"
-                    to: 0; duration: Motion.isleThrobMs * 0.58
-                    easing.type: Easing.InOutSine
-                }
-            }
-
-            Item {
-                id: stage
-
-                readonly property int pillH: IslandConfig.s("pillHeight")
-                readonly property int dotSize: stage.pillH
-                readonly property int gapPx: IslandConfig.s("minimalGap")
-
-                readonly property bool minimalOn:
-                    IslandConfig.s("minimal") && root.miniMedia
-                    && root.kind !== "" && root.kind !== "clock"
-                    && root.kind !== "media"
-
-                readonly property bool leftOn:
-                    IslandConfig.s("leftSlot") && root.leftKind !== ""
-
-                readonly property real detach: dotLife.value * (1 - morph.value)
-                readonly property real tail:
-                    stage.detach * (stage.gapPx + stage.dotSize)
-
-                readonly property real headDetach:
-                    slotLife.value * (1 - morph.value)
-                readonly property real head:
-                    stage.headDetach * (stage.gapPx + stage.dotSize)
-
-                readonly property real dotShow: stage.detach
-
-                readonly property int gap: win.inBar
-                    ? Math.max(0, Math.round(
-                        (BarConfig.s("barHeight", win.modelData.name)
-                         - stage.pillH) / 2))
-                    : IslandConfig.s("offsetY")
-
-                width: stage.head + surface.width + stage.tail
-                height: surface.height
-
-                anchors.top: win.atTop ? parent.top : undefined
-                anchors.bottom: win.atTop ? undefined : parent.bottom
-                anchors.topMargin: win.atTop ? stage.gap : 0
-                anchors.bottomMargin: win.atTop ? 0 : stage.gap
-
-                anchors.horizontalCenter:
-                    IslandConfig.s("align") === "center" ? parent.horizontalCenter
-                                                         : undefined
-                anchors.left:
-                    IslandConfig.s("align") === "left" ? parent.left : undefined
-                anchors.right:
-                    IslandConfig.s("align") === "right" ? parent.right : undefined
-
-                anchors.horizontalCenterOffset:
-                    IslandConfig.s("offsetX") + (stage.head - stage.tail) / 2
-                anchors.leftMargin: 16 + IslandConfig.s("offsetX") - stage.head
-                anchors.rightMargin: 16 - IslandConfig.s("offsetX") + stage.tail
-
-                opacity: birth.value
-                scale: (0.90 + 0.10 * birth.value)
-                       * (1 + (Motion.isleHoverScale - 1) * hoverLift.value)
-                       * (1 + (Motion.islePeekScale - 1) * peek.value)
-                       * (1 + (Motion.isleThrobScale - 1) * win.throb)
-                       * (1 - (1 - Motion.isleTapScale) * press.value)
-
-                readonly property real rush:
-                    morph.velocity * 0.16
-                    + pillWidth.velocity / 420
-                    + birth.velocity * 0.12
-
-                readonly property real jelly: IslandConfig.s("jelly")
-                    ? Math.max(-Motion.isleJellyCap,
-                               Math.min(Motion.isleJellyCap,
-                                        stage.rush * Motion.isleJelly))
-                    : 0
-
-                transform: Scale {
-                    origin.x: stage.width / 2
-                    origin.y: stage.height / 2
-                    xScale: 1 + stage.jelly
-                    yScale: 1 - stage.jelly * Motion.isleJellyCross
-                }
-
-                Connections {
-                    target: surface
-                    function onWidthChanged() { goo.requestSync(); }
-                    function onHeightChanged() { goo.requestSync(); }
-                }
-
-                Connections {
-                    target: dot
-                    function onXChanged() { goo.requestSync(); }
-                    function onScaleChanged() { goo.requestSync(); }
-                    function onVisibleChanged() { goo.requestSync(); }
-                }
-
-                Connections {
-                    target: task
-                    function onXChanged() { goo.requestSync(); }
-                    function onScaleChanged() { goo.requestSync(); }
-                    function onVisibleChanged() { goo.requestSync(); }
-                }
-
-                Connections {
-                    target: win
-                    function onVisibleChanged() {
-                        if (win.visible)
-                            goo.requestSync();
-                    }
-                }
-
-                Component.onCompleted: goo.requestSync()
-
-                ArtTint {
-                    id: artTint
-                    x: stage.head + 4
-                    y: 4
-                    fallback: Colors.accent
-                }
-
-                RectangularShadow {
-                    id: aura
-
-                    readonly property real power:
-                        IslandConfig.s("glowAlpha") / 100
-                        * (0.55 + 0.45 * morph.value + 0.55 * win.beat
-                           + 0.6 * peek.value + 0.5 * win.throb)
-
-                    x: surface.x
-                    y: surface.y
-                    width: surface.width
-                    height: surface.height
-                    radius: surface.corner
-                    blur: 14 + 16 * morph.value + 8 * win.beat
-                    spread: -1 + 3 * win.beat
-                    offset.y: 2 + 4 * morph.value
-                    color: Colors.alpha(win.tint, Math.min(0.9, aura.power))
-                    visible: IslandConfig.s("glow") && aura.power > 0.005
-                    opacity: birth.value
-
-                    Behavior on color { ColorAnimation { duration: Motion.slow } }
-                }
-
-                Rectangle {
-                    id: ring
-
-                    property real grow: 0
-
-                    x: surface.x - ring.grow
-                    y: surface.y - ring.grow * 0.72
-                    width: surface.width + ring.grow * 2
-                    height: surface.height + ring.grow * 1.44
-                    radius: Math.min(height / 2, surface.corner + ring.grow)
-                    color: "transparent"
-                    antialiasing: true
-                    border.width: 1.5
-                    border.color: Colors.alpha(win.tint, 0.9)
-                    opacity: 0
-                    visible: opacity > 0.01
-
-                    ParallelAnimation {
-                        id: ringRun
-                        NumberAnimation {
-                            target: ring; property: "grow"
-                            from: 0; to: 16; duration: 720
-                            easing.type: Easing.OutCubic
-                        }
-                        SequentialAnimation {
-                            NumberAnimation {
-                                target: ring; property: "opacity"
-                                from: 0; to: 0.75; duration: 90
-                            }
-                            NumberAnimation {
-                                target: ring; property: "opacity"
-                                to: 0; duration: 630
-                                easing.type: Easing.OutQuad
-                            }
-                        }
-                    }
-
-                    Connections {
-                        target: root
-                        function onFlashKindChanged() {
-                            if (root.flashKind !== "" && IslandConfig.s("ripple"))
-                                ringRun.restart();
-                        }
-                    }
-                }
-
-                Blobs {
-                    id: goo
-                    host: stage
-                    visible: IslandConfig.s("goo") && count > 0
-                    fuse: Math.max(3, Math.min(8, stage.gapPx / 2 - 1))
-                    corner: surface.corner
-                    stroke: IslandConfig.s("borderAlpha") > 0 ? 1 : 0
-                    shadow: IslandConfig.s("shadow")
-                    shadowColor: IslandConfig.s("tintShadow")
-                        ? Colors.alpha(Qt.darker(win.tint, 1.8), 0.40)
-                        : Qt.rgba(0, 0, 0, 0.32)
-                    fillColor: win.bodyColor
-                    fillAlpha: IslandConfig.s("fill") / 100
-                    hoverColor: win.bodyColor
-                    hoverAlpha: IslandConfig.s("fill") / 100
-                    strokeColor: win.tint
-                    strokeAlpha: IslandConfig.s("borderAlpha") / 100
-                }
-
-                Item {
-                    id: surface
-
-                    readonly property real bareW:
-                        Motion.mix(pillWidth.value, IslandConfig.s("wideWidth"),
-                                   morph.value)
-                    readonly property real bareH:
-                        Motion.mix(stage.pillH, wideTall.value, morph.value)
-
-                    width: Math.round(Motion.mix(stage.pillH, surface.bareW,
-                                                 birth.value))
-                    height: Math.round(surface.bareH)
-
-                    readonly property real corner:
-                        Math.min(IslandConfig.s("radius"), surface.height / 2)
-
-                    property bool isBlob: true
-
-                    anchors.left: stage.left
-                    anchors.leftMargin: stage.head
-                    anchors.top: stage.top
-
-                    Rectangle {
-                        id: plate
-                        anchors.fill: parent
-                        visible: !IslandConfig.s("goo") || goo.count <= 0
-                        radius: surface.corner
-                        antialiasing: true
-                        color: Colors.alpha(win.bodyColor, IslandConfig.s("fill") / 100)
-                        border.width: IslandConfig.s("borderAlpha") > 0 ? 1 : 0
-                        border.color: Colors.alpha(win.tint,
-                                                   IslandConfig.s("borderAlpha") / 100)
-
-                        Behavior on color { ColorAnimation { duration: Motion.base } }
-                        Behavior on border.color { ColorAnimation { duration: Motion.base } }
-
-                        layer.enabled: IslandConfig.s("shadow")
-                        layer.effect: MultiEffect {
-                            shadowEnabled: true
-                            shadowColor: IslandConfig.s("tintShadow")
-                                ? Colors.alpha(Qt.darker(win.tint, 1.8), 0.46)
-                                : Colors.shadow(0.38)
-                            shadowBlur: 0.62
-                            shadowVerticalOffset: 4
-
-                            Behavior on shadowColor {
-                                ColorAnimation { duration: Motion.slow }
-                            }
-                        }
-                    }
-
-                    Sheen {
-                        anchors.fill: parent
-                        visible: IslandConfig.s("sheen")
-                        radius: surface.corner
-                        border: false
-                        grain: false
-                        strength: 0.6
-                    }
-
-                    IslandRim {
-                        anchors.fill: parent
-                        radius: surface.corner
-                        thickness: IslandConfig.s("rimWidth")
-                        tint: win.tint
-                        value: win.rimValue
-                        busy: win.rimBusy
-                    }
-
-                    HoverHandler {
-                        onHoveredChanged: win.pointerIn = hovered
-                    }
-
-                    WheelHandler {
-                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                        onWheel: (ev) => {
-                            const dy = ev.angleDelta.y;
-                            if (dy > 0 && win.wide) {
-                                force.stop();
-                                win.forced = false;
-                                win.hushed = true;
-                                win.bump();
-                            } else if (dy < 0 && !win.wide && win.wideKind !== "") {
-                                win.hushed = false;
-                                win.forced = true;
-                                force.restart();
-                            }
-                        }
-                    }
-
-                    TapHandler {
-                        enabled: IslandConfig.s("tapWide") && win.wideKind !== ""
-                        onPressedChanged: win.pressed = pressed
-                        onTapped: {
-                            if (win.forced) {
-                                force.stop();
-                                win.forced = false;
-                            } else {
-                                win.forced = true;
-                                force.restart();
-                            }
-                            win.bump();
-                        }
-                    }
-
-                    ClippingRectangle {
-                        anchors.fill: parent
-                        radius: surface.corner
-                        color: "transparent"
-
-                        Rectangle {
-                            id: gloss
-
-                            readonly property real span:
-                                Math.max(64, parent.width * 0.34)
-
-                            width: gloss.span
-                            height: parent.height * 2.4
-                            anchors.verticalCenter: parent.verticalCenter
-                            rotation: 16
-                            transformOrigin: Item.Center
-                            opacity: 0
-                            visible: opacity > 0.01
-
-                            gradient: Gradient {
-                                orientation: Gradient.Horizontal
-                                GradientStop { position: 0.0; color: "transparent" }
-                                GradientStop {
-                                    position: 0.5
-                                    color: Colors.alpha(Colors.fg,
-                                                        Motion.isleGlossAlpha)
-                                }
-                                GradientStop { position: 1.0; color: "transparent" }
-                            }
-
-                            SequentialAnimation {
-                                id: shine
-                                ParallelAnimation {
-                                    NumberAnimation {
-                                        target: gloss; property: "x"
-                                        from: -gloss.span
-                                        to: surface.width + gloss.span
-                                        duration: Motion.isleGlossMs
-                                        easing.type: Easing.Bezier
-                                        easing.bezierCurve: Motion.isleContent
-                                    }
-                                    SequentialAnimation {
-                                        NumberAnimation {
-                                            target: gloss; property: "opacity"
-                                            to: 1
-                                            duration: Motion.isleGlossMs * 0.25
-                                        }
-                                        NumberAnimation {
-                                            target: gloss; property: "opacity"
-                                            to: 0
-                                            duration: Motion.isleGlossMs * 0.75
-                                        }
-                                    }
-                                }
-                            }
-
-                            Connections {
-                                target: win
-                                function onWideChanged() {
-                                    if (win.wide && IslandConfig.s("sheen"))
-                                        shine.restart();
-                                }
-                            }
-                        }
-
-                        IslandPill {
-                            id: pill
-                            anchors.centerIn: parent
-                            height: stage.pillH
-                            maxWidth: surface.width
-                            notifApp: root.notifApp
-
-                            tint: win.tint
-                            mediaTint: win.mediaTint
-                            beat: win.beat
-                            flashKind: root.flashKind
-                            flashGlyph: root.flashGlyph
-                            flashText: root.flashText
-                            flashFraction: root.flashFraction
-                            kind: root.kind
-                            stacked: root.stacked
-                            miniMedia: root.miniMedia && !stage.minimalOn
-
-                            opacity: win.wide ? 0 : 1
-                            scale: win.wide ? 0.92 : 1
-                            visible: opacity > 0.01
-
-                            transform: Translate {
-                                y: win.wide ? -7 : 0
-                                Behavior on y {
-                                    NumberAnimation {
-                                        duration: win.wide ? Motion.isleHideMs
-                                                           : Motion.isleRevealMs
-                                        easing.type: Easing.Bezier
-                                        easing.bezierCurve: Motion.isleContent
-                                    }
-                                }
-                            }
-
-                            Behavior on opacity {
-                                SequentialAnimation {
-                                    PauseAnimation {
-                                        duration: win.wide ? 0 : Motion.isleRevealDelay
-                                    }
-                                    NumberAnimation {
-                                        duration: win.wide ? Motion.isleHideMs
-                                                           : Motion.isleRevealMs
-                                        easing.type: Easing.Bezier
-                                        easing.bezierCurve: Motion.isleContent
-                                    }
-                                }
-                            }
-                            Behavior on scale {
-                                SequentialAnimation {
-                                    PauseAnimation {
-                                        duration: win.wide ? 0 : Motion.isleRevealDelay
-                                    }
-                                    NumberAnimation {
-                                        duration: win.wide ? Motion.isleHideMs
-                                                           : Motion.isleRevealMs
-                                        easing.type: Easing.Bezier
-                                        easing.bezierCurve: Motion.isleContent
-                                    }
-                                }
-                            }
-                        }
-
-                        IslandBody {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            kind: win.wideKind
-                            tint: win.tint
-                            wide: win.wide
-                            notifSummary: root.notifSummary
-                            notifBody: root.notifBody
-                            notifApp: root.notifApp
-                            demo: root.demo
-                        }
-
-                    }
-                }
-
-                Item {
-                    id: dot
-
-                    property bool isBlob: true
-
-                    width: stage.dotSize
-                    height: stage.dotSize
-                    x: stage.head + surface.width - stage.dotSize
-                       + stage.detach * (stage.gapPx + stage.dotSize)
-                    anchors.verticalCenter: surface.verticalCenter
-
-                    readonly property real swallow: 1 - morph.value
-
-                    visible: stage.dotShow > 0.015
-                    scale: (0.4 + 0.6 * dotLife.value) * dot.swallow
-                    opacity: Math.min(1, dotLife.value * 1.6) * dot.swallow
-
-                    Rectangle {
-                        anchors.fill: parent
-                        visible: !IslandConfig.s("goo") || goo.count <= 0
-                        radius: height / 2
-                        antialiasing: true
-                        color: Colors.alpha(win.bodyColor, IslandConfig.s("fill") / 100)
-                        border.width: IslandConfig.s("borderAlpha") > 0 ? 1 : 0
-                        border.color: Colors.alpha(win.tint,
-                                                   IslandConfig.s("borderAlpha") / 100)
-                    }
-
-                    IslandOrb {
-                        anchors.centerIn: parent
-                        size: Math.max(12, stage.dotSize - 6)
-                        tint: win.mediaTint
-                        live: dot.visible
-                    }
-                }
-
-                Item {
-                    id: task
-
-                    property bool isBlob: true
-
-                    width: stage.dotSize
-                    height: stage.dotSize
-                    x: stage.head - stage.headDetach * (stage.gapPx + stage.dotSize)
-                    anchors.verticalCenter: surface.verticalCenter
-
-                    readonly property real swallow: 1 - morph.value
-
-                    visible: stage.headDetach > 0.015
-                    scale: (0.4 + 0.6 * slotLife.value) * task.swallow
-                    opacity: Math.min(1, slotLife.value * 1.6) * task.swallow
-
-                    readonly property color hue:
-                        root.leftKind === "print" ? Colors.accentAlt
-                                                  : Colors.accent
-
-                    Rectangle {
-                        anchors.fill: parent
-                        visible: !IslandConfig.s("goo") || goo.count <= 0
-                        radius: height / 2
-                        antialiasing: true
-                        color: Colors.alpha(win.bodyColor, IslandConfig.s("fill") / 100)
-                        border.width: IslandConfig.s("borderAlpha") > 0 ? 1 : 0
-                        border.color: Colors.alpha(win.tint,
-                                                   IslandConfig.s("borderAlpha") / 100)
-                    }
-
-                    IslandSlot {
-                        anchors.centerIn: parent
-                        size: Math.max(14, stage.dotSize - 4)
-                        kind: root.leftKind
-                        tint: task.hue
-                        live: task.visible
-                    }
-                }
-
-                Item {
-                    id: privacy
-
-                    readonly property bool cam: Privacy.camera
-                    readonly property bool on:
-                        IslandConfig.s("privacy") && (Privacy.mic || Privacy.camera)
-
-                    width: 7
-                    height: 7
-                    x: stage.width + 7
-                    anchors.verticalCenter: surface.verticalCenter
-                    scale: privacy.on ? 1 : 0
-                    visible: scale > 0.01
-                    Behavior on scale { SpringAnimation { spring: 4; damping: 0.3; mass: 0.7; epsilon: 0.005 } }
-
-                    readonly property color hue: privacy.cam ? Qt.rgba(0.19, 0.82, 0.35, 1)
-                                                             : Qt.rgba(1.0, 0.62, 0.04, 1)
-
-                    RectangularShadow {
-                        anchors.fill: parent
-                        radius: width / 2
-                        blur: 8
-                        color: Colors.alpha(privacy.hue, 0.8)
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: width / 2
-                        antialiasing: true
-                        color: privacy.hue
-                        Behavior on color { ColorAnimation { duration: Motion.base } }
-                    }
-                }
-            }
+        IslandWindow {
+            hub: root
         }
     }
 }

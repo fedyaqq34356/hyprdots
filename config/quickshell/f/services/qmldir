@@ -37,3 +37,4 @@ singleton Vpn Vpn.qml
 singleton Weather Weather.qml
 singleton Wellbeing Wellbeing.qml
 singleton Privacy Privacy.qml
+singleton IslandBus IslandBus.qml
