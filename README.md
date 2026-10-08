@@ -74,6 +74,66 @@ and the lock screen recolour themselves around it.
 <tr>
 <td colspan="2" align="center"><sub>keyboard layout</sub></td>
 </tr>
+<tr>
+<td colspan="2"><img src="assets/island/island-media-big.gif" alt="Super+A: the island grows into a large player with rings, sparks and a spectrum driven by the music" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub><code>Super</code> + <code>A</code> — the island itself grows into a large player, everything around the cover moving with the music</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-call.gif" alt="An incoming call with answer and decline"></td>
+<td><img src="assets/island/island-weather.gif" alt="Rain, then snow, coming soon"></td>
+</tr>
+<tr>
+<td align="center"><sub>a call rings in the island</sub></td>
+<td align="center"><sub>rain or snow on the way, drawn as falling drops</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-cmd.gif" alt="A long terminal command finishing, then failing"></td>
+<td><img src="assets/island/island-task.gif" alt="A running task with its progress, then a failure"></td>
+</tr>
+<tr>
+<td align="center"><sub>a long command finishes while you look elsewhere</sub></td>
+<td align="center"><sub>a task with progress, then a failure</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-done.gif" alt="A success mark, then a failure mark"></td>
+<td><img src="assets/island/island-shot.gif" alt="A screenshot thumbnail sliding out of the island"></td>
+</tr>
+<tr>
+<td align="center"><sub>done and failed</sub></td>
+<td align="center"><sub>a screenshot to open, keep or throw away</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-clip.gif" alt="Copied text, then a copied image"></td>
+<td><img src="assets/island/island-record.gif" alt="Screen recording with a stop button"></td>
+</tr>
+<tr>
+<td align="center"><sub>copied text, then a copied image</sub></td>
+<td align="center"><sub>screen recording</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-alarm.gif" alt="An alarm ringing with snooze and stop"></td>
+<td><img src="assets/island/island-stack.gif" alt="Several messages stacked in the island"></td>
+</tr>
+<tr>
+<td align="center"><sub>an alarm</sub></td>
+<td align="center"><sub>several messages at once</sub></td>
+</tr>
+<tr>
+<td><img src="assets/island/island-print.gif" alt="A print job in the queue"></td>
+<td><img src="assets/island/island-net.gif" alt="Wi-Fi connecting, then a VPN dropping"></td>
+</tr>
+<tr>
+<td align="center"><sub>a print job</sub></td>
+<td align="center"><sub>Wi-Fi and VPN</sub></td>
+</tr>
+<tr>
+<td colspan="2"><img src="assets/island/island-focus.gif" alt="Do not disturb switching on" width="100%"></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><sub>do not disturb</sub></td>
+</tr>
 </table>
 
 <br>
