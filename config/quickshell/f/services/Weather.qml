@@ -53,6 +53,48 @@ Singleton {
     property int code: 113
     property bool day: true
     property var forecast: []
+
+    property string soonKind: ""
+    property real soonAt: 0
+    property int soonChance: 0
+
+    function isSnow(c) {
+        return c === 179 || c === 227 || c === 230 || (c >= 320 && c <= 338)
+            || c === 350 || c === 368 || c === 371 || c === 374 || c === 377
+            || c === 392 || c === 395;
+    }
+    function isRain(c) {
+        return !root.isSnow(c) && c >= 176 && c <= 389 && c !== 248 && c !== 260;
+    }
+
+    function findSoon(days) {
+        const now = Date.now();
+        let best = null;
+        for (const d of days || []) {
+            for (const h of d.hourly || []) {
+                const parts = String(d.date).split("-").map(Number);
+                const at = new Date(parts[0], parts[1] - 1, parts[2],
+                                    Math.floor(Number(h.time) / 100), 0).getTime();
+                if (at + 3 * 3600000 <= now || at > now + 3 * 3600000)
+                    continue;
+                const c = Number(h.weatherCode);
+                const rain = Number(h.chanceofrain) || 0;
+                const snow = Number(h.chanceofsnow) || 0;
+                let kind = "";
+                if (snow >= 50 || root.isSnow(c))
+                    kind = "snow";
+                else if (rain >= 50 || root.isRain(c))
+                    kind = "rain";
+                if (kind !== "" && (!best || at < best.at))
+                    best = { kind: kind, at: Math.max(at, now),
+                             chance: Math.max(rain, snow) };
+            }
+        }
+        const falling = root.isRain(root.code) || root.isSnow(root.code);
+        root.soonKind = best && !falling ? best.kind : "";
+        root.soonAt = best ? best.at : 0;
+        root.soonChance = best ? best.chance : 0;
+    }
     property bool ready: false
     property string error: ""
 
@@ -140,6 +182,7 @@ Singleton {
                         });
                     }
                     root.forecast = days;
+                    root.findSoon(j.weather.slice(0, 2));
 
                     root.error = "";
                     root.ready = true;

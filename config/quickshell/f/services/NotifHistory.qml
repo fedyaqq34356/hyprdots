@@ -55,6 +55,8 @@ Singleton {
 
     signal added(var entry)
 
+    property var live: null
+
     function add(n) {
         const entry = {
             id: String(n.id),

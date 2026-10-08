@@ -13,6 +13,8 @@ Polkit Polkit.qml
 Quick Quick.qml
 RecordingBadge RecordingBadge.qml
 Island Island.qml
+IslandWindow IslandWindow.qml
+IslandSources IslandSources.qml
 IslandBody IslandBody.qml
 IslandPill IslandPill.qml
 IslandOrb IslandOrb.qml
@@ -27,3 +29,6 @@ IslandBattery IslandBattery.qml
 IslandCheck IslandCheck.qml
 IslandWifi IslandWifi.qml
 IslandMeter IslandMeter.qml
+IslandSearch IslandSearch.qml
+LockFace LockFace.qml
+IslandSand IslandSand.qml

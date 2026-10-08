@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Widgets
 import QtQuick
 import "root:/design"
 import "root:/services"
@@ -8,23 +9,15 @@ import "root:/services"
 Scope {
     id: root
 
+    property bool armed: false
     property bool showing: false
-
-    readonly property int hold: 1150
-
-    readonly property string name: Quickshell.env("USER")
+    property bool peek: false
 
     function up() {
         if (root.showing)
             return;
         root.showing = true;
-        life.restart();
-    }
-
-    Timer {
-        id: life
-        interval: root.hold
-        onTriggered: root.showing = false
+        absorb.restart();
     }
 
     IpcHandler {
@@ -33,6 +26,31 @@ Scope {
         function up(): string {
             root.up();
             return "ok";
+        }
+
+        function peek(on: bool): string {
+            root.peek = on;
+            return on ? "shown" : "hidden";
+        }
+    }
+
+    property real k: 0
+
+    SequentialAnimation {
+        id: absorb
+        ScriptAction { script: root.k = 0 }
+        PauseAnimation { duration: 60 }
+        NumberAnimation {
+            target: root; property: "k"
+            from: 0; to: 1; duration: 760
+            easing.type: Easing.InOutCubic
+        }
+        ScriptAction {
+            script: {
+                Emergence.launch();
+                root.showing = false;
+                root.k = 0;
+            }
         }
     }
 
@@ -44,90 +62,49 @@ Scope {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
         screen: Focus.screen
-        visible: root.showing || veilFade.running
+        visible: root.armed || root.showing || root.peek
 
         anchors { top: true; bottom: true; left: true; right: true }
         exclusiveZone: -1
         color: "transparent"
         mask: Region {}
 
-        Rectangle {
-            id: veil
+        readonly property real tw: IslandConfig.s("pillMin")
+        readonly property real th: IslandConfig.s("pillHeight")
+        readonly property real tcx: win.width / 2 + IslandConfig.s("offsetX")
+        readonly property real tcy: IslandConfig.s("inBar")
+            ? BarConfig.s("barHeight", win.screen ? win.screen.name : "") / 2
+            : IslandConfig.s("offsetY") + win.th / 2
 
-            anchors.fill: parent
-            color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.82)
-            opacity: root.showing ? 1 : 0
+        readonly property real e: root.k
+        readonly property real ew: Math.pow(win.e, 0.85)
+        readonly property real eh: Math.pow(win.e, 1.15)
 
-            Behavior on opacity {
-                NumberAnimation {
-                    id: veilFade
-                    duration: root.showing ? Motion.instant : Motion.lazy
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Motion.expo
-                }
-            }
+        ClippingRectangle {
+            id: shell
 
-            Grain {
-                anchors.fill: parent
-                amount: 0.02
-            }
-        }
+            width: Motion.mix(win.width, win.tw, win.ew)
+            height: Motion.mix(win.height, win.th, win.eh)
+            x: Motion.mix(win.width / 2, win.tcx, win.e) - width / 2
+            y: Motion.mix(win.height / 2, win.tcy, win.e) - height / 2
+            radius: Motion.mix(0, win.th / 2, Math.min(1, win.e * 1.6))
+                    + Math.sin(win.e * Math.PI) * 60 * (1 - win.e)
+            color: "black"
+            opacity: win.e < 0.82 ? 1 : Math.max(0, 1 - (win.e - 0.82) / 0.18)
 
-        Column {
-            id: body
-
-            anchors.centerIn: parent
-            spacing: 18
-            opacity: root.showing ? 1 : 0
-
-            transform: Translate {
-                y: root.showing ? 0 : -26
-                Behavior on y {
-                    NumberAnimation {
-                        duration: Motion.lazy
-                        easing.type: Easing.Bezier
-                        easing.bezierCurve: Motion.expo
-                    }
-                }
-            }
-
-            Behavior on opacity {
-                NumberAnimation { duration: Motion.slow }
-            }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: I18n.t("hello.back")
-                color: Colors.fg
-                font.family: Fonts.display
-                font.pixelSize: 52
-                font.weight: Font.Light
-            }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: root.name
-                color: Colors.accent
-                font.family: Fonts.mono
-                font.pixelSize: 15
-                font.letterSpacing: 6
-                opacity: 0.9
+            LockFace {
+                width: win.width
+                height: win.height
+                x: (shell.width - width) / 2
+                y: (shell.height - height) / 2
+                live: root.armed || root.showing || root.peek
+                scale: Math.max(shell.width / win.width, shell.height / win.height)
             }
 
             Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: 220
-                height: 1
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop {
-                        position: 0.5
-                        color: Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                       Colors.outline.b, 0.7)
-                    }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
+                anchors.fill: parent
+                color: "black"
+                opacity: Math.max(0, (win.e - 0.45) / 0.55)
             }
         }
     }

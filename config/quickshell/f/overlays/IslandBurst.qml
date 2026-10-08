@@ -9,6 +9,7 @@ Item {
     property real reach: 38
     property int delay: 140
     property int duration: 760
+    property bool autoplay: true
 
     width: 0
     height: 0
@@ -21,7 +22,7 @@ Item {
         }
     }
 
-    Component.onCompleted: burst.play()
+    Component.onCompleted: if (burst.autoplay) burst.play()
 
     Repeater {
         id: sparks

@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Widgets
 import QtQuick
 import QtQuick.Effects
+import QtQuick.Shapes as Vec
 import "root:/design"
 import "root:/reusables"
 import "root:/services"
@@ -17,16 +18,26 @@ Item {
     property string flashText: ""
     property real flashFraction: -1
     property string notifApp: ""
+    property string notifIconUrl: ""
+    property string clipImage: ""
     property bool miniMedia: false
     property color mediaTint: Colors.accent
     property real beat: 0
     property int stacked: 0
+    property int deskDir: 0
     property real maxWidth: 0
+
+    readonly property Item markItem: mark
+    readonly property Item artItem: miniArt
+    property real markVeil: 1
+    property real artVeil: 1
 
     readonly property bool flashing: pill.flashKind !== ""
     readonly property bool deskFlash: pill.flashKind === "desk"
     readonly property bool osdFlash: pill.flashKind === "osd"
     readonly property bool notifFlash: pill.flashKind === "notif"
+    readonly property bool thumbFlash:
+        (pill.flashKind === "clip" || pill.flashKind === "shot") && pill.clipImage !== ""
 
     readonly property int inner: Math.max(12, pill.height - 8)
 
@@ -86,7 +97,7 @@ Item {
     readonly property real keysW:
         pill.keyCodes.length * langEm.width + (pill.keyCodes.length - 1) * pill.keyGap + 4
 
-    readonly property int meterW: 58
+    readonly property int meterW: Feedback.channel === "source" ? 58 : 0
     readonly property bool hasMeter: pill.osdFlash && pill.flashFraction >= 0
 
     readonly property real capText: 300
@@ -114,6 +125,16 @@ Item {
 
     readonly property real markW: pill.inner
 
+    TextMetrics {
+        id: deskEm
+        font.family: Fonts.mono
+        font.pixelSize: 13
+        font.weight: Font.Bold
+        text: pill.deskFlash ? pill.flashText : ""
+    }
+    readonly property real deskNumW:
+        pill.deskFlash ? Math.min(80, deskEm.width) + 12 : 0
+
     readonly property int split: 22
     readonly property real pctW: pctEm.width * 1.06
 
@@ -130,7 +151,7 @@ Item {
             return 0;
         let w;
         if (pill.deskFlash) {
-            w = pill.desksW + 20;
+            w = pill.desksW + 20 + pill.deskNumW;
         } else {
             w = pill.keysFlash ? 0 : pill.markW + pill.split;
             if (pill.keysFlash)
@@ -191,44 +212,85 @@ Item {
     Item {
         anchors.fill: parent
 
-        Rectangle {
+        Item {
             id: fill
 
             readonly property real frac:
                 Math.max(0, Math.min(1, pill.flashFraction))
+            readonly property bool on: pill.osdFlash && pill.flashFraction >= 0
 
             x: -(pill.maxWidth - pill.width) / 2
-            width: Math.max(0, pill.maxWidth * fill.frac)
+            width: pill.maxWidth
             height: pill.height
             anchors.verticalCenter: parent.verticalCenter
-            radius: 0
 
-            opacity: pill.osdFlash && pill.flashFraction >= 0
-                     && !IslandConfig.s("rim") ? 1 : 0
+            opacity: fill.on ? 1 : 0
             visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
 
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: Colors.alpha(pill.tint, 0.34) }
-                GradientStop { position: 1.0; color: Colors.alpha(pill.tint, 0.15) }
+            MorphSpring {
+                id: front
+                springBack: true
+                response: 0.72
+                damping: 0.9
+                epsilon: 0.2
+                target: fill.frac * fill.width
             }
 
-            Rectangle {
-                anchors.right: parent.right
-                width: 2
-                height: parent.height
-                color: Colors.alpha(pill.tint, 0.62)
-            }
-
-            Behavior on width {
-                NumberAnimation {
-                    duration: Motion.isleContentMs
-                    easing.type: Easing.Bezier
-                    easing.bezierCurve: Motion.isleContent
+            property real slosh: 0
+            FrameAnimation {
+                running: fill.visible
+                onTriggered: {
+                    const want = Math.min(4.5, Math.abs(front.velocity) / 110);
+                    const k = want > fill.slosh ? Math.min(1, frameTime * 5) : Math.min(1, frameTime * 1.6);
+                    fill.slosh += (want - fill.slosh) * k;
                 }
             }
-            Behavior on opacity {
-                NumberAnimation { duration: Motion.isleRevealMs }
+
+            property real phase: 0
+            NumberAnimation on phase {
+                running: fill.visible
+                loops: Animation.Infinite
+                from: 0; to: Math.PI * 2
+                duration: 2800
+            }
+
+            readonly property real amp: 0.9 + fill.slosh
+            readonly property var crest: {
+                const pts = [];
+                const n = 14;
+                const h = fill.height;
+                for (let i = 0; i <= n; i++) {
+                    const y = h * i / n;
+                    pts.push(Qt.point(Math.max(0, front.value
+                        + fill.amp * Math.sin(fill.phase + i / n * Math.PI * 1.7)), y));
+                }
+                return pts;
+            }
+            readonly property var body: [Qt.point(0, 0)].concat(fill.crest).concat([Qt.point(0, fill.height)])
+
+            Vec.Shape {
+                anchors.fill: parent
+                preferredRendererType: Vec.Shape.CurveRenderer
+
+                Vec.ShapePath {
+                    strokeColor: "transparent"
+                    strokeWidth: 0
+                    fillGradient: Vec.LinearGradient {
+                        x1: 0; y1: 0
+                        x2: Math.max(1, front.value); y2: 0
+                        GradientStop { position: 0; color: Colors.alpha(pill.tint, 0.16) }
+                        GradientStop { position: 1; color: Colors.alpha(pill.tint, 0.42) }
+                    }
+                    PathPolyline { path: fill.body }
+                }
+
+                Vec.ShapePath {
+                    strokeColor: Colors.alpha(Qt.lighter(pill.tint, 1.35), 0.9)
+                    strokeWidth: 1.6
+                    fillColor: "transparent"
+                    PathPolyline { path: fill.crest }
+                }
             }
         }
 
@@ -413,6 +475,7 @@ Item {
 
                 Item {
                     id: mark
+                    opacity: pill.markVeil
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     visible: !pill.deskFlash && !pill.keysFlash
@@ -424,10 +487,19 @@ Item {
                         visible: pill.notifFlash
                         radius: Math.round(height * 0.34)
                         antialiasing: true
-                        color: Colors.alpha(pill.tint, 0.22)
+                        color: pillIcon.visible ? "transparent" : Colors.alpha(pill.tint, 0.22)
+
+                        IconImage {
+                            id: pillIcon
+                            anchors.fill: parent
+                            source: pill.notifIconUrl
+                            visible: pill.notifIconUrl !== "" && status === Image.Ready
+                            asynchronous: true
+                        }
 
                         Text {
                             anchors.centerIn: parent
+                            visible: !pillIcon.visible
                             text: NotifHistory.appLetter(pill.notifApp)
                             color: pill.tint
                             font.family: Fonts.mono
@@ -463,9 +535,26 @@ Item {
                         border.color: Colors.alpha(pill.tint, 0.4)
                     }
 
+                    ClippingRectangle {
+                        anchors.fill: parent
+                        visible: pill.thumbFlash
+                        radius: Math.round(height * 0.3)
+                        color: Colors.alpha(pill.tint, 0.22)
+
+                        Image {
+                            anchors.fill: parent
+                            source: pill.thumbFlash ? pill.clipImage : ""
+                            sourceSize.width: 64
+                            sourceSize.height: 64
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            cache: false
+                        }
+                    }
+
                     Text {
                         anchors.centerIn: parent
-                        visible: !pill.notifFlash && !pill.osdFlash
+                        visible: !pill.notifFlash && !pill.osdFlash && !pill.thumbFlash
                         text: pill.flashGlyph
                         color: pill.tint
                         font.family: Fonts.glyph
@@ -479,7 +568,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
                     visible: pill.deskFlash
-                    width: visible ? pill.desksW + 16 : 0
+                    width: visible ? pill.desksW + 16 + pill.deskNumW : 0
                     height: pill.inner
 
                     readonly property real slot: pill.dotW + pill.dotGap
@@ -546,6 +635,44 @@ Item {
                         color: Colors.alpha(pill.tint, 0.18)
                     }
 
+                    Text {
+                        id: deskNum
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.max(0, pill.deskNumW - 12)
+                        horizontalAlignment: Text.AlignRight
+                        text: pill.flashText
+                        color: Qt.lighter(pill.tint, 1.1)
+                        font.family: Fonts.mono
+                        font.pixelSize: 13
+                        font.weight: Font.Bold
+                        elide: Text.ElideRight
+                        transform: Translate { id: numShift }
+
+                        ParallelAnimation {
+                            id: numIn
+                            NumberAnimation {
+                                target: numShift; property: "x"
+                                from: 12 * pill.deskDir; to: 0
+                                duration: 420
+                                easing.type: Easing.OutBack
+                                easing.overshoot: 1.6
+                            }
+                            NumberAnimation {
+                                target: deskNum; property: "opacity"
+                                from: 0; to: 1; duration: 220
+                            }
+                        }
+
+                        Connections {
+                            target: pill
+                            function onFlashTextChanged() {
+                                if (pill.deskFlash)
+                                    numIn.restart();
+                            }
+                        }
+                    }
+
                     Rectangle {
                         id: marker
 
@@ -578,6 +705,9 @@ Item {
                         case "bt":
                         case "vpn":
                         case "keys":
+                        case "fail":
+                        case "done":
+                        case "cmd":
                             return Qt.lighter(pill.tint, 1.08);
                         case "osd":
                             if (Feedback.flat)
@@ -599,8 +729,8 @@ Item {
                     MorphSpring {
                         id: dotX
                         springBack: true
-                        response: 0.34
-                        damping: 0.62
+                        response: 0.42
+                        damping: 0.9
                         epsilon: 0.05
                         target: langCard.at * langCard.slot + langEm.width / 2
                         Component.onCompleted: dotX.land()
@@ -632,9 +762,16 @@ Item {
                                 font.weight: Font.Bold
                                 font.letterSpacing: 1.2
 
-                                Behavior on color { ColorAnimation { duration: 260 } }
-                                Behavior on scale {
-                                    SpringAnimation { spring: 4; damping: 0.32; mass: 0.7; epsilon: 0.002 }
+                                Behavior on color { ColorAnimation { duration: 420; easing.type: Easing.InOutCubic } }
+                                Behavior on scale { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
+
+                                property real haze: code.on ? 0 : 0.55
+                                Behavior on haze { NumberAnimation { duration: 460; easing.type: Easing.InOutCubic } }
+                                layer.enabled: pill.keysFlash
+                                layer.effect: MultiEffect {
+                                    blurEnabled: true
+                                    blurMax: 10
+                                    blur: code.haze
                                 }
                             }
                         }
@@ -652,20 +789,25 @@ Item {
                     }
                 }
 
-                Text {
+                Marquee {
                     id: label
                     anchors.verticalCenter: parent.verticalCenter
                     visible: !pill.deskFlash && !pill.pctOnly
                              && pill.flashKind !== "keys" && text !== ""
                     width: visible ? pill.textRoom : 0
+                    height: pill.inner
                     text: pill.flashText
                     color: tailRow.ink
-                    horizontalAlignment: pill.notifFlash ? Text.AlignLeft
-                                                         : Text.AlignRight
-                    font.family: Fonts.display
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                    elide: Text.ElideRight
+                    align: pill.notifFlash || pill.flashKind === "call"
+                           ? Text.AlignLeft : Text.AlignRight
+                    family: Fonts.display
+                    pixelSize: 13
+                    weight: Font.DemiBold
+                    speed: 38
+                    hold: 900
+                    fade: 14
+                    gap: 34
+                    running: pill.flashing
 
                     Behavior on width {
                         NumberAnimation {
@@ -679,7 +821,7 @@ Item {
                 IslandMeter {
                     id: miniMeter
                     anchors.verticalCenter: parent.verticalCenter
-                    visible: pill.hasMeter
+                    visible: pill.hasMeter && Feedback.channel === "source"
                     width: visible ? pill.meterW : 0
                     height: 8
                     value: pill.flashFraction
@@ -798,6 +940,7 @@ Item {
 
             ClippingRectangle {
                 anchors.fill: parent
+                opacity: pill.artVeil
                 radius: Math.round(width * 0.3)
                 color: Colors.alpha(pill.mediaTint, 0.28)
 

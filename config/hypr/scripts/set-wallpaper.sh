@@ -21,9 +21,16 @@ PREV=""
 [[ -f "$HOME/.config/hypr/current-wallpaper" ]] && PREV=$(<"$HOME/.config/hypr/current-wallpaper")
 
 if pgrep -x awww-daemon >/dev/null 2>&1; then
-    awww img "$WALLPAPER" \
-        --transition-type fade --transition-duration 1.4 \
-        --transition-fps 60 --transition-bezier .25,1,.3,1 >/dev/null 2>&1
+    if [[ -n "${WALL_POS:-}" ]]; then
+        awww img "$WALLPAPER" \
+            --transition-type grow --transition-pos "$WALL_POS" \
+            --transition-duration 1.6 --transition-fps 60 \
+            --transition-bezier .55,.05,.25,1 >/dev/null 2>&1
+    else
+        awww img "$WALLPAPER" \
+            --transition-type fade --transition-duration 1.4 \
+            --transition-fps 60 --transition-bezier .25,1,.3,1 >/dev/null 2>&1
+    fi
 else
     hyprctl hyprpaper preload "$WALLPAPER" >/dev/null 2>&1
     for _ in $(seq 1 40); do

@@ -75,8 +75,10 @@ finish() {
         exit 1
     fi
     scrub_meta "$FILE"
+    if [ "$(qs -c f ipc call island shot "$FILE" 2>/dev/null)" != ok ]; then
+        notify "Screenshot" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
+    fi
     wl-copy --type image/png < "$FILE"
-    notify "Screenshot" "$(basename "$FILE")" -i "$FILE" -t 2500 -a screenshot -r 9992
     scan_secrets "$FILE" &
 }
 
