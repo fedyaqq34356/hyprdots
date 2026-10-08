@@ -14,6 +14,13 @@ fi
 ulimit -n "$(ulimit -Hn)" 2>/dev/null || true
 
 pkill -x dunst 2>/dev/null
+
+sock="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pipewire-0"
+for _ in $(seq 50); do
+    [ -S "$sock" ] && break
+    sleep 0.1
+done
+
 QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1
 
 start_watchdog

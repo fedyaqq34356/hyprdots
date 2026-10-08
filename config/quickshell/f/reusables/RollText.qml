@@ -10,6 +10,7 @@ Row {
     property int pixelSize: 12
     property int weight: Font.DemiBold
     property int rollDuration: 320
+    property real overshoot: 1.5
 
     TextMetrics {
         id: metrics
@@ -27,6 +28,7 @@ Row {
             id: cell
             required property int index
             readonly property string ch: root.text.charAt(index)
+            property int dir: 1
 
             TextMetrics {
                 id: own
@@ -70,7 +72,11 @@ Row {
                     roll.complete();
                 if (outgoing.text === cell.ch)
                     return;
+                const a = parseInt(outgoing.text), b = parseInt(cell.ch);
+                cell.dir = isNaN(a) || isNaN(b) ? 1
+                         : ((b - a + 10) % 10 <= 5 ? 1 : -1);
                 incoming.text = cell.ch;
+                incoming.y = cell.dir > 0 ? cell.height : -metrics.height;
                 roll.restart();
             }
 
@@ -79,15 +85,16 @@ Row {
 
                 NumberAnimation {
                     target: outgoing; property: "y"
-                    to: -metrics.height
-                    duration: root.rollDuration
-                    easing.type: Easing.OutCubic
+                    to: cell.dir > 0 ? -metrics.height : cell.height
+                    duration: root.rollDuration * 0.8
+                    easing.type: Easing.InCubic
                 }
                 NumberAnimation {
                     target: incoming; property: "y"
                     to: (cell.height - metrics.height) / 2
-                    duration: root.rollDuration
-                    easing.type: Easing.OutCubic
+                    duration: root.rollDuration * 1.4
+                    easing.type: root.overshoot > 0 ? Easing.OutBack : Easing.OutCubic
+                    easing.overshoot: root.overshoot
                 }
                 NumberAnimation {
                     target: outgoing; property: "opacity"

@@ -8,7 +8,7 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property var ignore: /cava|quickshell|peak|easyeffects|pavucontrol|pwvucontrol/i
+    readonly property var ignore: /cava|quickshell|peak|easyeffects|pavucontrol|pwvucontrol|^capture\.|_aec_|echo.?cancel/i
 
     readonly property bool mic: {
         const list = Pipewire.nodes ? Pipewire.nodes.values : [];

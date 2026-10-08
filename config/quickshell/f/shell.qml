@@ -6,6 +6,7 @@ import QtQuick
 import "root:/bar"
 import "root:/design"
 import "root:/desk"
+import "root:/gtavi"
 import "root:/overlays"
 import "root:/panels"
 import "root:/services"
@@ -101,7 +102,7 @@ ShellRoot {
         id: lock
         onUnlocked: curtain.up()
     }
-    Curtain { id: curtain }
+    Curtain { id: curtain; armed: lock.locked }
 
     IpcHandler {
         target: "diag"
@@ -174,9 +175,20 @@ ShellRoot {
 
     FocusTrail {}
     Greeting {}
+
+    GtaVI { id: gtavi }
+
+    PowerScreen { id: gtaviPower }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "gtavi"
+        onPressed: gtavi.toggle()
+    }
     Dim {}
 
     LazyLoader {
+        id: islandHubL
         active: IslandConfig.s("enabled")
         Island {}
     }
@@ -325,7 +337,8 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "media"
-        onPressed: panelDo(mediaL, p => p.toggle())
+        onPressed: islandHubL.item ? islandHubL.item.toggleMedia()
+                                : panelDo(mediaL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -373,6 +386,12 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "powerMenu"
+        onPressed: gtaviPower.toggle()
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "powerMenuClassic"
         onPressed: panelDo(powerMenuL, p => p.toggle())
     }
 

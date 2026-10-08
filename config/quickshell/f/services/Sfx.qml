@@ -90,6 +90,18 @@ Singleton {
         Process { stdinEnabled: false }
     }
 
+    readonly property string isle: root.dir + "island/"
+    readonly property real isleLevel: 0.30
+
+    function isleOpen(tone, quiet) {
+        const f = tone === "hi" ? "open-hi.wav" : tone === "lo" ? "open-lo.wav" : "open.wav";
+        root.play(root.isle + f, root.isleLevel * (quiet ? 0.6 : 1), 120);
+    }
+    function isleClose()   { root.play(root.isle + "close.wav", root.isleLevel * 0.7, 120); }
+    function isleShutter() { root.play(root.isle + "shutter.wav", root.isleLevel * 1.3, 150); }
+    function isleOk()      { root.play(root.isle + "ok.wav", root.isleLevel, 200); }
+    function isleFail()    { root.play(root.isle + "fail.wav", root.isleLevel, 200); }
+
     function tap()      { root.play(root.serp + "reusables/clickbutton/click.wav",  root.tapLevel, 40); }
     function tapAlt()   { root.play(root.serp + "reusables/clickbutton/click2.wav", root.tapLevel, 40); }
     function icon()     { root.play(root.serp + "reusables/iconbutton/click.wav",   root.tapLevel, 40); }

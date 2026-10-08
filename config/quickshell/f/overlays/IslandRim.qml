@@ -15,6 +15,9 @@ Item {
 
     readonly property bool active: rim.busy || rim.value >= 0
 
+    property bool shimmer: false
+    property int shimmerMs: 5200
+
     readonly property real inset: rim.thickness / 2 + 0.5
     readonly property real boxW: Math.max(0, rim.width - rim.inset * 2)
     readonly property real boxH: Math.max(0, rim.height - rim.inset * 2)
@@ -174,6 +177,72 @@ Item {
                     direction: PathArc.Clockwise
                 }
                 PathLine { x: rim.inset; y: rim.height / 2 }
+            }
+        }
+    }
+
+    Item {
+        id: glowBox
+        anchors.fill: parent
+        opacity: rim.shimmer ? 1 : 0
+        visible: opacity > 0.01
+        Behavior on opacity { NumberAnimation { duration: 900; easing.type: Easing.InOutSine } }
+
+        Loader {
+            anchors.fill: parent
+            active: glowBox.visible
+
+            sourceComponent: Vec.Shape {
+                id: glowShape
+                asynchronous: false
+                preferredRendererType: Vec.Shape.CurveRenderer
+
+                readonly property real t: rim.thickness + 0.5
+
+                property real spin: 0
+                NumberAnimation on spin {
+                    running: glowBox.visible
+                    loops: Animation.Infinite
+                    from: 360
+                    to: 0
+                    duration: rim.shimmerMs
+                }
+
+                Vec.ShapePath {
+                    strokeColor: "transparent"
+                    strokeWidth: 0
+                    fillRule: Vec.ShapePath.OddEvenFill
+
+                    fillGradient: Vec.ConicalGradient {
+                        centerX: rim.width / 2
+                        centerY: rim.height / 2
+                        angle: glowShape.spin
+
+                        GradientStop { position: 0.00; color: "transparent" }
+                        GradientStop { position: 0.07; color: Colors.alpha(Qt.lighter(rim.tint, 1.35), 0.95) }
+                        GradientStop { position: 0.16; color: Colors.alpha(rim.tint, 0.35) }
+                        GradientStop { position: 0.26; color: "transparent" }
+                        GradientStop { position: 0.52; color: "transparent" }
+                        GradientStop { position: 0.60; color: Colors.alpha(rim.tint, 0.40) }
+                        GradientStop { position: 0.70; color: "transparent" }
+                        GradientStop { position: 1.00; color: "transparent" }
+                    }
+
+                    PathRectangle {
+                        x: 0
+                        y: 0
+                        width: rim.width
+                        height: rim.height
+                        radius: Math.min(rim.radius, rim.height / 2)
+                    }
+                    PathRectangle {
+                        x: glowShape.t
+                        y: glowShape.t
+                        width: Math.max(0, rim.width - glowShape.t * 2)
+                        height: Math.max(0, rim.height - glowShape.t * 2)
+                        radius: Math.max(0, Math.min(rim.radius, rim.height / 2) - glowShape.t)
+                    }
+                }
             }
         }
     }

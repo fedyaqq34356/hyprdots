@@ -16,6 +16,46 @@ Singleton {
         return m[x.toLowerCase()] || x.slice(0, 2).toUpperCase();
     }
 
+    property bool caps: false
+    property var capsLeds: []
+
+    Process {
+        running: true
+        command: ["sh", "-c", "ls -d /sys/class/leds/*::capslock 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: root.capsLeds = this.text.split("\n").filter(l => l.trim() !== "")
+        }
+    }
+
+    Instantiator {
+        id: leds
+        model: root.capsLeds
+        delegate: FileView {
+            required property string modelData
+            path: modelData + "/brightness"
+            blockLoading: true
+        }
+    }
+
+    Timer {
+        interval: 300
+        repeat: true
+        running: root.capsLeds.length > 0
+        onTriggered: {
+            let on = false;
+            for (let i = 0; i < leds.count; i++) {
+                const f = leds.objectAt(i);
+                if (!f)
+                    continue;
+                f.reload();
+                if (f.text().trim() !== "0" && f.text().trim() !== "")
+                    on = true;
+            }
+            if (on !== root.caps)
+                root.caps = on;
+        }
+    }
+
     readonly property string code: {
         const l = layout.toLowerCase();
         if (l.startsWith("english"))   return "EN";

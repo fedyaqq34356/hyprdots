@@ -12,3 +12,6 @@ whitelist ${PICTURES}
 whitelist ${VIDEOS}
 whitelist ${MUSIC}
 whitelist ${HOME}/Files
+
+private-bin bwrap,xdg-dbus-proxy
+ignore restrict-namespaces

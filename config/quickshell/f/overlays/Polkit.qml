@@ -32,6 +32,7 @@ Scope {
                 : I18n.t("polkit.failed");
             Sfx.critical();
             shake.restart();
+            IslandBus.failed("󰌾", I18n.t("isle.polkit.wrong"));
         }
 
         function onAuthenticationSucceeded() {

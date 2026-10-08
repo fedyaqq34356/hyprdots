@@ -34,18 +34,156 @@ Scope {
 
     onShownChanged: {
         Sfx.panel(root.shown);
+        root.winsOpen = false;
         if (shown) {
+            root.lastLen = 0;
+            root.lastHits = -1;
             search.text = "";
-            list.currentIndex = 0;
+            root.sel = 0;
             search.forceActiveFocus();
         } else {
             Running.query = null;
         }
     }
 
+    property int sel: 0
+
+    function move(step) {
+        if (root.winsOpen) {
+            root.winSel = Math.max(0, Math.min(root.wins.length - 1, root.winSel + step));
+            return;
+        }
+        if (root.calcMode || root.runMode || root.drip)
+            return;
+        const n = root.drip ? Math.min(root.results.length, 10) : root.results.length;
+        root.sel = Math.max(0, Math.min(n - 1, root.sel + step));
+    }
+
+    function setQuery(t) {
+        search.text = t;
+        search.cursorPosition = t.length;
+        search.forceActiveFocus();
+    }
+
+    readonly property bool drip: {
+        if (!Prefs.apple || !IslandConfig.s("enabled"))
+            return false;
+        const top = IslandConfig.s("inBar") ? Prefs.barAtTop : IslandConfig.s("edge") === "top";
+        if (!top)
+            return false;
+        if (IslandConfig.s("hideFull")) {
+            const m = Hyprland.focusedMonitor;
+            const ws = m ? m.activeWorkspace : null;
+            if (ws && ws.hasFullscreen)
+                return false;
+        }
+        return true;
+    }
+
+    readonly property string mode: root.runMode ? "run" : root.calcMode ? "calc" : "app"
+
+    readonly property string isleHint: {
+        if (root.calcMode || root.runMode)
+            return "";
+        if (search.text.trim() !== "" && root.results.length === 0)
+            return "No matches";
+        if (!Running.any)
+            return "";
+        const ws = Running.workspaces;
+        return ws.length === 1 ? "Open · desk " + ws[0] : "Open · " + ws.length + " desks";
+    }
+    readonly property string isleHintGlyph:
+        root.isleHint === "No matches" ? "󰅖" : root.isleHint !== "" ? "󰖯" : ""
+
+    property int lastLen: 0
+    property int lastHits: -1
+
+    Connections {
+        target: search
+        function onTextChanged() {
+            const n = search.text.length;
+            root.winsOpen = false;
+            if (root.shown && root.drip && n !== root.lastLen)
+                IslandBus.keyed(n > root.lastLen ? 1 : -1);
+            root.lastLen = n;
+        }
+    }
+
+    onResultsChanged: {
+        const n = root.results.length;
+        if (root.shown && root.drip && !root.calcMode && !root.runMode
+            && search.text.trim() !== "" && n === 0 && root.lastHits !== 0)
+            IslandBus.nomatch();
+        root.lastHits = n;
+    }
+
+    Binding { target: IslandBus; property: "searching"; value: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "searchScreen"; value: win.screen ? win.screen.name : ""; when: root.shown || drops.holding }
+    Binding { target: IslandBus; property: "query"; value: search.text; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "cursor"; value: search.cursorPosition; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "mode"; value: root.mode; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "calc"; value: root.calcResult; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "hint"; value: root.isleHint; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "hintGlyph"; value: root.isleHintGlyph; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "hue"; value: drops.hue; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "hueOn"; value: drops.hueOn; when: (root.shown || drops.holding) && root.drip }
+
+    property bool winsOpen: false
+    property int winSel: 0
+    onSelChanged: root.winsOpen = false
+
+    readonly property var wins: {
+        const e = root.highlighted;
+        if (!e || root.calcMode || root.runMode)
+            return [];
+        const out = [];
+        const list = Hyprland.toplevels ? Hyprland.toplevels.values : [];
+        for (const t of list) {
+            const o = t ? t.lastIpcObject : null;
+            if (!o || !o.workspace || !Running.matches(e, o["class"]))
+                continue;
+            out.push({ title: o.title || t.title || e.name, ws: o.workspace.id, addr: o.address });
+        }
+        out.sort((a, b) => a.ws - b.ws);
+        return out.slice(0, 4);
+    }
+
+    function focusWin(w) {
+        if (!w)
+            return;
+        Sfx.tapAlt();
+        root.close();
+        Hyprland.dispatch("focuswindow address:" + w.addr);
+    }
+
+    function openWins() {
+        return false;
+        root.winSel = 0;
+        root.winsOpen = true;
+        Sfx.pick();
+        return true;
+    }
+
+    IpcHandler {
+        target: "launcher"
+        function open(): void { if (!root.shown) root.toggle(); }
+        function close(): void { root.close(); }
+        function state(): string {
+            return "shown=" + root.shown + " drip=" + root.drip + " living=" + drops.living + " sel=" + root.sel;
+        }
+        function type(t: string): void { if (!root.shown) root.toggle(); root.setQuery(t); }
+        function key(k: string): void {
+            if (k === "down") root.move(1);
+            else if (k === "up") root.move(-1);
+            else if (k === "right") root.openWins();
+            else if (k === "left") root.winsOpen = false;
+            else if (k === "enter") root.winsOpen ? root.focusWin(root.wins[root.winSel]) : root.accept();
+        }
+    }
+
     readonly property var highlighted: {
         if (!root.shown) return null;
-        const i = list.currentIndex;
+        const i = root.sel;
         if (i < 0) return null;
         return root.results[i] || null;
     }
@@ -168,7 +306,7 @@ Scope {
         else if (root.calcMode)
             root.calcAccept();
         else
-            root.launch(root.results[list.currentIndex]);
+            root.launch(root.results[root.sel]);
     }
 
     function useCount(entry) {
@@ -222,6 +360,18 @@ Scope {
     function launch(entry) {
         if (!entry) return;
         Sfx.tapAlt();
+
+        if (root.drip && root.shown) {
+            const at = root.results.indexOf(entry);
+            drops.fly(Math.max(0, at - drops.off), {
+                name: entry.name || "",
+                icon: drops.iconOf(entry),
+                hue: drops.hue,
+                id: entry.id || "",
+                startupClass: entry.startupClass || "",
+                running: Running.query === entry && Running.any
+            });
+        }
         root.close();
 
         Frecency.bump(entry.id);
@@ -239,7 +389,7 @@ Scope {
         WlrLayershell.namespace: "qs-launcher"
         id: win
         screen: Focus.screen
-        visible: root.shown
+        visible: root.shown || drops.living
         focusable: true
 
         anchors {
@@ -255,7 +405,7 @@ Scope {
         Rectangle {
             anchors.fill: parent
             color: "#000000"
-            opacity: root.shown ? (Prefs.apple ? 0.12 : 0.35) : 0
+            opacity: root.shown ? (root.drip ? 0.16 : Prefs.apple ? 0.12 : 0.35) : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
 
             MouseArea {
@@ -268,13 +418,76 @@ Scope {
             id: emerge
             card: card
             win: win
-            open: root.shown
+            open: root.shown && !root.drip
             dock: true
             cornerTo: 30
         }
 
         Item {
+            id: inputHost
+            width: 200
+            height: 20
+            opacity: 0
+                        TextInput {
+                            id: search
+                            parent: root.drip ? inputHost : searchSlot
+                            anchors.fill: parent
+                            verticalAlignment: TextInput.AlignVCenter
+                            color: Colors.fg
+                            font.family: Fonts.mono
+                            font.pixelSize: 14
+                            clip: true
+                            selectByMouse: true
+                            selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g,
+                                                    Colors.accent.b, 0.35)
+
+                            onTextChanged: root.sel = 0
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: search.text === ""
+                                text: I18n.t("launcher.placeholder")
+                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
+                                               Colors.fgDim.b, 0.5)
+                                font: search.font
+                            }
+
+                            Keys.onEscapePressed: {
+                                if (root.winsOpen)
+                                    root.winsOpen = false;
+                                else
+                                    root.close();
+                            }
+                            Keys.onDownPressed: root.move(1)
+                            Keys.onUpPressed: root.move(-1)
+                            Keys.onRightPressed: (event) => {
+                                if (root.winsOpen || search.cursorPosition < search.text.length
+                                    || !root.openWins())
+                                    event.accepted = false;
+                            }
+                            Keys.onLeftPressed: (event) => {
+                                if (root.winsOpen)
+                                    root.winsOpen = false;
+                                else
+                                    event.accepted = false;
+                            }
+                            Keys.onReturnPressed: root.winsOpen ? root.focusWin(root.wins[root.winSel]) : root.accept()
+                            Keys.onEnterPressed: root.winsOpen ? root.focusWin(root.wins[root.winSel]) : root.accept()
+                        }
+
+        }
+
+        LauncherDrip {
+            id: drops
+            anchors.fill: parent
+            l: root
+            open: root.shown && root.drip
+            visible: root.drip
+        }
+
+        Item {
             id: card
+            visible: !root.drip
             anchors.horizontalCenter: parent.horizontalCenter
             y: Prefs.apple ? (Prefs.barAtTop ? BarConfig.reserved(win.screen ? win.screen.name : "") : 0) + 8
                           : parent.height * 0.15
@@ -377,34 +590,11 @@ Scope {
                             }
                         }
 
-                        TextInput {
-                            id: search
+                        Item {
+                            id: searchSlot
                             width: parent.width - 130
+                            height: 22
                             anchors.verticalCenter: parent.verticalCenter
-                            color: Colors.fg
-                            font.family: Fonts.mono
-                            font.pixelSize: 14
-                            clip: true
-                            selectByMouse: true
-                            selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                                    Colors.accent.b, 0.35)
-
-                            onTextChanged: list.currentIndex = 0
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: search.text === ""
-                                text: I18n.t("launcher.placeholder")
-                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                               Colors.fgDim.b, 0.5)
-                                font: search.font
-                            }
-
-                            Keys.onEscapePressed: root.close()
-                            Keys.onDownPressed: if (!root.calcMode) list.incrementCurrentIndex()
-                            Keys.onUpPressed: if (!root.calcMode) list.decrementCurrentIndex()
-                            Keys.onReturnPressed: root.accept()
-                            Keys.onEnterPressed: root.accept()
                         }
 
                         Rectangle {
@@ -711,7 +901,8 @@ Scope {
                     visible: !root.calcMode && !root.runMode
                     model: root.calcMode || root.runMode ? [] : root.results
                     spacing: 3
-                    currentIndex: 0
+                    currentIndex: root.sel
+                    onCurrentIndexChanged: if (currentIndex >= 0 && root.sel !== currentIndex) root.sel = currentIndex
                     highlightMoveDuration: 160
                     boundsBehavior: Flickable.StopAtBounds
 
@@ -883,7 +1074,7 @@ Scope {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: list.currentIndex = index
+                            onEntered: root.sel = index
                             onClicked: root.launch(modelData)
                         }
                     }

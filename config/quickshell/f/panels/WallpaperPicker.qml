@@ -58,8 +58,7 @@ Scope {
         if (shown) {
             search.text = "";
             root.filter = "All";
-            grid.currentIndex = 0;
-            grid.positionViewAtBeginning();
+            root.pick = Math.max(0, root.results.indexOf(root.current));
             search.forceActiveFocus();
         }
     }
@@ -178,28 +177,56 @@ Scope {
     Process { id: setter }
     Process { id: historyWriter }
 
+    function step(d) {
+        const n = root.results.length;
+        if (n === 0)
+            return;
+        root.pick = (root.pick + d + n) % n;
+        Sfx.tick();
+    }
+
     function apply(path) {
         if (!path)
             return;
         root.close();
         root.current = path;
+        applyLater.path = path;
+        applyLater.restart();
+    }
 
-        setter.command = [Quickshell.env("HOME") + "/.config/hypr/scripts/set-wallpaper.sh", path];
-        setter.running = true;
+    Timer {
+        id: applyLater
+        property string path: ""
+        interval: 280
+        onTriggered: {
+            const path = applyLater.path;
+            const scr = win.screen;
+            let pos = "0.5,0.985";
+            if (scr && IslandBus.isleW > 0) {
+                const px = (IslandBus.isleX + IslandBus.isleW / 2) / scr.width;
+                const py = 1 - (IslandBus.isleY + IslandBus.isleH / 2) / scr.height;
+                pos = px.toFixed(4) + "," + py.toFixed(4);
+            }
+            const tone = root.toneOf(path);
+            IslandBus.wallApplied(path, tone !== "" ? tone : Colors.accent);
+            setter.command = ["env", "WALL_POS=" + pos,
+                              Quickshell.env("HOME") + "/.config/hypr/scripts/set-wallpaper.sh", path];
+            setter.running = true;
 
-        historyWriter.command = ["sh", "-c",
-            "printf '%s\\n' \"$1\" >> '" + root.historyPath + "'; " +
-            "tail -n 60 '" + root.historyPath + "' > '" + root.historyPath + ".tmp' && " +
-            "mv '" + root.historyPath + ".tmp' '" + root.historyPath + "'",
-            "sh", path];
-        historyWriter.running = true;
+            historyWriter.command = ["sh", "-c",
+                "printf '%s\\n' \"$1\" >> '" + root.historyPath + "'; " +
+                "tail -n 60 '" + root.historyPath + "' > '" + root.historyPath + ".tmp' && " +
+                "mv '" + root.historyPath + ".tmp' '" + root.historyPath + "'",
+                "sh", path];
+            historyWriter.running = true;
+        }
     }
 
     function shuffle() {
         const pool = root.results.length > 0 ? root.results : root.files;
         if (pool.length === 0)
             return;
-        apply(pool[Math.floor(Math.random() * pool.length)]);
+        root.pick = Math.max(0, root.results.indexOf(pool[Math.floor(Math.random() * pool.length)]));
     }
 
     function cycleFilter(step) {
@@ -226,11 +253,11 @@ Scope {
         return out;
     }
 
-    onResultsChanged: grid.currentIndex = 0
+    property int pick: 0
+    onResultsChanged: root.pick = 0
 
     readonly property string focused:
-        grid.currentIndex >= 0 && grid.currentIndex < results.length
-            ? results[grid.currentIndex] : ""
+        root.pick >= 0 && root.pick < results.length ? results[root.pick] : ""
 
     HyprlandFocusGrab {
         active: root.shown
@@ -238,80 +265,95 @@ Scope {
         onCleared: root.close()
     }
 
+    readonly property bool isle: {
+        if (!Prefs.apple || !IslandConfig.s("enabled"))
+            return false;
+        return IslandConfig.s("inBar") ? Prefs.barAtTop : IslandConfig.s("edge") === "top";
+    }
+    readonly property bool talk: root.shown && root.isle
+
+    readonly property color tone: root.toneOf(root.focused) !== "" ? root.toneOf(root.focused) : Colors.accent
+    property color glow: root.tone
+    Behavior on glow { ColorAnimation { duration: 1000; easing.type: Easing.InOutCubic } }
+
+    Binding { target: IslandBus; property: "searching"; value: root.talk }
+    Binding { target: IslandBus; property: "searchScreen"; value: win.screen ? win.screen.name : ""; when: root.talk }
+    Binding { target: IslandBus; property: "query"; value: search.text; when: root.talk }
+    Binding { target: IslandBus; property: "cursor"; value: search.cursorPosition; when: root.talk }
+    Binding { target: IslandBus; property: "mode"; value: "wall"; when: root.talk }
+    Binding { target: IslandBus; property: "calc"; value: ""; when: root.talk }
+    Binding {
+        target: IslandBus; property: "hint"; when: root.talk
+        value: root.results.length === 0 ? "No wallpapers"
+             : (root.pick + 1) + " of " + root.results.length
+    }
+    Binding { target: IslandBus; property: "hintGlyph"; value: ""; when: root.talk }
+    Binding { target: IslandBus; property: "hue"; value: root.glow; when: root.talk }
+    Binding { target: IslandBus; property: "hueOn"; value: true; when: root.talk }
+
+    property int lastLen: 0
+    Connections {
+        target: search
+        function onTextChanged() {
+            const n = search.text.length;
+            if (root.talk && n !== root.lastLen)
+                IslandBus.keyed(n > root.lastLen ? 1 : -1);
+            root.lastLen = n;
+        }
+    }
+
     PanelWindow {
         WlrLayershell.namespace: "qs-wallpapers"
         id: win
         screen: Focus.screen
-        visible: root.shown
+        visible: root.shown || stage.opacity > 0.01
         focusable: true
 
         anchors { top: true; bottom: true; left: true; right: true }
         exclusiveZone: -1
         color: "transparent"
 
-        Rectangle {
+        Item {
+            id: stage
             anchors.fill: parent
-            color: "#000000"
-            opacity: root.shown ? 0.62 : 0
-            Behavior on opacity { NumberAnimation { duration: Motion.base } }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.close()
+
+            opacity: root.shown ? 1 : 0
+            Behavior on opacity {
+                NumberAnimation { duration: root.shown ? 360 : 260; easing.type: Easing.OutCubic }
             }
-        }
 
-        Bloom {
-            target: card
-            amount: root.shown ? 0.22 : 0
-            inset: 48
-            blurMax: 64
-        }
-
-        Emerge {
-            id: emerge
-            card: card
-            win: win
-            open: root.shown
-        }
-
-        ClippingRectangle {
-            id: card
-
-            anchors.centerIn: parent
-            width: Math.min(1320, parent.width - 72)
-            height: Math.min(820, parent.height - 72)
-            radius: Shape.modal
-            color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.97)
-
-            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
-            scale: emerge.on ? 1 : (root.shown ? 1 : 0.95)
-            transform: Translate { x: emerge.dx; y: emerge.dy }
-            Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: Motion.base } }
-            Behavior on scale {
-                enabled: !emerge.on
-                SpringAnimation {
-                    spring: Motion.panelSpring
-                    damping: Motion.panelDamping
-                    mass: Motion.panelMass
-                    epsilon: 0.001
-                }
+            Rectangle {
+                anchors.fill: parent
+                color: "black"
             }
 
             Item {
                 id: backdrop
-
                 anchors.fill: parent
 
-                property bool onA: true
-                readonly property string want: root.thumbFor(root.focused)
+                SequentialAnimation on scale {
+                    running: root.shown
+                    loops: Animation.Infinite
+                    NumberAnimation { from: 1.0; to: 1.06; duration: 24000; easing.type: Easing.InOutSine }
+                    NumberAnimation { from: 1.06; to: 1.0; duration: 24000; easing.type: Easing.InOutSine }
+                }
 
-                onWantChanged: {
-                    if (backdrop.want === "")
-                        return;
-                    if (backdrop.onA)
-                        layerB.source = backdrop.want;
-                    else
-                        layerA.source = backdrop.want;
+                property bool onA: true
+                readonly property string want: root.focused !== "" ? "file://" + root.focused : ""
+
+                onWantChanged: wantLater.restart()
+
+                Timer {
+                    id: wantLater
+                    interval: 140
+                    onTriggered: {
+                        if (backdrop.want === "")
+                            return;
+                        if (backdrop.onA)
+                            layerB.source = backdrop.want;
+                        else
+                            layerA.source = backdrop.want;
+                    }
                 }
 
                 Image {
@@ -320,9 +362,11 @@ Scope {
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: false
-                    sourceSize.width: 1600
+                    sourceSize.width: 1920
                     opacity: backdrop.onA ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+                    scale: backdrop.onA ? 1 : 1.04
+                    Behavior on opacity { NumberAnimation { duration: 700; easing.type: Easing.InOutCubic } }
+                    Behavior on scale { NumberAnimation { duration: 1400; easing.type: Easing.OutCubic } }
                     onStatusChanged: if (status === Image.Ready && !backdrop.onA) backdrop.onA = true
                 }
 
@@ -332,9 +376,11 @@ Scope {
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     cache: false
-                    sourceSize.width: 1600
+                    sourceSize.width: 1920
                     opacity: backdrop.onA ? 0 : 1
-                    Behavior on opacity { NumberAnimation { duration: Motion.slow } }
+                    scale: backdrop.onA ? 1.04 : 1
+                    Behavior on opacity { NumberAnimation { duration: 700; easing.type: Easing.InOutCubic } }
+                    Behavior on scale { NumberAnimation { duration: 1400; easing.type: Easing.OutCubic } }
                     onStatusChanged: if (status === Image.Ready && backdrop.onA) backdrop.onA = false
                 }
             }
@@ -342,677 +388,493 @@ Scope {
             Rectangle {
                 anchors.fill: parent
                 gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0.0
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.97)
-                    }
-                    GradientStop {
-                        position: 0.34
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.88)
-                    }
-                    GradientStop {
-                        position: 1.0
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.74)
-                    }
+                    GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.42) }
+                    GradientStop { position: 0.45; color: Qt.rgba(0, 0, 0, 0.30) }
+                    GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.78) }
                 }
             }
 
-            Rectangle {
-                anchors.fill: parent
-                gradient: Gradient {
-                    GradientStop {
-                        position: 0.0
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.32)
-                    }
-                    GradientStop { position: 0.5; color: "transparent" }
-                    GradientStop {
-                        position: 1.0
-                        color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.42)
-                    }
-                }
+            RectangularShadow {
+                x: stage.width / 2 - 340
+                y: carousel.cy - 160
+                width: 680
+                height: 360
+                radius: 120
+                blur: 140
+                color: Colors.alpha(root.glow, 0.30)
             }
 
-            Sheen {
+            MouseArea {
                 anchors.fill: parent
-                radius: Shape.modal
-                edge: Colors.accent
-                edgeOpacity: 0.28
-                grainOpacity: 0.022
+                onClicked: root.close()
+            }
+
+            property real lookX: 0
+            property real lookY: 0
+            Behavior on lookX { NumberAnimation { duration: 700; easing.type: Easing.OutCubic } }
+            Behavior on lookY { NumberAnimation { duration: 700; easing.type: Easing.OutCubic } }
+
+            HoverHandler {
+                onPointChanged: {
+                    stage.lookX = Math.max(-1, Math.min(1, (point.position.x - stage.width / 2) / (stage.width / 2)));
+                    stage.lookY = Math.max(-1, Math.min(1, (point.position.y - carousel.cy) / (stage.height / 2)));
+                }
+                onHoveredChanged: if (!hovered) { stage.lookX = 0; stage.lookY = 0; }
+            }
+
+            property real t: 0
+            NumberAnimation on t {
+                running: root.shown
+                loops: Animation.Infinite
+                from: 0; to: Math.PI * 2
+                duration: 7000
+            }
+
+            WheelHandler {
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                property real acc: 0
+                onWheel: (ev) => {
+                    const d = Math.abs(ev.angleDelta.x) > Math.abs(ev.angleDelta.y)
+                        ? ev.angleDelta.x : ev.angleDelta.y;
+                    acc += d;
+                    while (acc >= 120) { acc -= 120; root.step(-1); }
+                    while (acc <= -120) { acc += 120; root.step(1); }
+                }
             }
 
             Item {
-                id: side
+                id: carousel
+                anchors.fill: parent
 
-                anchors.left: parent.left
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.margins: 32
-                width: 372
+                readonly property real cy: stage.height * 0.44
+                readonly property real span: stage.width
 
-                Column {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    spacing: 22
+                opacity: root.shown ? 1 : 0
+                transform: Translate {
+                    y: root.shown ? 0 : 36
+                    Behavior on y { NumberAnimation { duration: 560; easing.type: Easing.OutCubic } }
+                }
+                Behavior on opacity { NumberAnimation { duration: 460; easing.type: Easing.OutCubic } }
 
-                    Row {
-                        width: parent.width
-                        spacing: 10
+                PathView {
+                    id: path
 
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "󰸉"
-                            color: Colors.accent
-                            font.family: root.mono
-                            font.pixelSize: 17
+                    anchors.fill: parent
+                    model: root.results
+                    pathItemCount: Math.min(9, root.results.length)
+                    preferredHighlightBegin: 0.5
+                    preferredHighlightEnd: 0.5
+                    highlightRangeMode: PathView.StrictlyEnforceRange
+                    highlightMoveDuration: 720
+                    snapMode: PathView.SnapOneItem
+                    cacheItemCount: 4
+                    currentIndex: root.pick
+                    onCurrentIndexChanged: if (currentIndex >= 0 && currentIndex !== root.pick) root.pick = currentIndex
+
+                    path: Path {
+                        startX: -0.04 * carousel.span
+                        startY: carousel.cy - 74
+                        PathAttribute { name: "s"; value: 0.46 }
+                        PathAttribute { name: "ry"; value: 46 }
+                        PathAttribute { name: "dim"; value: 0.66 }
+                        PathAttribute { name: "zz"; value: 0 }
+
+                        PathQuad {
+                            x: 0.25 * carousel.span; y: carousel.cy - 14
+                            controlX: 0.08 * carousel.span; controlY: carousel.cy - 30
                         }
+                        PathPercent { value: 0.36 }
+                        PathAttribute { name: "s"; value: 0.70 }
+                        PathAttribute { name: "ry"; value: 30 }
+                        PathAttribute { name: "dim"; value: 0.38 }
+                        PathAttribute { name: "zz"; value: 50 }
 
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "wallpapers"
-                            color: Colors.fg
-                            font.family: Fonts.display
-                            font.pixelSize: Fonts.titleSize
+                        PathQuad {
+                            x: 0.5 * carousel.span; y: carousel.cy
+                            controlX: 0.38 * carousel.span; controlY: carousel.cy
+                        }
+                        PathPercent { value: 0.5 }
+                        PathAttribute { name: "s"; value: 1.0 }
+                        PathAttribute { name: "ry"; value: 0 }
+                        PathAttribute { name: "dim"; value: 0 }
+                        PathAttribute { name: "zz"; value: 100 }
+
+                        PathQuad {
+                            x: 0.75 * carousel.span; y: carousel.cy - 14
+                            controlX: 0.62 * carousel.span; controlY: carousel.cy
+                        }
+                        PathPercent { value: 0.64 }
+                        PathAttribute { name: "s"; value: 0.70 }
+                        PathAttribute { name: "ry"; value: -30 }
+                        PathAttribute { name: "dim"; value: 0.38 }
+                        PathAttribute { name: "zz"; value: 50 }
+
+                        PathQuad {
+                            x: 1.04 * carousel.span; y: carousel.cy - 74
+                            controlX: 0.92 * carousel.span; controlY: carousel.cy - 30
+                        }
+                        PathPercent { value: 1.0 }
+                        PathAttribute { name: "s"; value: 0.46 }
+                        PathAttribute { name: "ry"; value: -46 }
+                        PathAttribute { name: "dim"; value: 0.66 }
+                        PathAttribute { name: "zz"; value: 0 }
+                    }
+
+                    delegate: Item {
+                        id: cell
+
+                        required property var modelData
+                        required property int index
+
+                        readonly property bool isCur: PathView.isCurrentItem
+                        readonly property bool onScreen: cell.modelData === root.current
+                        readonly property color hue: root.toneOf(cell.modelData) !== ""
+                            ? root.toneOf(cell.modelData) : Colors.accent
+
+                        width: 540
+                        height: 338
+                        z: cell.PathView.zz
+                        scale: cell.PathView.s
+
+                        property real live: cell.isCur ? 1 : 0
+                        Behavior on live { NumberAnimation { duration: 600; easing.type: Easing.InOutCubic } }
+
+                        transform: [
+                            Rotation {
+                                origin.x: cell.width / 2
+                                origin.y: cell.height / 2
+                                axis { x: 0; y: 1; z: 0 }
+                                angle: cell.PathView.ry + 7 * stage.lookX * cell.live
+                            },
+                            Rotation {
+                                origin.x: cell.width / 2
+                                origin.y: cell.height / 2
+                                axis { x: 1; y: 0; z: 0 }
+                                angle: -5 * stage.lookY * cell.live
+                            },
+                            Translate { y: Math.sin(stage.t) * 5 * cell.live }
+                        ]
+
+                        Item {
+                            visible: cell.live > 0.01
+                            opacity: 0.14 * cell.live
+                            y: cell.height + 10
+                            width: cell.width
+                            height: cell.height * 0.45
+                            clip: true
+
+                            Image {
+                                width: cell.width
+                                height: cell.height
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                sourceSize.width: 600
+                                source: cell.live > 0.01 ? root.thumbFor(cell.modelData) : ""
+                                transform: Scale { origin.y: cell.height / 2; yScale: -1 }
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    blurEnabled: true
+                                    blur: 0.4
+                                    blurMax: 24
+                                    maskEnabled: true
+                                    maskSource: reflMask
+                                }
+                            }
                         }
 
                         Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: shownCount.implicitWidth + 16
-                            height: 20
-                            radius: Shape.detail
-                            color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                           Colors.fgDim.b, 0.10)
-
-                            Text {
-                                id: shownCount
-                                anchors.centerIn: parent
-                                text: root.results.length + " / " + root.files.length
-                                color: Colors.fgDim
-                                opacity: 0.75
-                                font.family: root.mono
-                                font.pixelSize: 10
-                            }
-                        }
-                    }
-
-                    Column {
-                        width: parent.width
-                        spacing: 10
-
-                        Text {
-                            width: parent.width
-                            text: root.focused !== ""
-                                ? root.prettyName(root.focused)
-                                : I18n.t("wall.nothing")
-                            color: Colors.fg
-                            wrapMode: Text.WordWrap
-                            maximumLineCount: 2
-                            elide: Text.ElideRight
-                            font.family: Fonts.display
-                            font.pixelSize: 30
-                            font.weight: Font.DemiBold
-                        }
-
-                        Row {
-                            spacing: 8
-                            visible: root.focused !== ""
-
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: root.toneOf(root.focused) !== ""
-                                width: 18
-                                height: 18
-                                radius: 9
-                                antialiasing: true
-                                color: root.toneOf(root.focused) !== ""
-                                    ? root.toneOf(root.focused) : "transparent"
-                                border.width: 1
-                                border.color: Qt.rgba(0, 0, 0, 0.35)
-                            }
-
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: root.bucket(root.focused) !== ""
-                                width: bucketLabel.implicitWidth + 16
-                                height: 20
-                                radius: Shape.detail
-                                color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                               Colors.fgDim.b, 0.10)
-
-                                Text {
-                                    id: bucketLabel
-                                    anchors.centerIn: parent
-                                    text: root.bucket(root.focused).toLowerCase()
-                                    color: Colors.fgDim
-                                    opacity: 0.8
-                                    font.family: root.mono
-                                    font.pixelSize: 9
-                                    font.letterSpacing: 1
-                                }
-                            }
-
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: root.focused === root.current
-                                width: liveLabel.implicitWidth + 18
-                                height: 20
-                                radius: Shape.detail
-                                color: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                               Colors.accent.b, 0.22)
-
-                                Text {
-                                    id: liveLabel
-                                    anchors.centerIn: parent
-                                    text: "󰄬  on screen"
-                                    color: Colors.accent
-                                    font.family: root.mono
-                                    font.pixelSize: 9
-                                    font.letterSpacing: 1
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 48
-                        radius: Shape.field
-                        color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.55)
-                        border.width: 1
-                        border.color: search.activeFocus
-                            ? Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.55)
-                            : Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                      Colors.outline.b, 0.16)
-                        Behavior on border.color { ColorAnimation { duration: Motion.fast } }
-
-                        Rectangle {
-                            z: -1
-                            anchors.centerIn: parent
-                            width: parent.width + 10
-                            height: parent.height + 10
-                            radius: parent.radius + 5
-                            color: Colors.accent
-                            opacity: search.activeFocus ? 0.20 : 0
-                            Behavior on opacity { NumberAnimation { duration: Motion.slow } }
-
+                            id: reflMask
+                            visible: false
                             layer.enabled: true
-                            layer.effect: MultiEffect {
-                                blurEnabled: true
-                                blur: 1.0
-                                blurMax: 36
+                            width: cell.width
+                            height: cell.height
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "transparent" }
+                                GradientStop { position: 0.62; color: "transparent" }
+                                GradientStop { position: 1.0; color: "white" }
                             }
                         }
 
-                        Row {
+                        RectangularShadow {
                             anchors.fill: parent
-                            anchors.leftMargin: 16
-                            anchors.rightMargin: 16
-                            spacing: 12
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "󰍉"
-                                color: Colors.accent
-                                opacity: search.activeFocus ? 1 : 0.7
-                                font.family: root.mono
-                                font.pixelSize: 16
-                            }
-
-                            TextInput {
-                                id: search
-                                width: parent.width - 44
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: Colors.fg
-                                font.family: root.mono
-                                font.pixelSize: 14
-                                clip: true
-                                selectByMouse: true
-                                selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                                        Colors.accent.b, 0.35)
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    visible: search.text === ""
-                                    text: I18n.t("act.search")
-                                    color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
-                                                   Colors.fgDim.b, 0.5)
-                                    font: search.font
-                                }
-
-                                Keys.onEscapePressed: root.close()
-                                Keys.onLeftPressed: grid.moveCurrentIndexLeft()
-                                Keys.onRightPressed: grid.moveCurrentIndexRight()
-                                Keys.onUpPressed: grid.moveCurrentIndexUp()
-                                Keys.onDownPressed: grid.moveCurrentIndexDown()
-                                Keys.onTabPressed: root.cycleFilter(1)
-                                Keys.onBacktabPressed: root.cycleFilter(-1)
-                                Keys.onReturnPressed: root.apply(root.focused)
-                                Keys.onEnterPressed: root.apply(root.focused)
-                            }
+                            radius: 26
+                            blur: cell.isCur ? 56 : 30
+                            offset.y: cell.isCur ? 22 : 12
+                            spread: -4
+                            color: cell.isCur ? Colors.alpha(cell.hue, 0.55) : Qt.rgba(0, 0, 0, 0.6)
+                            Behavior on color { ColorAnimation { duration: 500 } }
                         }
-                    }
 
-                    Flow {
-                        width: parent.width
-                        spacing: 8
+                        ClippingRectangle {
+                            anchors.fill: parent
+                            radius: 26
+                            color: "#0d0d0d"
 
-                        Repeater {
-                            model: root.filters
+                            Image {
+                                anchors.fill: parent
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                sourceSize.width: 600
+                                source: root.thumbFor(cell.modelData)
+                                onStatusChanged: if (status === Image.Error) source = "file://" + cell.modelData
+                            }
+
+                            Image {
+                                anchors.fill: parent
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                sourceSize.width: 1100
+                                source: cell.isCur ? "file://" + cell.modelData : ""
+                                opacity: status === Image.Ready ? 1 : 0
+                                Behavior on opacity { NumberAnimation { duration: 400 } }
+                            }
 
                             Rectangle {
-                                id: pill
-
-                                required property var modelData
-
-                                readonly property bool active: root.filter === modelData.name
-                                readonly property bool tinted: modelData.hex !== ""
-
-                                width: tinted ? 36 : label.implicitWidth + 26
-                                height: 36
-                                radius: Shape.chip
-                                antialiasing: true
-
-                                color: active
-                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                              Colors.accent.b, 0.24)
-                                    : pillArea.containsMouse
-                                        ? Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
-                                                  Colors.bgAlt.b, 0.7)
-                                        : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
-                                                  Colors.bgAlt.b, 0.4)
-                                border.width: 1
-                                border.color: active
-                                    ? Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                              Colors.accent.b, 0.6)
-                                    : Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                              Colors.outline.b, 0.12)
-
-                                Behavior on color { ColorAnimation { duration: Motion.fast } }
-                                Behavior on border.color { ColorAnimation { duration: Motion.fast } }
-
-                                scale: active ? 1.06 : (pillArea.containsMouse ? 1.03 : 1.0)
-                                Behavior on scale {
-                                    SpringAnimation {
-                                        spring: Motion.tapSpring
-                                        damping: Motion.tapDamping
-                                        mass: Motion.tapMass
-                                        epsilon: 0.001
-                                    }
-                                }
-
-                                Rectangle {
-                                    visible: pill.tinted
-                                    anchors.centerIn: parent
-                                    width: 16
-                                    height: 16
-                                    radius: 8
-                                    antialiasing: true
-                                    color: pill.modelData.hex
-                                    border.width: 1
-                                    border.color: Qt.rgba(0, 0, 0, 0.35)
-                                }
-
-                                Text {
-                                    id: label
-                                    visible: !pill.tinted
-                                    anchors.centerIn: parent
-                                    text: pill.modelData.name.toLowerCase()
-                                    color: pill.active ? Colors.accent : Colors.fgDim
-                                    font.family: root.mono
-                                    font.pixelSize: 11
-                                }
-
-                                MouseArea {
-                                    id: pillArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        Sfx.pick();
-                                        root.filter = pill.modelData.name;
-                                        search.forceActiveFocus();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Column {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    spacing: 14
-
-                    Row {
-                        width: parent.width
-                        spacing: 10
-
-                        Rectangle {
-                            width: parent.width - 130
-                            height: 46
-                            radius: Shape.field
-                            antialiasing: true
-                            opacity: root.focused !== "" ? 1 : 0.4
-
-                            color: applyArea.containsMouse
-                                ? Colors.accent
-                                : Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                          Colors.accent.b, 0.22)
-                            border.width: 1
-                            border.color: Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                                  Colors.accent.b, 0.55)
-                            Behavior on color { ColorAnimation { duration: Motion.fast } }
-
-                            scale: applyArea.pressed ? 0.97 : 1
-                            Behavior on scale { NumberAnimation { duration: Motion.fast } }
-
-                            Row {
-                                anchors.centerIn: parent
-                                spacing: 10
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "󰸉"
-                                    color: applyArea.containsMouse
-                                        ? Colors.accentText : Colors.accent
-                                    font.family: root.mono
-                                    font.pixelSize: 15
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: I18n.t("act.open")
-                                    color: applyArea.containsMouse
-                                        ? Colors.accentText : Colors.fg
-                                    font.family: Fonts.display
-                                    font.pixelSize: 14
-                                    font.weight: Font.DemiBold
-                                }
-                            }
-
-                            MouseArea {
-                                id: applyArea
                                 anchors.fill: parent
-                                enabled: root.focused !== ""
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    Sfx.fill();
-                                    root.apply(root.focused);
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.10) }
+                                    GradientStop { position: 0.35; color: "transparent" }
                                 }
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "black"
+                                opacity: cell.PathView.dim
                             }
                         }
 
                         Rectangle {
-                            width: 120
-                            height: 46
-                            radius: Shape.field
-                            antialiasing: true
-                            color: shuffleArea.containsMouse
-                                ? Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
-                                          Colors.accentAlt.b, 0.22)
-                                : Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g,
-                                          Colors.bgAlt.b, 0.5)
-                            border.width: 1
-                            border.color: Qt.rgba(Colors.accentAlt.r, Colors.accentAlt.g,
-                                                  Colors.accentAlt.b, 0.35)
-                            Behavior on color { ColorAnimation { duration: Motion.fast } }
-
-                            scale: shuffleArea.pressed ? 0.97 : 1
-                            Behavior on scale { NumberAnimation { duration: Motion.fast } }
-
-                            Row {
-                                anchors.centerIn: parent
-                                spacing: 8
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "󰑓"
-                                    color: Colors.accentAlt
-                                    font.family: root.mono
-                                    font.pixelSize: 14
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "random"
-                                    color: Colors.fgDim
-                                    opacity: 0.9
-                                    font.family: root.mono
-                                    font.pixelSize: 11
-                                }
-                            }
-
-                            MouseArea {
-                                id: shuffleArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    Sfx.tapAlt();
-                                    root.shuffle();
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: I18n.t("wall.keys")
-                        color: Colors.fgDim
-                        opacity: 0.45
-                        font.family: root.mono
-                        font.pixelSize: 10
-                    }
-                }
-            }
-
-            GridView {
-                id: grid
-
-                anchors.left: side.right
-                anchors.leftMargin: 26
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                anchors.topMargin: 26
-                anchors.bottomMargin: 26
-                anchors.rightMargin: 26
-
-                clip: true
-                model: root.results
-                cellWidth: Math.floor(width / 3)
-                cellHeight: Math.floor(cellWidth * 0.62)
-                currentIndex: 0
-                boundsBehavior: Flickable.StopAtBounds
-                cacheBuffer: 1400
-                highlightMoveDuration: 160
-
-                delegate: Item {
-                    id: cell
-
-                    required property var modelData
-                    required property int index
-
-                    width: grid.cellWidth
-                    height: grid.cellHeight
-
-                    readonly property bool isCurrent: modelData === root.current
-                    readonly property bool isFocused: index === grid.currentIndex
-
-                    opacity: 0
-                    transform: Scale {
-                        id: cellPop
-                        origin.x: cell.width / 2
-                        origin.y: cell.height / 2
-                        xScale: 0.92
-                        yScale: 0.92
-                    }
-
-                    SequentialAnimation {
-                        running: true
-                        PauseAnimation { duration: Motion.delay(cell.index) }
-                        ParallelAnimation {
-                            NumberAnimation {
-                                target: cell; property: "opacity"; to: 1
-                                duration: Motion.base
-                            }
-                            NumberAnimation {
-                                target: cellPop; property: "xScale"; to: 1
-                                duration: Motion.slow
-                                easing.type: Easing.Bezier
-                                easing.bezierCurve: Motion.snap
-                            }
-                            NumberAnimation {
-                                target: cellPop; property: "yScale"; to: 1
-                                duration: Motion.slow
-                                easing.type: Easing.Bezier
-                                easing.bezierCurve: Motion.snap
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        z: -1
-                        anchors.centerIn: parent
-                        width: parent.width - 8
-                        height: parent.height - 8
-                        radius: Shape.field + 6
-                        color: Colors.accent
-                        opacity: cell.isCurrent ? 0.36
-                               : (cell.isFocused ? 0.28
-                               : (tileArea.containsMouse ? 0.18 : 0))
-                        Behavior on opacity { NumberAnimation { duration: Motion.base } }
-
-                        layer.enabled: opacity > 0.01
-                        layer.effect: MultiEffect {
-                            blurEnabled: true
-                            blur: 1.0
-                            blurMax: 34
-                        }
-                    }
-
-                    ClippingRectangle {
-                        id: tile
-
-                        anchors.fill: parent
-                        anchors.margins: 9
-                        radius: Shape.field + 2
-                        color: Qt.rgba(Colors.bgAlt.r, Colors.bgAlt.g, Colors.bgAlt.b, 0.35)
-                        border.width: cell.isCurrent || cell.isFocused ? 2 : 1
-                        border.color: cell.isCurrent
-                            ? Colors.accent
-                            : (cell.isFocused
-                                ? Qt.rgba(Colors.accent.r, Colors.accent.g,
-                                          Colors.accent.b, 0.6)
-                                : Qt.rgba(Colors.outline.r, Colors.outline.g,
-                                          Colors.outline.b, 0.22))
-
-                        scale: tileArea.containsMouse ? 1.05 : (cell.isFocused ? 1.02 : 1.0)
-                        Behavior on scale {
-                            SpringAnimation {
-                                spring: Motion.tapSpring
-                                damping: Motion.tapDamping
-                                mass: Motion.tapMass
-                                epsilon: 0.001
-                            }
-                        }
-                        Behavior on border.color { ColorAnimation { duration: Motion.fast } }
-
-                        Image {
                             anchors.fill: parent
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            sourceSize.width: 560
-                            source: root.thumbFor(cell.modelData)
-                            onStatusChanged: {
-                                if (status === Image.Error)
-                                    source = "file://" + cell.modelData;
-                            }
+                            radius: 26
+                            color: "transparent"
+                            antialiasing: true
+                            border.width: 1
+                            border.color: cell.isCur ? Qt.rgba(1, 1, 1, 0.28) : Qt.rgba(1, 1, 1, 0.10)
                         }
 
                         Rectangle {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            height: 34
-                            opacity: tileArea.containsMouse || cell.isFocused ? 1 : 0
-                            Behavior on opacity { NumberAnimation { duration: Motion.fast } }
-
-                            gradient: Gradient {
-                                GradientStop {
-                                    position: 0.0
-                                    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.0)
-                                }
-                                GradientStop {
-                                    position: 1.0
-                                    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.92)
-                                }
-                            }
-
-                            Text {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12
-                                anchors.rightMargin: 12
-                                verticalAlignment: Text.AlignBottom
-                                bottomPadding: 7
-                                text: root.prettyName(cell.modelData)
-                                color: cell.isCurrent ? Colors.accent : Colors.fg
-                                font.family: Fonts.display
-                                font.pixelSize: 11
-                                elide: Text.ElideMiddle
-                            }
-                        }
-
-                        Rectangle {
-                            visible: cell.isCurrent
+                            visible: cell.onScreen
                             anchors.top: parent.top
                             anchors.right: parent.right
-                            anchors.margins: 9
-                            width: 26
-                            height: 26
-                            radius: width / 2
-                            antialiasing: true
-                            color: Colors.accent
-                            border.width: 2
-                            border.color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.55)
+                            anchors.margins: 16
+                            width: 30
+                            height: 30
+                            radius: 15
+                            color: Qt.rgba(0, 0, 0, 0.55)
+                            border.width: 1
+                            border.color: Qt.rgba(1, 1, 1, 0.3)
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "󰄬"
-                                color: Colors.accentText
-                                font.family: root.mono
-                                font.pixelSize: 12
-                                font.weight: Font.Bold
+                                color: "white"
+                                font.family: Fonts.glyph
+                                font.pixelSize: 14
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (cell.isCur) {
+                                    Sfx.fill();
+                                    root.apply(cell.modelData);
+                                } else {
+                                    root.pick = cell.index;
+                                    Sfx.tick();
+                                }
                             }
                         }
                     }
+                }
+            }
 
-                    MouseArea {
-                        id: tileArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onEntered: grid.currentIndex = cell.index
-                        onClicked: {
-                            Sfx.fill();
-                            root.apply(cell.modelData);
-                        }
+            Item {
+                id: caption
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: carousel.cy + 338 / 2 + 40
+                width: 700
+                height: 80
+
+                property string name: ""
+                property string sub: ""
+                property real lift: 0
+
+                readonly property string wantName: root.focused !== "" ? root.prettyName(root.focused) : ""
+                onWantNameChanged: capSwap.restart()
+
+                SequentialAnimation {
+                    id: capSwap
+                    ParallelAnimation {
+                        NumberAnimation { target: capBody; property: "opacity"; to: 0; duration: 200; easing.type: Easing.InOutCubic }
+                        NumberAnimation { target: caption; property: "lift"; to: -6; duration: 200; easing.type: Easing.InOutCubic }
+                    }
+                    ScriptAction { script: caption.name = caption.wantName }
+                    ParallelAnimation {
+                        NumberAnimation { target: capBody; property: "opacity"; to: 1; duration: 520; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: caption; property: "lift"; from: 8; to: 0; duration: 600; easing.type: Easing.OutCubic }
                     }
                 }
 
-                Text {
-                    anchors.centerIn: parent
-                    visible: root.results.length === 0
-                    text: I18n.t("state.empty")
-                    color: Colors.fgDim
-                    opacity: 0.5
-                    font.family: root.mono
-                    font.pixelSize: 13
+                Column {
+                    id: capBody
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 10
+                    transform: Translate { y: caption.lift }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: Math.min(implicitWidth, 700)
+                        horizontalAlignment: Text.AlignHCenter
+                        text: caption.name
+                        color: "white"
+                        font.family: Fonts.display
+                        font.pixelSize: 26
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 10
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 10
+                            height: 10
+                            radius: 5
+                            color: root.glow
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.focused === root.current ? "On screen" : "↵  Apply"
+                            color: Qt.rgba(1, 1, 1, 0.55)
+                            font.family: Fonts.display
+                            font.pixelSize: 13
+                        }
+                    }
                 }
             }
+
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 54
+                spacing: 14
+
+                Repeater {
+                    model: root.filters
+
+                    Item {
+                        id: dotItem
+                        required property var modelData
+                        readonly property bool on: root.filter === dotItem.modelData.name
+                        readonly property bool tinted: dotItem.modelData.hex !== ""
+
+                        width: dotItem.tinted ? 22 : wordText.implicitWidth + 18
+                        height: 22
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: parent.width + (dotItem.on ? 8 : 0)
+                            height: parent.height + (dotItem.on ? 8 : 0)
+                            radius: height / 2
+                            color: "transparent"
+                            border.width: 1.5
+                            border.color: Qt.rgba(1, 1, 1, dotItem.on ? 0.75 : 0)
+                            Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                            Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                            Behavior on border.color { ColorAnimation { duration: 260 } }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: height / 2
+                            color: dotItem.tinted ? dotItem.modelData.hex : Qt.rgba(1, 1, 1, dotItem.on ? 0.16 : 0.08)
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                        }
+
+                        Text {
+                            id: wordText
+                            visible: !dotItem.tinted
+                            anchors.centerIn: parent
+                            text: dotItem.modelData.name.toLowerCase()
+                            color: Qt.rgba(1, 1, 1, dotItem.on ? 0.95 : 0.6)
+                            font.family: Fonts.display
+                            font.pixelSize: 11
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                Sfx.pick();
+                                root.filter = dotItem.modelData.name;
+                                search.forceActiveFocus();
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 22
+                text: "←→ browse     ↵ apply     tab colour     type to search"
+                color: Qt.rgba(1, 1, 1, 0.32)
+                font.family: Fonts.display
+                font.pixelSize: 11
+            }
+
+            Text {
+                visible: !root.isle
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: 60
+                text: search.text !== "" ? search.text : "Type to search"
+                color: Qt.rgba(1, 1, 1, search.text !== "" ? 0.9 : 0.35)
+                font.family: Fonts.display
+                font.pixelSize: 16
+            }
+
+            Text {
+                anchors.centerIn: parent
+                visible: root.results.length === 0
+                text: "No wallpapers"
+                color: Qt.rgba(1, 1, 1, 0.5)
+                font.family: Fonts.display
+                font.pixelSize: 16
+            }
         }
+
+        TextInput {
+            id: search
+            width: 10
+            height: 10
+            opacity: 0
+
+            Keys.onEscapePressed: root.close()
+            Keys.onLeftPressed: root.step(-1)
+            Keys.onRightPressed: root.step(1)
+            Keys.onUpPressed: root.cycleFilter(-1)
+            Keys.onDownPressed: root.cycleFilter(1)
+            Keys.onTabPressed: root.cycleFilter(1)
+            Keys.onBacktabPressed: root.cycleFilter(-1)
+            Keys.onReturnPressed: root.apply(root.focused)
+            Keys.onEnterPressed: root.apply(root.focused)
+        }
+    }
+
+    IpcHandler {
+        target: "wallpapers"
+        function open(): void { if (!root.shown) root.toggle(); }
+        function close(): void { root.close(); }
+        function step(d: int): void { root.step(d); }
+        function type(t: string): void { search.text = t; }
+        function apply(): void { root.apply(root.focused); }
     }
 }

@@ -1,0 +1,8 @@
+GtaVI GtaVI.qml
+Experience Experience.qml
+DigitCell DigitCell.qml
+SunsetFx SunsetFx.qml
+singleton GtaConfig GtaConfig.qml
+Slides Slides.qml
+PowerScreen PowerScreen.qml
+PowerScene PowerScene.qml

@@ -16,6 +16,7 @@ Singleton {
 
     readonly property bool charging:
         root.dev !== null && root.dev.state === UPowerDeviceState.Charging
+    readonly property bool plugged: !UPower.onBattery
     readonly property bool full:
         root.dev !== null && root.dev.state === UPowerDeviceState.FullyCharged
 

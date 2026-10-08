@@ -17,18 +17,24 @@ Scope {
         bodySupported: true
         bodyMarkupSupported: true
         imageSupported: true
+        inlineReplySupported: true
 
         onNotification: function (n) {
+            const eaten = IslandConfig.s("enabled") && IslandConfig.on("notif")
+                       && IslandConfig.s("eatPopups");
+
+            const keep = eaten && !n.transient && !Dnd.active;
+            NotifHistory.live = keep ? n : null;
+            if (keep)
+                root.eat(n);
+
             if (!n.transient)
                 NotifHistory.add(n);
 
             if (Dnd.active)
                 return;
 
-            const eaten = IslandConfig.s("enabled") && IslandConfig.on("notif")
-                       && IslandConfig.s("eatPopups");
-
-            if (!eaten)
+            if (keep || !eaten)
                 n.tracked = true;
 
             if (n.transient)
@@ -41,11 +47,34 @@ Scope {
         }
     }
 
+    property var eaten: ({})
+
+    function eat(n) {
+        const next = Object.assign({}, root.eaten);
+        next[n.id] = true;
+        root.eaten = next;
+        n.closed.connect(() => {
+            const left = Object.assign({}, root.eaten);
+            delete left[n.id];
+            root.eaten = left;
+        });
+    }
+
+    readonly property int popups: {
+        const list = server.trackedNotifications.values;
+        let k = 0;
+        for (let i = 0; i < list.length; i++) {
+            if (!root.eaten[list[i].id])
+                k++;
+        }
+        return k;
+    }
+
     PanelWindow {
         WlrLayershell.namespace: "qs-notifications"
         id: win
         screen: Focus.screen
-        visible: server.trackedNotifications.values.length > 0
+        visible: root.popups > 0
 
         anchors {
             top: true
@@ -80,8 +109,17 @@ Scope {
             Repeater {
                 model: server.trackedNotifications
 
-                NotificationCard {
-                    onClosed: modelData.dismiss()
+                Loader {
+                    id: slot
+                    required property var modelData
+                    active: !root.eaten[slot.modelData.id]
+                    visible: slot.active
+                    sourceComponent: Component {
+                        NotificationCard {
+                            modelData: slot.modelData
+                            onClosed: slot.modelData.dismiss()
+                        }
+                    }
                 }
             }
         }

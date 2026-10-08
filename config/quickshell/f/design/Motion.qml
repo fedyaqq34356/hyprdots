@@ -27,7 +27,7 @@ Singleton {
     readonly property real tapMass:    0.55
 
     readonly property real panelSpring:  3.2
-    readonly property real panelDamping: 0.42
+    readonly property real panelDamping: 0.6
     readonly property real panelMass:    0.9
 
     readonly property real heavySpring:  2.2
@@ -35,17 +35,17 @@ Singleton {
     readonly property real heavyMass:    1.4
 
     readonly property real isleOpenResponse:  0.46
-    readonly property real isleOpenDamping:   0.72
+    readonly property real isleOpenDamping:   0.86
     readonly property int  isleCloseMs:       300
 
     readonly property real isleWidthResponse: 0.38
     readonly property real isleWidthDamping:  0.86
 
     readonly property real isleHoverResponse: 0.38
-    readonly property real isleHoverDamping:  0.80
+    readonly property real isleHoverDamping:  0.92
     readonly property real isleHoverScale:    1.028
     readonly property real islePeekResponse:  0.30
-    readonly property real islePeekDamping:   0.50
+    readonly property real islePeekDamping:   0.70
     readonly property real islePeekScale:     1.04
     readonly property int  islePeekHoldMs:    90
 
@@ -64,11 +64,31 @@ Singleton {
     readonly property real isleTapResponse: 0.22
     readonly property real isleTapDamping:  0.70
 
+    readonly property real isleSquashX:        0.055
+    readonly property real isleSquashY:        0.17
+    readonly property real isleSquashResponse: 0.26
+    readonly property real isleSquashDamping:  0.34
+
+    readonly property int  isleShakeMs:   460
+    readonly property real isleShakePx:   9
+
+    readonly property int  isleDozeSize:  12
+    readonly property int  isleDozeMs:    3600
+
     readonly property int  isleGlossMs:    760
     readonly property real isleGlossAlpha: 0.16
 
     readonly property int  isleThrobMs:    1100
     readonly property real isleThrobScale: 1.022
+
+    readonly property int  isleWindupMs:    70
+    readonly property real isleWindupScale: 0.04
+
+    readonly property int  isleCometLiftMs: 150
+    readonly property int  isleCometMs:     640
+
+    readonly property real isleMagnetReach: 90
+    readonly property real isleMagnetPull:  4
 
     readonly property int stagger: 28
 
