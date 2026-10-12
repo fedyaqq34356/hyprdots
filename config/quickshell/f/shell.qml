@@ -71,6 +71,7 @@ ShellRoot {
     LazyLoader { id: mediaL; MediaPanel {} }
     LazyLoader { id: calendarL; loading: true; Calendar {} }
     LazyLoader { id: sysRingsL; SysRings {} }
+    LazyLoader { id: batteryL; BatteryPanel {} }
     LazyLoader { id: timerL; TimerPanel {} }
     LazyLoader { id: settingsL; Settings {} }
     LazyLoader { id: guideL; Guide {} }
@@ -351,6 +352,12 @@ ShellRoot {
         appid: "quickshell"
         name: "sysRings"
         onPressed: panelDo(sysRingsL, p => p.toggle())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "battery"
+        onPressed: panelDo(batteryL, p => p.toggle())
     }
 
     GlobalShortcut {
