@@ -26,7 +26,9 @@ unfreeze() {
 }
 trap unfreeze EXIT
 
-SLURP_STYLE=(-d -b 00000055 -c efbd90ff -s efbd9022 -w 2)
+ACCENT=$(sed -n 's/^\$accent *= *rgb(\([0-9a-fA-F]\{6\}\)).*/\1/p' "$HOME/.config/hypr/config/colors.conf" 2>/dev/null | head -1)
+[ -n "$ACCENT" ] || ACCENT=ffffff
+SLURP_STYLE=(-d -b 00000055 -c "${ACCENT}ff" -s "${ACCENT}22" -w 2)
 
 pick_region() {
     freeze
@@ -101,7 +103,7 @@ case "$MODE" in
 
         while :; do
             freeze
-            SUB=$(slurp -d 2>/dev/null) || { unfreeze; break; }
+            SUB=$(slurp "${SLURP_STYLE[@]}" 2>/dev/null) || { unfreeze; break; }
             unfreeze
             [ -z "$SUB" ] && break
 
@@ -184,7 +186,7 @@ case "$MODE" in
             exit 1
         }
 
-        SLURP_STYLE=(-d -b 000000aa -c efbd90ff -s efbd9033 -w 3)
+        SLURP_STYLE=(-d -b 000000aa -c "${ACCENT}ff" -s "${ACCENT}33" -w 3)
 
         GEOM=$(pick_region) || {
             notify "Lens" "No region selected" -t 2000 -a screenshot -r 9993
@@ -226,7 +228,7 @@ case "$MODE" in
             exit 1
         }
 
-        SLURP_STYLE=(-d -b 000000aa -c efbd90ff -s efbd9033 -w 3)
+        SLURP_STYLE=(-d -b 000000aa -c "${ACCENT}ff" -s "${ACCENT}33" -w 3)
 
         GEOM=$(pick_region) || {
             notify "OCR" "No region selected" -t 2000 -a screenshot -r 9993

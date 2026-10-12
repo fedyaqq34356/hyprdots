@@ -20,8 +20,31 @@ ccpd)
         sleep 0.3
     done
     pidof ccpd >/dev/null 2>&1 && killall -9 ccpd 2>/dev/null
-    rc-service ccpd start >/dev/null 2>&1
-    exit $?
+    pkill -9 '^captmon' 2>/dev/null
+
+    ports=$(awk '$1 == "UI_Port" || $1 == "PDATA_Port" { print $2 }' /etc/ccpd.conf)
+    [[ -n "$ports" ]] || ports="59687 59787"
+    filter=""
+    for p in $ports; do
+        filter+="${filter:+ or }sport = :$p"
+    done
+    for _ in $(seq 1 75); do
+        [[ -z "$(ss -Htan "( $filter )" 2>/dev/null)" ]] && break
+        sleep 1
+    done
+
+    rc-service ccpd start >/dev/null 2>&1 || exit $?
+
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        missing=0
+        for p in $ports; do
+            [[ -n "$(ss -Hltn "sport = :$p" 2>/dev/null)" ]] || missing=1
+        done
+        (( missing )) || exit 0
+        sleep 0.3
+    done
+    echo "ccpd поднялся не на всех портах: $ports" >&2
+    exit 1
     ;;
 
 enable)
