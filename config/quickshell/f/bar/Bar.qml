@@ -512,6 +512,127 @@ Scope {
                 }
 
                 Item {
+                    id: dotsChip
+                    z: 5
+                    readonly property bool wanted: DotsUpdate.available
+                    readonly property real gap: BarConfig.s("islandGap", win.screenName)
+                    readonly property real margin: BarConfig.s("edgeMargin", win.screenName)
+                    readonly property real full: chipRow.implicitWidth + 26
+
+                    height: BarConfig.s("islandHeight", win.screenName)
+                    width: dotsChip.wanted ? dotsChip.full : dotsChip.height
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: win.yielded || leftZone.width <= 0
+                        ? dotsChip.margin
+                        : field.x + leftZone.x + leftZone.width + dotsChip.gap
+                    visible: opacity > 0.01
+                    opacity: dotsChip.wanted ? 1 : 0
+                    scale: dotsChip.wanted ? (chipMouse.containsMouse ? 1.05 : 1) : 0.6
+
+                    Behavior on x { NumberAnimation { duration: Motion.slow; easing.type: Easing.Bezier; easing.bezierCurve: Motion.glide } }
+                    Behavior on width { NumberAnimation { duration: 620; easing.type: Easing.OutCubic } }
+                    Behavior on opacity { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
+                    Behavior on scale { NumberAnimation { duration: 420; easing.type: Easing.OutCubic } }
+
+                    Rectangle {
+                        id: chipPlate
+                        anchors.fill: parent
+                        radius: Math.min(height / 2, BarConfig.s("radius", win.screenName))
+                        color: Colors.alpha(Colors.bg, (chipMouse.containsMouse
+                            ? BarConfig.s("fillHover", win.screenName)
+                            : BarConfig.s("fill", win.screenName)) / 100)
+                        border.width: 1
+                        border.color: Colors.alpha(Colors.accent, chipPlate.glow)
+                        antialiasing: true
+                        clip: true
+
+                        property real glow: 0.3
+                        SequentialAnimation on glow {
+                            running: dotsChip.wanted
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 0.25; to: 0.75; duration: 2800; easing.type: Easing.InOutSine }
+                            NumberAnimation { from: 0.75; to: 0.25; duration: 2800; easing.type: Easing.InOutSine }
+                        }
+
+                        Rectangle {
+                            id: chipSheen
+                            width: parent.height * 1.6
+                            height: parent.height * 3
+                            anchors.verticalCenter: parent.verticalCenter
+                            rotation: 22
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop { position: 0.0; color: "transparent" }
+                                GradientStop { position: 0.5; color: Colors.alpha(Colors.accent, 0.22) }
+                                GradientStop { position: 1.0; color: "transparent" }
+                            }
+                            SequentialAnimation on x {
+                                running: dotsChip.wanted
+                                loops: Animation.Infinite
+                                PauseAnimation { duration: 2400 }
+                                NumberAnimation {
+                                    from: -chipSheen.width * 1.5; to: dotsChip.full + chipSheen.width
+                                    duration: 1800; easing.type: Easing.InOutCubic
+                                }
+                                PauseAnimation { duration: 3800 }
+                            }
+                        }
+
+                        Row {
+                            id: chipRow
+                            anchors.centerIn: parent
+                            spacing: 7
+                            opacity: dotsChip.width > dotsChip.full * 0.8 ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: 300 } }
+
+                            Text {
+                                id: chipGlyph
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "󰚰"
+                                color: Colors.accent
+                                font.family: Fonts.glyph
+                                font.pixelSize: 14
+                                SequentialAnimation on rotation {
+                                    running: dotsChip.wanted
+                                    loops: Animation.Infinite
+                                    PauseAnimation { duration: 3200 }
+                                    NumberAnimation { from: 0; to: 360; duration: 1400; easing.type: Easing.InOutCubic }
+                                    PauseAnimation { duration: 2400 }
+                                }
+                            }
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: I18n.t("dots.update")
+                                color: Colors.fg
+                                font.family: Fonts.display
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: DotsUpdate.size()
+                                color: Colors.alpha(Colors.fgDim, 0.7)
+                                font.family: Fonts.mono
+                                font.pixelSize: 10
+                                font.weight: Font.DemiBold
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        id: chipMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        enabled: dotsChip.wanted
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            Sfx.tick();
+                            DotsUpdate.open();
+                        }
+                    }
+                }
+
+                Item {
                     id: field
                     visible: !win.yielded
                     anchors.horizontalCenter: parent.horizontalCenter

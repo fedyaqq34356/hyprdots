@@ -47,6 +47,7 @@ MANIFEST = [
     (".local/bin/shell-autostart", "bin/shell-autostart"),
     (".local/bin/shell-watchdog", "bin/shell-watchdog"),
     (".local/bin/shell-switch", "bin/shell-switch"),
+    (".local/bin/hyprdots-update", "bin/hyprdots-update"),
     (".local/bin/qs-solo", "bin/qs-solo"),
     (".local/bin/serezha-mode", "bin/serezha-mode"),
     (".local/bin/serezha-menu", "bin/serezha-menu"),

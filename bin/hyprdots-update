@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+SOURCE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/hyprdots/source"
+SRC="${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots"
+[[ -f "$SOURCE_FILE" ]] && SRC=$(<"$SOURCE_FILE")
+
+case "${HYPRDOTS_LANG:-${LANG:-}}" in
+ru*) RU=1 ;;
+*) RU=0 ;;
+esac
+t() { if ((RU)); then printf '%s' "$1"; else printf '%s' "$2"; fi; }
+
+BOLD=$'\e[1m'; DIM=$'\e[2m'; RED=$'\e[31m'; GREEN=$'\e[32m'
+YELLOW=$'\e[33m'; BLUE=$'\e[34m'; RESET=$'\e[0m'
+
+human() {
+    local b=$1
+    if ((b >= 1048576)); then
+        awk -v b="$b" 'BEGIN { printf "%.1f MB", b / 1048576 }'
+    elif ((b >= 1024)); then
+        awk -v b="$b" 'BEGIN { printf "%.1f KB", b / 1024 }'
+    else
+        printf '%d B' "$b"
+    fi
+}
+
+measure() {
+    git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+    git -C "$SRC" rev-parse '@{u}' >/dev/null 2>&1 || return 1
+    timeout 60 git -C "$SRC" fetch --quiet 2>/dev/null || return 1
+    COMMITS=$(git -C "$SRC" rev-list --count 'HEAD..@{u}' 2>/dev/null || echo 0)
+    BYTES=$(git -C "$SRC" rev-list --objects 'HEAD..@{u}' 2>/dev/null | cut -d' ' -f1 \
+        | git -C "$SRC" cat-file --batch-check='%(objectsize)' 2>/dev/null \
+        | awk '$1 ~ /^[0-9]+$/ { s += $1 } END { printf "%d", s }')
+    FILES=$(git -C "$SRC" diff --name-only HEAD '@{u}' 2>/dev/null | wc -l)
+    return 0
+}
+
+if [[ "${1:-}" == "--check" ]]; then
+    if measure && ((COMMITS > 0)); then
+        printf '{"available":true,"commits":%d,"bytes":%d,"files":%d}\n' "$COMMITS" "$BYTES" "$FILES"
+    else
+        printf '{"available":false}\n'
+    fi
+    exit 0
+fi
+
+notify_shell() {
+    command -v qs >/dev/null && qs ipc -c f call dotsUpdate refresh >/dev/null 2>&1 || true
+}
+
+leave() {
+    notify_shell
+    exit "${1:-0}"
+}
+
+printf '\n  %s%s%s\n\n' "$BOLD" "$(t 'Обновление конфигурации hyprdots' 'hyprdots configuration update')" "$RESET"
+printf '  %s%s%s\n' "$DIM" "$(t 'проверяю GitHub…' 'checking GitHub…')" "$RESET"
+
+if ! measure; then
+    printf '\n  %s!%s %s\n' "$RED" "$RESET" "$(t "не получилось связаться с репозиторием в $SRC" "could not reach the repository at $SRC")"
+    printf '\n  %s' "$(t 'Enter — закрыть' 'Enter to close')"
+    read -r _ </dev/tty
+    leave 1
+fi
+
+printf '\033[1A\033[2K'
+
+if ((COMMITS == 0)); then
+    printf '  %s✓%s %s\n\n' "$GREEN" "$RESET" "$(t 'у тебя уже последняя версия' 'you already have the latest version')"
+    sleep 2
+    leave 0
+fi
+
+printf '  %s%-12s%s %s\n' "$DIM" "$(t 'изменений' 'changes')" "$RESET" "$COMMITS"
+printf '  %s%-12s%s %s\n' "$DIM" "$(t 'файлов' 'files')" "$RESET" "$FILES"
+printf '  %s%-12s%s %s%s%s\n\n' "$DIM" "$(t 'вес' 'size')" "$RESET" "$BOLD" "$(human "$BYTES")" "$RESET"
+
+git -C "$SRC" log --format="  $BLUE•$RESET %s $DIM(%cr)$RESET" 'HEAD..@{u}' | head -n 15
+((COMMITS > 15)) && printf '  %s… %s%s\n' "$DIM" "$(t "и ещё $((COMMITS - 15))" "and $((COMMITS - 15)) more")" "$RESET"
+
+printf '\n  %s%s%s %s' "$BOLD" "$(t 'Обновить сейчас?' 'Update now?')" "$RESET" "[y/N] "
+read -r reply </dev/tty || reply=n
+if [[ ! "$reply" =~ ^[YyДд]$ ]]; then
+    exit 0
+fi
+
+printf '\n'
+if git -C "$SRC" merge-base --is-ancestor HEAD '@{u}'; then
+    git -C "$SRC" merge --ff-only --quiet '@{u}' || leave 1
+else
+    printf '  %s!%s %s\n' "$YELLOW" "$RESET" "$(t 'история на GitHub переписана — копия будет сброшена к ней' 'history on GitHub was rewritten — the local copy is reset to it')"
+    git -C "$SRC" reset --hard --quiet '@{u}' || leave 1
+fi
+
+if bash "$SRC/install.sh" --update --pulled -y; then
+    printf '\n  %s✓%s %s\n' "$GREEN" "$RESET" "$(t 'готово — окно закроется само' 'done — this window closes by itself')"
+    sleep 3
+    leave 0
+fi
+
+printf '\n  %s!%s %s\n' "$RED" "$RESET" "$(t 'обновление прервалось, вывод выше' 'the update failed, see the output above')"
+printf '\n  %s' "$(t 'Enter — закрыть' 'Enter to close')"
+read -r _ </dev/tty
+leave 1
