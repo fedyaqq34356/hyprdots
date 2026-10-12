@@ -375,6 +375,375 @@ A watchdog supervises it: if Quickshell dies it is restarted, and after three fa
 stops retrying and says so in a notification instead of flapping. `shell-switch status` reports
 the current state, `shell-switch restart` reloads it.
 
+### From a blank disk
+
+A full walk-through, from an empty drive to this desktop. If Arch or Artix is already installed,
+skip straight to [Install](#install). Commands marked **Arch** or **Artix** differ between the two;
+everything else is the same.
+
+<details>
+<summary><b>1. Boot the installer</b> — <sub>ISO, USB stick, firmware settings</sub></summary>
+
+
+* **Arch** — download the ISO from [archlinux.org/download](https://archlinux.org/download/).
+* **Artix** — download the **base OpenRC** ISO from [artixlinux.org/download](https://artixlinux.org/download.php).
+
+Write it to a USB stick (everything on the stick is erased):
+
+```bash
+sudo dd if=archlinux-x86_64.iso of=/dev/sdX bs=4M status=progress oflag=sync
+```
+
+On Windows use [Rufus](https://rufus.ie) in DD mode, or drop the ISO on a [Ventoy](https://www.ventoy.net) stick.
+
+In the firmware (usually `F2`, `F10`, `Del` or `Esc` at power-on): boot in **UEFI** mode, turn
+**Secure Boot off**, and on laptops with NVIDIA graphics set the GPU mode to *Hybrid* / *MSHybrid*
+rather than *iGPU only*. Boot from the stick.
+
+Check that the machine really booted in UEFI mode — this must print a number, not an error:
+
+```bash
+cat /sys/firmware/efi/fw_platform_size
+```
+
+</details>
+
+<details>
+<summary><b>2. Network, keyboard, clock</b></summary>
+
+
+Wired Ethernet works by itself. For Wi-Fi:
+
+**Arch**
+
+```bash
+iwctl
+[iwd]# device list
+[iwd]# station wlan0 scan
+[iwd]# station wlan0 get-networks
+[iwd]# station wlan0 connect "NetworkName"
+[iwd]# exit
+```
+
+**Artix** (log in as `root`, password `artix`)
+
+```bash
+rfkill unblock wifi
+connmanctl
+connmanctl> enable wifi
+connmanctl> scan wifi
+connmanctl> services
+connmanctl> agent on
+connmanctl> connect wifi_xxxxxxxx_managed_psk
+connmanctl> quit
+```
+
+Then check it and sync the clock:
+
+```bash
+ping -c 3 archlinux.org
+timedatectl set-ntp true        # Arch only; Artix syncs the clock later from the installed system
+```
+
+</details>
+
+<details>
+<summary><b>3. Partition and format</b> — <sub>EFI + root, ext4 or btrfs</sub></summary>
+
+
+Find the disk (`nvme0n1`, `sda`, …):
+
+```bash
+lsblk
+```
+
+> ⚠️ The next step **erases the whole disk**. Double-check the name.
+
+```bash
+cfdisk /dev/nvme0n1
+```
+
+Choose `gpt` and create two partitions:
+
+| Partition | Size | Type |
+| --- | --- | --- |
+| `/dev/nvme0n1p1` | 1G | EFI System |
+| `/dev/nvme0n1p2` | the rest | Linux filesystem |
+
+Format and mount them (on a SATA disk the names are `sda1`, `sda2`):
+
+```bash
+mkfs.fat -F 32 /dev/nvme0n1p1
+mkfs.ext4 /dev/nvme0n1p2
+
+mount /dev/nvme0n1p2 /mnt
+mount --mkdir /dev/nvme0n1p1 /mnt/boot
+```
+
+Swap is optional — a swap file can be added later, or use `zram-generator` (Arch) / `zramen` (Artix).
+
+</details>
+
+<details>
+<summary><b>4. Install the base system</b> — <sub>pick the microcode for your CPU</sub></summary>
+
+
+The microcode package depends on the **processor**:
+
+| CPU | Package |
+| --- | --- |
+| Intel | `intel-ucode` |
+| AMD | `amd-ucode` |
+
+**Arch**
+
+```bash
+pacstrap -K /mnt base base-devel linux linux-headers linux-firmware \
+    intel-ucode networkmanager sudo git nano
+genfstab -U /mnt >> /mnt/etc/fstab
+arch-chroot /mnt
+```
+
+**Artix**
+
+```bash
+basestrap /mnt base base-devel openrc elogind-openrc linux linux-headers linux-firmware \
+    intel-ucode networkmanager networkmanager-openrc sudo git nano
+fstabgen -U /mnt >> /mnt/etc/fstab
+artix-chroot /mnt
+```
+
+Replace `intel-ucode` with `amd-ucode` on an AMD processor.
+
+</details>
+
+<details>
+<summary><b>5. Configure the system</b> — <sub>time zone, locale, user, bootloader</sub></summary>
+
+
+Everything below runs inside the chroot. Replace `Europe/Kyiv`, `myhost` and `user` with your own.
+
+```bash
+ln -sf /usr/share/zoneinfo/Europe/Kyiv /etc/localtime
+hwclock --systohc
+
+sed -i 's/^#en_US.UTF-8/en_US.UTF-8/; s/^#ru_RU.UTF-8/ru_RU.UTF-8/' /etc/locale.gen
+locale-gen
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+
+echo myhost > /etc/hostname
+```
+
+**Artix** also keeps the hostname for OpenRC:
+
+```bash
+echo 'hostname="myhost"' > /etc/conf.d/hostname
+```
+
+Root password, your user, and `sudo` for the `wheel` group:
+
+```bash
+passwd
+useradd -m -G wheel,video,audio,input -s /bin/bash user
+passwd user
+EDITOR=nano visudo        # uncomment the line:  %wheel ALL=(ALL:ALL) ALL
+```
+
+Bootloader (GRUB picks up the microcode automatically):
+
+```bash
+pacman -S grub efibootmgr
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+Turn on the network for the installed system:
+
+```bash
+systemctl enable NetworkManager          # Arch
+rc-update add NetworkManager default     # Artix
+```
+
+Leave and reboot, pulling the USB stick out:
+
+```bash
+exit
+umount -R /mnt
+reboot
+```
+
+Log in as your user. Wi-Fi from now on: `nmtui`.
+
+</details>
+
+<details>
+<summary><b>6. Artix: Arch repositories</b> — <sub>Artix only, needed for Hyprland and Quickshell</sub></summary>
+
+
+Hyprland, Quickshell and part of the dependencies come from Arch's `[extra]`. Artix has an
+official bridge for that:
+
+```bash
+sudo pacman -S artix-archlinux-support
+sudo pacman-key --populate archlinux
+```
+
+Append to the **end** of `/etc/pacman.conf` (after the Artix repositories):
+
+```ini
+[extra]
+Include = /etc/pacman.d/mirrorlist-arch
+
+[multilib]
+Include = /etc/pacman.d/mirrorlist-arch
+```
+
+Also uncomment `[lib32]` in the same file, then refresh:
+
+```bash
+sudo pacman -Syu
+```
+
+The installer stops with a clear message if `[extra]` is missing.
+
+</details>
+
+<details>
+<summary><b>7. Graphics drivers</b> — <sub>NVIDIA, AMD, Intel, hybrid laptops</sub></summary>
+
+
+Not sure what is inside?
+
+```bash
+lspci -k | grep -EA3 'VGA|3D|Display'
+```
+
+Enable `[multilib]` (Arch: uncomment it in `/etc/pacman.conf`; Artix: done in step 6) so the
+32-bit libraries for Steam and Wine are available, then `sudo pacman -Syu`.
+
+**AMD Radeon**
+
+```bash
+sudo pacman -S mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon
+```
+
+Video decoding (VA-API) is built into `mesa`. Nothing else is needed — the kernel driver `amdgpu`
+loads by itself.
+
+**Intel**
+
+```bash
+sudo pacman -S mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver
+```
+
+`intel-media-driver` covers Broadwell (5th gen) and newer; for older chips install
+`libva-intel-driver` instead.
+
+**NVIDIA**
+
+Pick the package by the card generation:
+
+| Card | Package |
+| --- | --- |
+| RTX 50/40/30/20, GTX 16xx (Turing and newer) | `nvidia-open` (`nvidia-open-dkms` for `linux-lts`, `linux-zen` and other kernels) |
+| GTX 10xx, GTX 9xx (Pascal, Maxwell) | `nvidia-580xx-dkms` + `nvidia-580xx-utils` from the AUR (instead of the line below) |
+| older | not supported by Hyprland — use the iGPU or `nouveau` |
+
+```bash
+sudo pacman -S nvidia-open nvidia-utils lib32-nvidia-utils egl-wayland libva-nvidia-driver
+```
+
+Load the driver early so Hyprland gets the GPU from the very first frame. In
+`/etc/mkinitcpio.conf` set:
+
+```bash
+MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
+```
+
+and remove `kms` from the `HOOKS=(...)` line, then rebuild and reboot:
+
+```bash
+sudo mkinitcpio -P
+sudo reboot
+```
+
+Check that DRM modesetting is on — it must print `Y`:
+
+```bash
+cat /sys/module/nvidia_drm/parameters/modeset
+```
+
+If it prints `N`, add `nvidia_drm.modeset=1` to `GRUB_CMDLINE_LINUX_DEFAULT` in
+`/etc/default/grub` and run `sudo grub-mkconfig -o /boot/grub/grub.cfg`.
+
+**Hybrid laptops (Intel/AMD + NVIDIA)** — install the drivers for **both** GPUs. The desktop runs
+on the integrated one and the NVIDIA card wakes up for games (`prime-run <game>` from the
+`nvidia-prime` package).
+
+You do not have to edit anything by hand afterwards: the installer looks at `lspci`, keeps the
+NVIDIA environment in `~/.config/hypr/config/env.conf` only when there is an NVIDIA card, and
+switches VA-API to `radeonsi` or `iHD` on AMD and Intel.
+
+</details>
+
+<details>
+<summary><b>8. Processor</b> — <sub>Intel and AMD power management</sub></summary>
+
+
+Microcode was installed in step 4. After it, check it loaded:
+
+```bash
+journalctl -k | grep -i microcode       # Arch
+dmesg | grep -i microcode               # Artix
+```
+
+* **AMD** (Zen 2 and newer) uses the `amd-pstate` driver automatically on current kernels —
+  `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver` prints `amd-pstate-epp`.
+* **Intel** uses `intel_pstate`, also automatic.
+
+Laptops: install a power daemon so the island can switch power profiles:
+
+```bash
+sudo pacman -S power-profiles-daemon
+sudo systemctl enable --now power-profiles-daemon          # Arch
+sudo pacman -S power-profiles-daemon-openrc && \
+    sudo rc-update add power-profiles-daemon default       # Artix
+```
+
+</details>
+
+<details>
+<summary><b>9. Install this configuration</b></summary>
+
+
+As your normal user (not root), with the network up:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+```
+
+The installer detects Arch or Artix and your GPU, installs every package (plus `yay` for the AUR if
+there is no AUR helper yet), enables NetworkManager and Bluetooth for systemd or OpenRC, deploys the
+files, sets zsh as the login shell and builds the colour scheme.
+
+Put a few images into `~/Pictures/Wallpapers`, then log out and back in on the TTY and start the
+session:
+
+```bash
+start-hyprland
+```
+
+To start it automatically after logging in on tty1, add to the end of `~/.zprofile`:
+
+```bash
+[[ -z $WAYLAND_DISPLAY && $(tty) == /dev/tty1 ]] && exec start-hyprland
+```
+
+First steps: `Super` + `W` — pick a wallpaper, `Super` + `D` — launcher, `Super` + `Shift` + `I` —
+tune the island. All shortcuts are in [Keybindings](#keybindings).
+
+</details>
+
 ### Install
 
 One command. It fetches the repository, installs every dependency, backs up whatever is already
@@ -411,6 +780,13 @@ machine as it is and only brings the configuration forward:
 ```bash
 dots-update
 ```
+
+**Or just press the button.** The shell checks GitHub every 30 minutes. When a new version is
+out, an **update** button with its size appears next to the workspaces — or in the top-left corner
+when the island has taken over the bar. Clicking it opens a terminal with the list of changes, the
+number of files and how much the update weighs, and asks `Update now? [y/N]`. Say no and the
+terminal closes while the button stays; say yes and the update runs by itself, after which the
+button disappears until the next version.
 
 It pulls the newest revision, prints the commits you are about to get, replaces the configuration
 files (backing up whatever it overwrites), installs only packages that are genuinely missing —
@@ -977,6 +1353,7 @@ back on the way out. Brightness, volume, refresh rate and idle timeouts are deli
 | `Super` + `Shift` + `M` | audio panel (output and microphone) |
 | `Super` + `Shift` + `D` | calendar with a commit heatmap |
 | `Super` + `F1` | system monitor rings |
+| `Super` + `Ctrl` + `B` | battery — charge, time left, health and cycles |
 | `Super` + `Shift` + `N` | notification centre |
 | `Super` + `Ctrl` + `N` | do not disturb |
 | `Super` + `P` | power menu |
@@ -1122,8 +1499,8 @@ the systemd variants.
 <summary><b>Notes</b> — <sub>hardware, quirks and honest caveats</sub></summary>
 
 
-* NVIDIA-specific environment variables live in `config/hypr/config/env.conf` — remove them on AMD
-  or Intel hardware.
+* NVIDIA-specific environment variables live in `config/hypr/config/env.conf`; the installer
+  removes them by itself when there is no NVIDIA card.
 * Monitors are declared in `config/hypr/config/monitors.conf`; adjust it for your outputs.
 * Wallpapers are read from `~/Pictures/Wallpapers` and rotate every three hours; the interval is
   set in `config/hypr/scripts/wallpaper-rotate.sh`.
@@ -1168,6 +1545,374 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE).
 прекращаются и приходит уведомление — вместо бесконечного мигания панели. `shell-switch status`
 показывает состояние, `shell-switch restart` перезапускает.
 
+### С чистого диска
+
+Полный путь от пустого диска до этого рабочего стола. Если Arch или Artix уже стоит, сразу
+переходите к [Установке](#установка). Команды с пометкой **Arch** или **Artix** у двух систем
+разные, всё остальное одинаково.
+
+<details>
+<summary><b>1. Загрузка установщика</b> — <sub>ISO, флешка, настройки прошивки</sub></summary>
+
+
+* **Arch** — ISO с [archlinux.org/download](https://archlinux.org/download/).
+* **Artix** — ISO **base OpenRC** с [artixlinux.org/download](https://artixlinux.org/download.php).
+
+Запишите образ на флешку (всё на ней сотрётся):
+
+```bash
+sudo dd if=archlinux-x86_64.iso of=/dev/sdX bs=4M status=progress oflag=sync
+```
+
+В Windows — [Rufus](https://rufus.ie) в режиме DD или флешка с [Ventoy](https://www.ventoy.net).
+
+В прошивке (обычно `F2`, `F10`, `Del` или `Esc` при включении): режим загрузки **UEFI**,
+**Secure Boot выключить**, на ноутбуках с NVIDIA режим видеокарты — *Hybrid* / *MSHybrid*, а не
+*iGPU only*. Загрузитесь с флешки.
+
+Убедитесь, что система загрузилась именно в UEFI — команда должна вывести число, а не ошибку:
+
+```bash
+cat /sys/firmware/efi/fw_platform_size
+```
+
+</details>
+
+<details>
+<summary><b>2. Сеть, раскладка, часы</b></summary>
+
+
+Проводной интернет работает сам. Для Wi-Fi:
+
+**Arch**
+
+```bash
+iwctl
+[iwd]# device list
+[iwd]# station wlan0 scan
+[iwd]# station wlan0 get-networks
+[iwd]# station wlan0 connect "ИмяСети"
+[iwd]# exit
+```
+
+**Artix** (логин `root`, пароль `artix`)
+
+```bash
+rfkill unblock wifi
+connmanctl
+connmanctl> enable wifi
+connmanctl> scan wifi
+connmanctl> services
+connmanctl> agent on
+connmanctl> connect wifi_xxxxxxxx_managed_psk
+connmanctl> quit
+```
+
+Проверка и синхронизация времени:
+
+```bash
+ping -c 3 archlinux.org
+timedatectl set-ntp true        # только Arch; в Artix время синхронизируется уже в установленной системе
+```
+
+</details>
+
+<details>
+<summary><b>3. Разметка и форматирование</b> — <sub>EFI + корень, ext4 или btrfs</sub></summary>
+
+
+Найдите диск (`nvme0n1`, `sda`, …):
+
+```bash
+lsblk
+```
+
+> ⚠️ Следующий шаг **стирает весь диск**. Проверьте имя дважды.
+
+```bash
+cfdisk /dev/nvme0n1
+```
+
+Выберите `gpt` и создайте два раздела:
+
+| Раздел | Размер | Тип |
+| --- | --- | --- |
+| `/dev/nvme0n1p1` | 1G | EFI System |
+| `/dev/nvme0n1p2` | всё остальное | Linux filesystem |
+
+Форматирование и монтирование (на SATA-диске имена `sda1`, `sda2`):
+
+```bash
+mkfs.fat -F 32 /dev/nvme0n1p1
+mkfs.ext4 /dev/nvme0n1p2
+
+mount /dev/nvme0n1p2 /mnt
+mount --mkdir /dev/nvme0n1p1 /mnt/boot
+```
+
+Swap не обязателен — потом можно добавить swap-файл или zram (`zram-generator` в Arch, `zramen` в Artix).
+
+</details>
+
+<details>
+<summary><b>4. Базовая система</b> — <sub>микрокод под ваш процессор</sub></summary>
+
+
+Пакет микрокода зависит от **процессора**:
+
+| Процессор | Пакет |
+| --- | --- |
+| Intel | `intel-ucode` |
+| AMD | `amd-ucode` |
+
+**Arch**
+
+```bash
+pacstrap -K /mnt base base-devel linux linux-headers linux-firmware \
+    intel-ucode networkmanager sudo git nano
+genfstab -U /mnt >> /mnt/etc/fstab
+arch-chroot /mnt
+```
+
+**Artix**
+
+```bash
+basestrap /mnt base base-devel openrc elogind-openrc linux linux-headers linux-firmware \
+    intel-ucode networkmanager networkmanager-openrc sudo git nano
+fstabgen -U /mnt >> /mnt/etc/fstab
+artix-chroot /mnt
+```
+
+На процессоре AMD замените `intel-ucode` на `amd-ucode`.
+
+</details>
+
+<details>
+<summary><b>5. Настройка системы</b> — <sub>часовой пояс, локаль, пользователь, загрузчик</sub></summary>
+
+
+Всё дальше выполняется внутри chroot. `Europe/Kyiv`, `myhost` и `user` замените на свои.
+
+```bash
+ln -sf /usr/share/zoneinfo/Europe/Kyiv /etc/localtime
+hwclock --systohc
+
+sed -i 's/^#en_US.UTF-8/en_US.UTF-8/; s/^#ru_RU.UTF-8/ru_RU.UTF-8/' /etc/locale.gen
+locale-gen
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+
+echo myhost > /etc/hostname
+```
+
+В **Artix** имя хоста нужно ещё и OpenRC:
+
+```bash
+echo 'hostname="myhost"' > /etc/conf.d/hostname
+```
+
+Пароль root, ваш пользователь и `sudo` для группы `wheel`:
+
+```bash
+passwd
+useradd -m -G wheel,video,audio,input -s /bin/bash user
+passwd user
+EDITOR=nano visudo        # раскомментируйте строку:  %wheel ALL=(ALL:ALL) ALL
+```
+
+Загрузчик (микрокод GRUB подхватит сам):
+
+```bash
+pacman -S grub efibootmgr
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+Сеть в установленной системе:
+
+```bash
+systemctl enable NetworkManager          # Arch
+rc-update add NetworkManager default     # Artix
+```
+
+Выход и перезагрузка (флешку вынуть):
+
+```bash
+exit
+umount -R /mnt
+reboot
+```
+
+Войдите под своим пользователем. Wi-Fi теперь — через `nmtui`.
+
+</details>
+
+<details>
+<summary><b>6. Artix: репозитории Arch</b> — <sub>только для Artix, нужны для Hyprland и Quickshell</sub></summary>
+
+
+Hyprland, Quickshell и часть зависимостей лежат в `[extra]` у Arch. У Artix для этого есть
+официальный мост:
+
+```bash
+sudo pacman -S artix-archlinux-support
+sudo pacman-key --populate archlinux
+```
+
+Допишите в **конец** `/etc/pacman.conf` (после репозиториев Artix):
+
+```ini
+[extra]
+Include = /etc/pacman.d/mirrorlist-arch
+
+[multilib]
+Include = /etc/pacman.d/mirrorlist-arch
+```
+
+Там же раскомментируйте `[lib32]` и обновитесь:
+
+```bash
+sudo pacman -Syu
+```
+
+Если `[extra]` не подключён, установщик остановится и скажет об этом.
+
+</details>
+
+<details>
+<summary><b>7. Драйверы видеокарты</b> — <sub>NVIDIA, AMD, Intel, гибридные ноутбуки</sub></summary>
+
+
+Не знаете, что стоит внутри?
+
+```bash
+lspci -k | grep -EA3 'VGA|3D|Display'
+```
+
+Включите `[multilib]` (Arch: раскомментировать в `/etc/pacman.conf`; Artix: сделано в шаге 6),
+чтобы были 32-битные библиотеки для Steam и Wine, затем `sudo pacman -Syu`.
+
+**AMD Radeon**
+
+```bash
+sudo pacman -S mesa lib32-mesa vulkan-radeon lib32-vulkan-radeon
+```
+
+Аппаратное декодирование видео (VA-API) встроено в `mesa`. Больше ничего не нужно — драйвер ядра
+`amdgpu` загружается сам.
+
+**Intel**
+
+```bash
+sudo pacman -S mesa lib32-mesa vulkan-intel lib32-vulkan-intel intel-media-driver
+```
+
+`intel-media-driver` — для Broadwell (5-е поколение) и новее; для старых чипов вместо него
+`libva-intel-driver`.
+
+**NVIDIA**
+
+Пакет выбирается по поколению карты:
+
+| Карта | Пакет |
+| --- | --- |
+| RTX 50/40/30/20, GTX 16xx (Turing и новее) | `nvidia-open` (`nvidia-open-dkms` для `linux-lts`, `linux-zen` и других ядер) |
+| GTX 10xx, GTX 9xx (Pascal, Maxwell) | `nvidia-580xx-dkms` + `nvidia-580xx-utils` из AUR (вместо строки ниже) |
+| старше | Hyprland не поддерживает — используйте встроенную графику или `nouveau` |
+
+```bash
+sudo pacman -S nvidia-open nvidia-utils lib32-nvidia-utils egl-wayland libva-nvidia-driver
+```
+
+Ранняя загрузка драйвера, чтобы Hyprland получил видеокарту с первого кадра. В
+`/etc/mkinitcpio.conf`:
+
+```bash
+MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)
+```
+
+и уберите `kms` из строки `HOOKS=(...)`, затем пересоберите и перезагрузитесь:
+
+```bash
+sudo mkinitcpio -P
+sudo reboot
+```
+
+Проверьте, что DRM modesetting включён — должно вывести `Y`:
+
+```bash
+cat /sys/module/nvidia_drm/parameters/modeset
+```
+
+Если выводит `N`, добавьте `nvidia_drm.modeset=1` в `GRUB_CMDLINE_LINUX_DEFAULT` в
+`/etc/default/grub` и выполните `sudo grub-mkconfig -o /boot/grub/grub.cfg`.
+
+**Гибридные ноутбуки (Intel/AMD + NVIDIA)** — ставьте драйверы для **обеих** видеокарт. Рабочий
+стол работает на встроенной, а NVIDIA просыпается для игр (`prime-run <игра>` из пакета
+`nvidia-prime`).
+
+Руками потом ничего править не нужно: установщик смотрит в `lspci`, оставляет переменные NVIDIA в
+`~/.config/hypr/config/env.conf` только если карта NVIDIA есть, а на AMD и Intel переключает
+VA-API на `radeonsi` или `iHD`.
+
+</details>
+
+<details>
+<summary><b>8. Процессор</b> — <sub>энергосбережение Intel и AMD</sub></summary>
+
+
+Микрокод поставлен в шаге 4. Проверьте, что он загрузился:
+
+```bash
+journalctl -k | grep -i microcode       # Arch
+dmesg | grep -i microcode               # Artix
+```
+
+* **AMD** (Zen 2 и новее) на свежих ядрах сам использует драйвер `amd-pstate` —
+  `cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver` выводит `amd-pstate-epp`.
+* **Intel** использует `intel_pstate`, тоже автоматически.
+
+На ноутбуке поставьте демон профилей питания, чтобы остров мог их переключать:
+
+```bash
+sudo pacman -S power-profiles-daemon
+sudo systemctl enable --now power-profiles-daemon          # Arch
+sudo pacman -S power-profiles-daemon-openrc && \
+    sudo rc-update add power-profiles-daemon default       # Artix
+```
+
+</details>
+
+<details>
+<summary><b>9. Установка конфигурации</b></summary>
+
+
+От обычного пользователя (не root), с работающей сетью:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+```
+
+Установщик сам определяет Arch или Artix и видеокарту, ставит все пакеты (и `yay` для AUR, если
+AUR-помощника ещё нет), включает NetworkManager и Bluetooth под systemd или OpenRC, раскладывает
+файлы, делает zsh оболочкой входа и собирает цветовую схему.
+
+Положите несколько картинок в `~/Pictures/Wallpapers`, перелогиньтесь в TTY и запустите сессию:
+
+```bash
+start-hyprland
+```
+
+Чтобы она запускалась сама после входа на tty1, допишите в конец `~/.zprofile`:
+
+```bash
+[[ -z $WAYLAND_DISPLAY && $(tty) == /dev/tty1 ]] && exec start-hyprland
+```
+
+Первые шаги: `Super` + `W` — выбрать обои, `Super` + `D` — запуск приложений, `Super` + `Shift` +
+`I` — настройка острова. Все сочетания — в разделе [Горячие клавиши](#горячие-клавиши).
+
+</details>
+
 ### Установка
 
 Одна команда: скачивает репозиторий, ставит все зависимости, делает резервную копию текущих
@@ -1204,6 +1949,12 @@ cd hyprdots
 ```bash
 dots-update
 ```
+
+**Или просто нажмите кнопку.** Шелл раз в 30 минут проверяет GitHub. Когда выходит новая
+версия, рядом с рабочими столами появляется кнопка **обновление** с размером — или в левом верхнем
+углу, если бар отдан острову. По нажатию открывается терминал со списком изменений, числом файлов и
+весом обновления и вопросом `Обновить сейчас? [y/N]`. Откажетесь — терминал закроется, кнопка
+останется; согласитесь — обновление пройдёт само, и кнопка исчезнет до следующей версии.
 
 Он забирает свежую ревизию, показывает список коммитов, которые приедут, раскладывает файлы (всё
 заменяемое сначала уходит в резервную копию), доставляет только реально отсутствующие пакеты —
@@ -1755,6 +2506,7 @@ HDA-кодека, автосон USB кроме устройств ввода, S
 | `Super` + `Shift` + `M` | звук: вывод и микрофон |
 | `Super` + `Shift` + `D` | календарь с тепловой картой коммитов |
 | `Super` + `F1` | кольца системного монитора |
+| `Super` + `Ctrl` + `B` | батарея — заряд, на сколько хватит, здоровье и циклы |
 | `Super` + `Shift` + `N` | центр уведомлений |
 | `Super` + `Ctrl` + `N` | не беспокоить |
 | `Super` + `P` | меню выключения |
@@ -1900,8 +2652,8 @@ systemd-вариантов.
 <summary><b>Замечания</b> — <sub>железо, особенности и честные оговорки</sub></summary>
 
 
-* Переменные окружения для NVIDIA лежат в `config/hypr/config/env.conf` — на AMD и Intel их нужно
-  убрать.
+* Переменные окружения для NVIDIA лежат в `config/hypr/config/env.conf`; без карты NVIDIA
+  установщик убирает их сам.
 * Мониторы описаны в `config/hypr/config/monitors.conf`, поправьте под свои выходы.
 * Обои берутся из `~/Pictures/Wallpapers` и меняются раз в три часа; интервал задаётся в
   `config/hypr/scripts/wallpaper-rotate.sh`.
