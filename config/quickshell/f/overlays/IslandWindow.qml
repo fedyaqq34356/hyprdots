@@ -1085,8 +1085,8 @@ PanelWindow {
 
         Connections {
             target: surface
-            function onWidthChanged() { goo.requestSync(); }
-            function onHeightChanged() { goo.requestSync(); }
+            function onWidthChanged() { goo.applySync(); }
+            function onHeightChanged() { goo.applySync(); }
         }
 
         Connections {
@@ -2220,7 +2220,7 @@ PanelWindow {
         Item {
             id: trail
             anchors.fill: parent
-            visible: IslandConfig.s("trail") && trail.speed > 0.02
+            visible: IslandConfig.s("trail") && !win.bigMotion && trail.speed > 0.02
 
             readonly property real speed: Math.min(1,
                 Math.abs(morph.velocity) / 3 + Math.abs(pillWidth.velocity) / 800)
