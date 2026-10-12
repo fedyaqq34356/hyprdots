@@ -57,7 +57,9 @@ MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
 MONITOR="${MONITOR:-eDP-1}"
 
 if [ "$MODE" = region ]; then
-    GEOM=$(slurp -d -b 00000055 -c efbd90ff -s efbd9022 -w 2) || exit 1
+    ACCENT=$(sed -n 's/^\$accent *= *rgb(\([0-9a-fA-F]\{6\}\)).*/\1/p' "$HOME/.config/hypr/config/colors.conf" 2>/dev/null | head -1)
+    [ -n "$ACCENT" ] || ACCENT=ffffff
+    GEOM=$(slurp -d -b 00000055 -c "${ACCENT}ff" -s "${ACCENT}22" -w 2) || exit 1
     [ -z "$GEOM" ] && exit 1
     ARGS+=(-g "$GEOM")
 else

@@ -156,10 +156,45 @@ render_html() {
     [[ -s "$out" ]]
 }
 
+pdf_risky() {
+    pdfinfo "$1" 2>/dev/null | grep -q '^Producer:.*ReportLab' && return 0
+    pdffonts "$1" 2>/dev/null | awk 'NR > 2 && $(NF-4) == "no" { found = 1 } END { exit !found }'
+}
+
+rasterize_pdf() {
+    local src="$1" out="$2" dir="$WORK/raster"
+    rm -rf "$dir"
+    mkdir -p "$dir"
+    pdftoppm -r 600 -gray -png "$src" "$dir/p" >/dev/null 2>&1 || return 1
+    local png
+    for png in "$dir"/p-*.png; do
+        [[ -e "$png" ]] || return 1
+        magick "$png" \
+            -resize "${PAGE_W}x${PAGE_H}>" \
+            -density 600 -units PixelsPerInch \
+            -gravity center -background white -extent "${PAGE_W}x${PAGE_H}" \
+            -compress Zip "${png%.png}.pdf" >/dev/null 2>&1 || return 1
+        rm -f "$png"
+    done
+    local pages=("$dir"/p-*.pdf)
+    if (( ${#pages[@]} == 1 )); then
+        mv -f "${pages[0]}" "$out"
+    else
+        mapfile -t pages < <(printf '%s\n' "${pages[@]}" | sort -V)
+        pdfunite "${pages[@]}" "$out" >/dev/null 2>&1 || return 1
+    fi
+    rm -rf "$dir"
+    touch "$WORK/rasterized"
+}
+
 build_pdf() {
     case "$KIND" in
     pdf)
-        ln -sf "$SRC" "$PDF"
+        if pdf_risky "$SRC"; then
+            rasterize_pdf "$SRC" "$PDF" || return 1
+        else
+            ln -sf "$SRC" "$PDF"
+        fi
         ;;
     ps)
         ps2pdf "$SRC" "$PDF" >/dev/null 2>&1 || return 1
@@ -206,9 +241,13 @@ build_pdf() {
     [[ -s "$PDF" || -L "$PDF" ]]
 }
 
+[[ "$KIND" == pdf && -L "$PDF" ]] && pdf_risky "$SRC" && rm -f "$PDF"
+
 if [[ ! -e "$PDF" ]]; then
     build_pdf || fail convert "не удалось преобразовать в PDF"
 fi
+
+[[ -e "$WORK/rasterized" ]] && KIND=image
 
 PAGES=$(pdfinfo "$PDF" 2>/dev/null | awk '/^Pages:/ { print $2; exit }')
 [[ "$PAGES" =~ ^[0-9]+$ ]] || PAGES=1
