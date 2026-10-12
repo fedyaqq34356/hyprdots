@@ -38,3 +38,4 @@ singleton Weather Weather.qml
 singleton Wellbeing Wellbeing.qml
 singleton Privacy Privacy.qml
 singleton IslandBus IslandBus.qml
+singleton DotsUpdate DotsUpdate.qml
