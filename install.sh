@@ -85,6 +85,7 @@ PACMAN_PKGS=(
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber upower bluez bluez-utils
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
+    git pciutils mesa vulkan-icd-loader
     waybar fuzzel mako networkmanager foot nnn udisks2
     qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
@@ -97,6 +98,33 @@ confirm() {
     printf '%s' "  continue? [Y/n] "
     read -r reply </dev/tty || reply=y
     [[ -z "$reply" || "$reply" =~ ^[Yy]$ ]]
+}
+
+IS_ARTIX=0
+[[ -f /etc/artix-release ]] && IS_ARTIX=1
+
+GPU_LIST=$(lspci -nn 2>/dev/null | grep -Ei 'vga|3d|display' || true)
+HAS_NVIDIA=0; HAS_AMD=0; HAS_INTEL=0
+grep -qi 'nvidia' <<<"$GPU_LIST" && HAS_NVIDIA=1
+grep -Eqi 'amd|ati technologies|radeon' <<<"$GPU_LIST" && HAS_AMD=1
+grep -qi 'intel' <<<"$GPU_LIST" && HAS_INTEL=1
+
+gpu_packages() {
+    ((HAS_AMD)) && printf '%s\n' vulkan-radeon
+    ((HAS_INTEL)) && printf '%s\n' vulkan-intel intel-media-driver
+    if ((HAS_NVIDIA)) && pacman -Q nvidia-utils >/dev/null 2>&1; then
+        printf '%s\n' egl-wayland libva-nvidia-driver
+    fi
+    if ((IS_ARTIX)); then
+        printf '%s\n' elogind-openrc networkmanager-openrc bluez-openrc
+    fi
+}
+
+check_repos() {
+    ((IS_ARTIX)) || return 0
+    if ! pacman -Sl extra >/dev/null 2>&1; then
+        die "Artix needs the Arch [extra] repository for Hyprland and Quickshell — see the README, section \"Artix: Arch repositories\""
+    fi
 }
 
 detect_aur_helper() {
@@ -117,10 +145,16 @@ bootstrap_aur_helper() {
 
 install_packages() {
     log "Installing packages from the official repositories"
+    check_repos
+    local extra=()
+    mapfile -t extra < <(gpu_packages)
     if ((UPDATE)); then
-        run sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
+        run sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}" "${extra[@]}"
     else
-        run sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}"
+        run sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}" "${extra[@]}"
+    fi
+    if ((HAS_NVIDIA)) && ! pacman -Q nvidia-utils >/dev/null 2>&1; then
+        warn "NVIDIA card found but no driver installed — install it as the README describes, then run install.sh --update"
     fi
     ok "repository packages ready"
 
@@ -198,6 +232,41 @@ install_power() {
     ok "power profile helper installed"
 }
 
+configure_gpu() {
+    local env="$HOME/.config/hypr/config/env.conf"
+    [[ -f "$env" && -w "$env" ]] || return 0
+    if ((HAS_NVIDIA)); then
+        ok "GPU: NVIDIA — NVIDIA environment kept"
+        return 0
+    fi
+    run sed -i -E '/^env = (__GLX_VENDOR_LIBRARY_NAME|LIBVA_DRIVER_NAME|GBM_BACKEND|NVD_BACKEND|WLR_DRM_DEVICES|__GL_SHADER_DISK_CACHE|__GL_SHADER_DISK_CACHE_PATH),/d' "$env"
+    if ((HAS_AMD)); then
+        run sed -i '1i env = LIBVA_DRIVER_NAME,radeonsi' "$env"
+        ok "GPU: AMD — VA-API set to radeonsi"
+    elif ((HAS_INTEL)); then
+        run sed -i '1i env = LIBVA_DRIVER_NAME,iHD' "$env"
+        ok "GPU: Intel — VA-API set to iHD"
+    else
+        ok "GPU: generic — NVIDIA environment removed"
+    fi
+}
+
+enable_services() {
+    log "Enabling services"
+    if ((IS_ARTIX)); then
+        local svc
+        for svc in NetworkManager bluetoothd; do
+            [[ -e "/etc/init.d/$svc" ]] || continue
+            run sudo rc-update add "$svc" default >/dev/null 2>&1 || true
+            run sudo rc-service "$svc" start >/dev/null 2>&1 || true
+        done
+    elif command -v systemctl >/dev/null; then
+        run sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
+        run sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
+    fi
+    ok "network and bluetooth enabled"
+}
+
 deploy_config() {
     log "Deploying the configuration"
     deploy_tree "$SRC_DIR/config" "$HOME/.config"
@@ -211,7 +280,13 @@ deploy_config() {
             "$HOME/.local/share/applications"
     fi
 
+    run mkdir -p "$HOME/.config/hyprdots"
+    if [[ -d "$SRC_DIR/.git" ]]; then
+        ((DRY_RUN)) || printf '%s\n' "$SRC_DIR" > "$HOME/.config/hyprdots/source"
+    fi
+
     expand_home
+    configure_gpu
     install_power
     ok "files installed (backup: ${BACKUP_DIR/#$HOME/\~})"
 }
@@ -268,6 +343,8 @@ ${BOLD}Hyprland desktop — automatic installation${RESET}
   source      ${SRC_DIR/#$HOME/\~}
   target      ~/.config, ~/.local/bin, ~
   packages    $((SKIP_PACKAGES ? 0 : ${#PACMAN_PKGS[@]} + ${#AUR_PKGS[@]}))
+  system      $( ((IS_ARTIX)) && echo "Artix (OpenRC)" || echo "Arch (systemd)")
+  gpu         $( ((HAS_NVIDIA)) && printf 'NVIDIA ')$( ((HAS_AMD)) && printf 'AMD ')$( ((HAS_INTEL)) && printf 'Intel')
   existing files are backed up before being replaced
 EOF
 fi
@@ -277,6 +354,7 @@ confirm || die "aborted"
 deploy_config
 ((UPDATE)) || seed_wallpapers || true
 generate_theme
+((UPDATE)) || ((SKIP_PACKAGES)) || enable_services
 ((UPDATE)) || set_shell
 
 reload_session() {
@@ -305,11 +383,12 @@ fi
 cat <<EOF
 
 ${GREEN}${BOLD}Done.${RESET}
-  1. log out and start Hyprland
+  1. log out, log in on a TTY and run ${BOLD}start-hyprland${RESET}
   2. press ${BOLD}Super+W${RESET} to pick a wallpaper — the whole desktop is recoloured from it
   3. press ${BOLD}Super+Shift+I${RESET} to tune the dynamic island — it replaces the bar clock and reacts to music, volume, notifications and timers
   4. press ${BOLD}Super+Shift+L${RESET} to see the lock screen
-  5. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
+  5. when a new version lands on GitHub, an ${BOLD}update${RESET} button appears next to the workspaces
+  6. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
 
   backup of the previous configuration: ${BACKUP_DIR/#$HOME/\~}
 EOF
