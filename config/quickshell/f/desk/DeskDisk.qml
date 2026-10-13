@@ -410,6 +410,7 @@ Item {
                         color: Colors.fg
                         opacity: 0.85
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 15
                     }
 

@@ -48,6 +48,7 @@ Item {
     TextMetrics {
         id: clockEm
         font.family: Fonts.mono
+        font.features: { "tnum": 1 }
         font.pixelSize: 13
         font.weight: Font.DemiBold
         text: "00:00"
@@ -56,6 +57,7 @@ Item {
     TextMetrics {
         id: textEm
         font.family: Fonts.display
+        font.features: { "tnum": 1 }
         font.pixelSize: 13
         font.weight: Font.DemiBold
         text: pill.flashText
@@ -64,6 +66,7 @@ Item {
     TextMetrics {
         id: pctEm
         font.family: Fonts.mono
+        font.features: { "tnum": 1 }
         font.pixelSize: 12
         font.weight: Font.DemiBold
         text: "100%"
@@ -85,6 +88,7 @@ Item {
     TextMetrics {
         id: langEm
         font.family: Fonts.display
+        font.features: { "tnum": 1 }
         font.pixelSize: 12
         font.weight: Font.Bold
         font.letterSpacing: 1.2
@@ -128,12 +132,12 @@ Item {
     TextMetrics {
         id: deskEm
         font.family: Fonts.mono
+        font.features: { "tnum": 1 }
         font.pixelSize: 13
         font.weight: Font.Bold
         text: pill.deskFlash ? pill.flashText : ""
     }
-    readonly property real deskNumW:
-        pill.deskFlash ? Math.min(80, deskEm.width) + 12 : 0
+    readonly property real deskNumW: 0
 
     readonly property int split: 22
     readonly property real pctW: pctEm.width * 1.06
@@ -256,41 +260,20 @@ Item {
             }
 
             readonly property real amp: 0.9 + fill.slosh
-            readonly property var crest: {
-                const pts = [];
-                const n = 14;
-                const h = fill.height;
-                for (let i = 0; i <= n; i++) {
-                    const y = h * i / n;
-                    pts.push(Qt.point(Math.max(0, front.value
-                        + fill.amp * Math.sin(fill.phase + i / n * Math.PI * 1.7)), y));
-                }
-                return pts;
-            }
-            readonly property var body: [Qt.point(0, 0)].concat(fill.crest).concat([Qt.point(0, fill.height)])
-
-            Vec.Shape {
+            Water {
                 anchors.fill: parent
-                preferredRendererType: Vec.Shape.CurveRenderer
-
-                Vec.ShapePath {
-                    strokeColor: "transparent"
-                    strokeWidth: 0
-                    fillGradient: Vec.LinearGradient {
-                        x1: 0; y1: 0
-                        x2: Math.max(1, front.value); y2: 0
-                        GradientStop { position: 0; color: Colors.alpha(pill.tint, 0.16) }
-                        GradientStop { position: 1; color: Colors.alpha(pill.tint, 0.42) }
-                    }
-                    PathPolyline { path: fill.body }
-                }
-
-                Vec.ShapePath {
-                    strokeColor: Colors.alpha(Qt.lighter(pill.tint, 1.35), 0.9)
-                    strokeWidth: 1.6
-                    fillColor: "transparent"
-                    PathPolyline { path: fill.crest }
-                }
+                axis: 1
+                level: Math.max(0, front.value)
+                phase1: fill.phase
+                amp1: fill.amp
+                waves1: 0.85
+                nearColor: pill.tint
+                nearAlpha: 0.42
+                farColor: pill.tint
+                farAlpha: 0.16
+                crestColor: Qt.lighter(pill.tint, 1.35)
+                crestAlpha: 0.9
+                crestWidth: 1.6
             }
         }
 
@@ -503,6 +486,7 @@ Item {
                             text: NotifHistory.appLetter(pill.notifApp)
                             color: pill.tint
                             font.family: Fonts.mono
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Math.max(9, Math.round(parent.height * 0.52))
                             font.weight: Font.Bold
                         }
@@ -614,14 +598,96 @@ Item {
 
                             Rectangle {
                                 required property var modelData
+                                required property int index
+
+                                readonly property real cx:
+                                    index * desks.slot + pill.dotW / 2
+                                readonly property real side:
+                                    cx < (desks.edgeL + desks.edgeR) / 2 ? -1 : 1
+                                readonly property real near: Math.max(0,
+                                    side < 0 ? desks.edgeL - cx : cx - desks.edgeR)
+                                readonly property real touch: Math.exp(-near / 8)
 
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: pill.dotW
                                 height: pill.dotW
                                 radius: height / 2
                                 antialiasing: true
-                                color: Colors.alpha(Colors.fgDim, 0.3)
+                                transform: Translate {
+                                    x: side * 3.2 * touch * desks.motion
+                                }
+                                scale: 1 + 0.25 * touch * desks.motion
+                                color: Colors.alpha(Colors.fgDim,
+                                    0.3 + 0.35 * touch * desks.motion)
                             }
+                        }
+                    }
+
+                    readonly property real motion:
+                        Math.min(1, desks.stretch / 14)
+
+                    property real ghostX: desks.seat
+                    property int ghostDir: 0
+                    property int lastIndex: pill.deskIndex
+
+                    Connections {
+                        target: pill
+                        function onDeskIndexChanged() {
+                            if (!pill.deskFlash) {
+                                desks.lastIndex = pill.deskIndex;
+                                return;
+                            }
+                            desks.ghostDir = pill.deskIndex > desks.lastIndex ? 1 : -1;
+                            desks.ghostX = desks.lastIndex * desks.slot + pill.dotW / 2;
+                            desks.lastIndex = pill.deskIndex;
+                            ghostRun.restart();
+                            ringLater.restart();
+                        }
+                    }
+
+                    Rectangle {
+                        id: ghost
+                        property real t: 1
+                        x: 8 + desks.ghostX - width / 2 + desks.ghostDir * 16 * ghost.t
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: desks.capR * 2 * (1 + 0.9 * ghost.t)
+                        height: desks.capH * (1 - 0.35 * ghost.t)
+                        radius: height / 2
+                        antialiasing: true
+                        visible: ghost.t < 1
+                        opacity: 0.55 * (1 - ghost.t)
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0.0; color: Colors.alpha(pill.tint, desks.ghostDir > 0 ? 0.0 : 1) }
+                            GradientStop { position: 1.0; color: Colors.alpha(pill.tint, desks.ghostDir > 0 ? 1 : 0.0) }
+                        }
+                        NumberAnimation {
+                            id: ghostRun
+                            target: ghost; property: "t"
+                            from: 0; to: 1; duration: 700
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Timer { id: ringLater; interval: 240; onTriggered: ringRun.restart() }
+                    Rectangle {
+                        id: ring
+                        property real t: 1
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: 8 + desks.seat - width / 2
+                        width: desks.capR * 2 + 14 * ring.t
+                        height: desks.capH + 10 * ring.t
+                        radius: height / 2
+                        antialiasing: true
+                        color: "transparent"
+                        border.width: 1.2
+                        border.color: Colors.alpha(Qt.lighter(pill.tint, 1.2), 0.6 * (1 - ring.t))
+                        visible: ring.t < 1
+                        NumberAnimation {
+                            id: ringRun
+                            target: ring; property: "t"
+                            from: 0; to: 1; duration: 620
+                            easing.type: Easing.OutCubic
                         }
                     }
 
@@ -633,44 +699,6 @@ Item {
                         radius: height / 2
                         antialiasing: true
                         color: Colors.alpha(pill.tint, 0.18)
-                    }
-
-                    Text {
-                        id: deskNum
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: Math.max(0, pill.deskNumW - 12)
-                        horizontalAlignment: Text.AlignRight
-                        text: pill.flashText
-                        color: Qt.lighter(pill.tint, 1.1)
-                        font.family: Fonts.mono
-                        font.pixelSize: 13
-                        font.weight: Font.Bold
-                        elide: Text.ElideRight
-                        transform: Translate { id: numShift }
-
-                        ParallelAnimation {
-                            id: numIn
-                            NumberAnimation {
-                                target: numShift; property: "x"
-                                from: 12 * pill.deskDir; to: 0
-                                duration: 420
-                                easing.type: Easing.OutBack
-                                easing.overshoot: 1.6
-                            }
-                            NumberAnimation {
-                                target: deskNum; property: "opacity"
-                                from: 0; to: 1; duration: 220
-                            }
-                        }
-
-                        Connections {
-                            target: pill
-                            function onFlashTextChanged() {
-                                if (pill.deskFlash)
-                                    numIn.restart();
-                            }
-                        }
                     }
 
                     Rectangle {
@@ -758,6 +786,7 @@ Item {
                                 color: code.on ? "white" : Colors.alpha(Colors.fg, 0.32)
                                 scale: code.on ? 1.08 : 0.94
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: 12
                                 font.weight: Font.Bold
                                 font.letterSpacing: 1.2
@@ -879,6 +908,7 @@ Item {
                             text: "+" + pill.stacked
                             color: Colors.fgDim
                             font.family: Fonts.mono
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Math.max(8, Math.round(parent.height * 0.5))
                             font.weight: Font.Bold
                         }

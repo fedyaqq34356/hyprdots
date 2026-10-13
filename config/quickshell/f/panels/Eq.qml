@@ -100,6 +100,7 @@ Scope {
                         text: I18n.t("eq.title")
                         color: Colors.fg
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: Fonts.titleSize
                     }
 
@@ -124,7 +125,7 @@ Scope {
                                 : I18n.t("eq.inactive")
                             color: Equalizer.available ? Colors.accent : Colors.warn
                             font.family: root.mono
-                            font.pixelSize: 10
+                            font.pixelSize: Fonts.tiny
                             font.letterSpacing: 1
                         }
                     }
@@ -183,7 +184,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: parent.modelData === 0 ? 0.6 : 0.4
                                 font.family: root.mono
-                                font.pixelSize: 9
+                                font.pixelSize: Fonts.tiny
                             }
                         }
                     }
@@ -396,7 +397,7 @@ Scope {
                                     text: (band.gain > 0 ? "+" : "") + band.gain.toFixed(1)
                                     color: Colors.accent
                                     font.family: root.mono
-                                    font.pixelSize: 9
+                                    font.pixelSize: Fonts.tiny
                                 }
                             }
 
@@ -451,7 +452,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.45
                             font.family: root.mono
-                            font.pixelSize: 9
+                            font.pixelSize: Fonts.tiny
                         }
                     }
                 }
@@ -492,7 +493,7 @@ Scope {
                                 text: I18n.t("eq." + pill.modelData) || pill.modelData
                                 color: pill.active ? Colors.accent : Colors.fgDim
                                 font.family: root.mono
-                                font.pixelSize: 10
+                                font.pixelSize: Fonts.tiny
                             }
 
                             TapHandler {

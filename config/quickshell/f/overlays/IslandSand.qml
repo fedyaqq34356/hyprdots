@@ -15,7 +15,7 @@ Item {
     Behavior on heat { NumberAnimation { duration: 900; easing.type: Easing.InOutSine } }
 
     property real shown: sand.level
-    Behavior on shown { NumberAnimation { duration: 1200; easing.type: Easing.InOutSine } }
+    Behavior on shown { enabled: sand.visible; NumberAnimation { duration: 1200; easing.type: Easing.InOutSine } }
 
     readonly property real surfaceY: sand.height * (1 - Math.max(0, Math.min(1, sand.shown)))
 

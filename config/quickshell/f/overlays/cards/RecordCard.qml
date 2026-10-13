@@ -79,6 +79,7 @@ Item {
             text: I18n.t("isle.src.record")
             color: Colors.bad
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             font.weight: Font.DemiBold
         }

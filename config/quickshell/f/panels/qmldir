@@ -23,4 +23,6 @@ SettingsChoice SettingsChoice.qml
 PrintPanel PrintPanel.qml
 IslandPanel IslandPanel.qml
 LauncherDrip LauncherDrip.qml
+ClipDrip ClipDrip.qml
 BatteryPanel BatteryPanel.qml
+NotifDeck NotifDeck.qml

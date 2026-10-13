@@ -40,6 +40,7 @@ Item {
             opacity: row.checked ? 1 : 0.55
             elide: Text.ElideRight
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: Fonts.headingSize
             Behavior on opacity { NumberAnimation { duration: Motion.fast } }
         }
@@ -52,7 +53,7 @@ Item {
             opacity: 0.45
             elide: Text.ElideRight
             font.family: row.mono
-            font.pixelSize: 10
+            font.pixelSize: Fonts.tiny
         }
     }
 

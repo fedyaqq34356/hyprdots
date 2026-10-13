@@ -18,12 +18,12 @@ Singleton {
     readonly property var expo:     [0.16, 1.00, 0.30, 1.00, 1, 1]
     readonly property var glide:    [0.10, 0.90, 0.15, 1.00, 1, 1]
     readonly property var quick:    [0.40, 0.00, 0.90, 0.30, 1, 1]
-    readonly property var snap:     [0.20, 1.28, 0.30, 1.00, 1, 1]
-    readonly property var pop:      [0.16, 1.20, 0.28, 1.00, 1, 1]
-    readonly property var elastic:  [0.12, 1.45, 0.35, 1.00, 1, 1]
+    readonly property var snap:     [0.22, 1.04, 0.32, 1.00, 1, 1]
+    readonly property var pop:      [0.18, 1.03, 0.30, 1.00, 1, 1]
+    readonly property var elastic:  [0.16, 1.08, 0.34, 1.00, 1, 1]
 
     readonly property real tapSpring:  5.0
-    readonly property real tapDamping: 0.34
+    readonly property real tapDamping: 0.62
     readonly property real tapMass:    0.55
 
     readonly property real panelSpring:  3.2
@@ -86,6 +86,8 @@ Singleton {
 
     readonly property int  isleCometLiftMs: 150
     readonly property int  isleCometMs:     640
+    readonly property int  isleSuckLiftMs:  200
+    readonly property int  isleSuckMs:      600
 
     readonly property real isleMagnetReach: 90
     readonly property real isleMagnetPull:  4

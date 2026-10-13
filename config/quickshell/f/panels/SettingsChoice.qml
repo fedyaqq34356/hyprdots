@@ -29,7 +29,7 @@ Column {
             color: Colors.fgDim
             opacity: 0.7
             font.family: choice.mono
-            font.pixelSize: 11
+            font.pixelSize: Fonts.small
         }
 
         Segment {

@@ -15,7 +15,7 @@ Scope {
 
     readonly property string mono: Fonts.mono
     readonly property string home: Quickshell.env("HOME")
-    readonly property string lister: home + "/.config/hypr/scripts/files-list.sh"
+    readonly property string lister: home + "/.config/hypr/scripts/tools/files-list.sh"
 
     property string dir: home + "/Pictures"
     property string parentDir: home
@@ -160,13 +160,16 @@ Scope {
             Item {
                 anchors.fill: parent
                 z: -1
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 1.0
-                    shadowVerticalOffset: 10
-                    shadowOpacity: 0.5
-                    shadowColor: "#000000"
+
+                RectangularShadow {
+                    anchors.fill: parent
+                    anchors.topMargin: 10
+                    anchors.bottomMargin: -10
+                    radius: Shape.card
+                    blur: 34
+                    spread: -2
+                    color: "#000000"
+                    opacity: 0.5
                 }
 
                 Rectangle {
@@ -224,7 +227,7 @@ Scope {
                                 text: root.prettyDir
                                 color: Colors.fg
                                 font.family: root.mono
-                                font.pixelSize: 13
+                                font.pixelSize: Fonts.medium
                                 font.weight: Font.DemiBold
                             }
 
@@ -239,7 +242,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.65
                                 font.family: root.mono
-                                font.pixelSize: 10
+                                font.pixelSize: Fonts.tiny
                             }
                         }
                     }
@@ -352,7 +355,7 @@ Scope {
                                     color: Colors.accent
                                     opacity: 0.85
                                     font.family: root.mono
-                                    font.pixelSize: 40
+                                    font.pixelSize: Fonts.giant
                                 }
 
                                 Image {
@@ -400,7 +403,8 @@ Scope {
                                 color: tile.current ? Colors.fg : Colors.fgDim
                                 opacity: tile.current ? 1 : 0.75
                                 font.family: Fonts.display
-                                font.pixelSize: 9
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                                 font.weight: tile.current ? Font.DemiBold : Font.Normal
                                 elide: Text.ElideMiddle
                                 horizontalAlignment: Text.AlignHCenter
@@ -429,7 +433,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.7
                         font.family: root.mono
-                        font.pixelSize: 12
+                        font.pixelSize: Fonts.text
                     }
 
                     Text {
@@ -438,7 +442,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.45
                         font.family: root.mono
-                        font.pixelSize: 9
+                        font.pixelSize: Fonts.tiny
                     }
                 }
 
@@ -459,7 +463,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.5
                         font.family: root.mono
-                        font.pixelSize: 9
+                        font.pixelSize: Fonts.tiny
                         elide: Text.ElideMiddle
                         width: parent.width - 240
                     }
@@ -472,7 +476,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.45
                         font.family: root.mono
-                        font.pixelSize: 9
+                        font.pixelSize: Fonts.tiny
                     }
                 }
             }

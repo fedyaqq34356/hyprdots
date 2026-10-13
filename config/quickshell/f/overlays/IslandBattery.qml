@@ -63,46 +63,18 @@ Item {
         radius: shell.radius - 3
         color: "transparent"
 
-        Canvas {
+        Water {
             id: liquid
             anchors.fill: parent
-            renderStrategy: Canvas.Cooperative
-
-            readonly property real level: bat.shown
-            onLevelChanged: requestPaint()
-            Connections {
-                target: bat
-                function onPhaseChanged() { liquid.requestPaint(); }
-                function onInkChanged() { liquid.requestPaint(); }
-            }
-
-            onPaint: {
-                const ctx = getContext("2d");
-                const w = width, h = height;
-                ctx.clearRect(0, 0, w, h);
-                const edge = w * liquid.level;
-                if (edge <= 0.5)
-                    return;
-                const amp = bat.charging ? 2.2 : 1.0;
-                const c = bat.ink;
-
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                const steps = 12;
-                for (let i = 0; i <= steps; i++) {
-                    const y = h * i / steps;
-                    const x = edge + Math.sin(bat.phase + i / steps * Math.PI * 2) * amp;
-                    ctx.lineTo(Math.max(0, x), y);
-                }
-                ctx.lineTo(0, h);
-                ctx.closePath();
-
-                const grad = ctx.createLinearGradient(0, 0, 0, h);
-                grad.addColorStop(0.0, Qt.lighter(c, 1.3));
-                grad.addColorStop(1.0, Qt.darker(c, 1.35));
-                ctx.fillStyle = grad;
-                ctx.fill();
-            }
+            visible: bat.shown * width > 0.5
+            axis: 1
+            level: width * bat.shown
+            phase1: bat.phase; amp1: bat.charging ? 2.2 : 1.0; waves1: 1
+            amp2: 0
+            nearColor: Qt.lighter(bat.ink, 1.3); nearAlpha: 1
+            farColor: Qt.darker(bat.ink, 1.35); farAlpha: 1
+            crestColor: Qt.lighter(bat.ink, 1.6); crestAlpha: 0.6
+            crestWidth: 1.2
         }
 
         Repeater {

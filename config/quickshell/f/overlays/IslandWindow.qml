@@ -106,6 +106,7 @@ PanelWindow {
 
     readonly property bool bigEvent:
         win.hub.kind === "notif" || win.hub.kind === "alarm"
+        || win.hub.kind === "remind"
         || win.hub.kind === "bt" || win.hub.kind === "peri"
         || win.hub.kind === "power"
         || win.hub.kind === "net" || win.hub.kind === "vpn"
@@ -281,6 +282,7 @@ PanelWindow {
             return win.mediaTint;
         switch (win.hub.kind) {
         case "alarm":  return Colors.bad;
+        case "remind": return Colors.warn;
         case "record": return Colors.bad;
         case "notif":  return iconTint.found ? iconTint.color : win.hub.notifTint;
         case "call":   return win.hub.callState === "live" ? Colors.good
@@ -407,6 +409,8 @@ PanelWindow {
         epsilon: 0.25
         target: win.big ? IslandConfig.s("mediaBigHeight")
               : win.wideKind === "media" ? IslandConfig.s("mediaHeight")
+              : win.wideKind === "notif"
+              ? Math.max(IslandConfig.s("wideHeight") + (win.notifTools ? 40 : 0), body.want + 24)
               : IslandConfig.s("wideHeight") + (win.notifTools ? 40 : 0)
         Component.onCompleted: wideTall.land()
     }
@@ -431,8 +435,9 @@ PanelWindow {
     }
 
     FrameAnimation {
-        running: (win.seeking || seek.running)
-                 && IslandBus.searchScreen === win.modelData.name
+        running: ((win.seeking || seek.running)
+                  && IslandBus.searchScreen === win.modelData.name)
+                 || (IslandBus.watch > 0 && win.lead && !win.seeking)
         onTriggered: {
             const r = surface.mapToItem(comet, 0, 0);
             const q = surface.mapToItem(comet, surface.width, surface.height);
@@ -540,6 +545,7 @@ PanelWindow {
 
     readonly property bool throbbing:
         win.hub.kind === "alarm"
+        || (win.hub.kind === "remind" && !win.wide)
         || (win.hub.kind === "record" && !win.wide)
 
     property real throb: 0
@@ -792,6 +798,177 @@ PanelWindow {
     }
 
     Item {
+        id: suck
+        anchors.fill: parent
+
+        property string src: ""
+        property real lift: 0
+        property real t: 0
+        property real flare: 0
+        property real speed: 0
+        property real lastT: 0
+        readonly property bool on: suck.src !== ""
+        visible: suck.on
+
+        property real ex: suck.width / 2
+        property real ey: 14
+        property real ew: 92
+        property real eh: 28
+
+        readonly property real aspect: shotImg.status === Image.Ready && shotImg.implicitHeight > 0
+            ? shotImg.implicitWidth / shotImg.implicitHeight : 16 / 9
+        readonly property real sh: Math.min(180, 330 / suck.aspect)
+        readonly property real sw: suck.sh * suck.aspect
+        readonly property real sy: suck.ey + suck.eh / 2 + 40 + suck.sh / 2
+
+        Connections {
+            target: win.hub
+            function onShotFly(path) {
+                if (!win.lead || !win.visible || !win.atTop || win.blocked)
+                    return;
+                suck.src = "file://" + path;
+                suck.speed = 0;
+                suck.lastT = 0;
+                suckRun.restart();
+            }
+        }
+
+        SequentialAnimation {
+            id: suckRun
+            ScriptAction { script: { suck.t = 0; suck.lift = 0; suck.flare = 1; } }
+            ParallelAnimation {
+                NumberAnimation {
+                    target: suck; property: "lift"
+                    from: 0; to: 1; duration: Motion.isleSuckLiftMs
+                    easing.type: Easing.OutCubic
+                }
+                NumberAnimation {
+                    target: suck; property: "flare"
+                    from: 1; to: 0; duration: Motion.isleSuckLiftMs
+                    easing.type: Easing.InOutSine
+                }
+            }
+            NumberAnimation {
+                target: suck; property: "t"
+                from: 0; to: 1
+                duration: Motion.isleSuckMs - Motion.isleSuckLiftMs
+                easing.type: Easing.InBack
+                easing.overshoot: 1.1
+            }
+            ScriptAction { script: suck.src = "" }
+        }
+
+        FrameAnimation {
+            running: suck.on
+            onTriggered: {
+                const r = surface.mapToItem(suck, 0, 0);
+                const q = surface.mapToItem(suck, surface.width, surface.height);
+                suck.ew = q.x - r.x;
+                suck.eh = q.y - r.y;
+                suck.ex = r.x + suck.ew / 2;
+                suck.ey = r.y + suck.eh / 2;
+                const dt = Math.max(0.001, frameTime);
+                suck.speed = suck.speed * 0.6 + 0.4 * Math.abs(suck.t - suck.lastT) / dt;
+                suck.lastT = suck.t;
+                suckGoo.applySync();
+            }
+        }
+
+        readonly property real cy: Motion.mix(suck.sy, suck.ey, suck.t)
+        readonly property real grow: 0.86 + 0.14 * suck.lift
+        readonly property real dw: Math.max(4, Motion.mix(suck.sw + 10, suck.eh * 0.8,
+                                                          Math.pow(suck.t, 0.8)) * suck.grow)
+        readonly property real dh: Math.max(4, Motion.mix(suck.sh + 10, suck.eh * 0.8,
+                                                          Math.pow(suck.t, 1.4)) * suck.grow)
+        readonly property real stretch: Math.min(0.35, suck.speed * 0.04)
+
+        Item {
+            id: suckField
+            visible: suck.on
+            x: suck.ex - Math.max(suck.sw, suck.ew) / 2 - 60
+            y: 0
+            width: Math.max(suck.sw, suck.ew) + 120
+            height: suck.sy + suck.sh / 2 + 40
+
+            Item {
+                property bool isBlob: true
+                x: suck.ex - suck.ew / 2 - suckField.x
+                y: suck.ey - suck.eh / 2
+                width: suck.ew
+                height: suck.eh
+            }
+
+            Item {
+                property bool isBlob: true
+                readonly property real blobScaleX: 1 - suck.stretch * 0.5
+                readonly property real blobScaleY: 1 + suck.stretch
+                x: suck.ex - suck.dw / 2 - suckField.x
+                y: suck.cy - suck.dh / 2
+                width: suck.dw
+                height: suck.dh
+            }
+        }
+
+        Blobs {
+            id: suckGoo
+            host: suckField
+            visible: suck.on && count > 0
+            opacity: Math.min(1, suck.lift * 1.6)
+            fuse: 26
+            corner: Math.min(18, stage.pillH / 2)
+            stroke: 0
+            shadow: false
+            fillColor: win.bodyColor
+            fillAlpha: IslandConfig.s("fill") / 100
+            hoverColor: win.bodyColor
+            hoverAlpha: IslandConfig.s("fill") / 100
+            strokeAlpha: 0
+        }
+
+        RectangularShadow {
+            visible: suck.on
+            z: -1
+            x: suck.ex - width / 2
+            y: suck.cy - height / 2
+            width: suck.dw * (1 - suck.stretch * 0.5)
+            height: suck.dh * (1 + suck.stretch)
+            radius: Math.min(18, height / 2)
+            blur: 26
+            color: Qt.rgba(1, 1, 1, (0.18 + 0.4 * suck.flare) * suck.lift * (1 - suck.t))
+        }
+
+        ClippingRectangle {
+            visible: suck.on && opacity > 0.01
+            readonly property real w: (suck.dw - 10) * (1 - suck.stretch * 0.5)
+            readonly property real h: (suck.dh - 10) * (1 + suck.stretch)
+            x: suck.ex - w / 2
+            y: suck.cy - h / 2
+            width: Math.max(1, w)
+            height: Math.max(1, h)
+            radius: Math.min(13, height / 2)
+            color: "transparent"
+            opacity: suck.lift * (1 - Math.max(0, Math.min(1, (suck.t - 0.55) / 0.35)))
+
+            Image {
+                id: shotImg
+                anchors.fill: parent
+                source: suck.src
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: false
+                cache: false
+                sourceSize.width: 520
+                smooth: true
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: "white"
+                opacity: 0.85 * suck.flare
+            }
+        }
+    }
+
+    Item {
         id: comet
         anchors.fill: parent
 
@@ -969,6 +1146,7 @@ PanelWindow {
                         text: comet.e ? comet.e.app : ""
                         color: Colors.alpha(Colors.fg, 0.55)
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 10
                     }
                     Text {
@@ -976,6 +1154,7 @@ PanelWindow {
                         text: comet.e ? comet.e.summary : ""
                         color: Colors.fg
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
@@ -1207,33 +1386,61 @@ PanelWindow {
             }
         }
 
-        Repeater {
-            model: 2
+        Item {
+            id: dropHost
+            readonly property int rest: win.wide && win.wideKind === "notif"
+                ? Math.max(0, win.hub.notifTotal - win.hub.notifIndex - 1) : 0
+            x: surface.x + surface.width / 2 - 60
+            y: surface.y + surface.height - 16
+            width: 120
+            height: 80
+            z: -1
 
-            Rectangle {
-                id: leaf
-                required property int index
-                readonly property int depth: index + 1
-                readonly property bool on:
-                    win.wide && win.wideKind === "notif"
-                    && win.hub.notifTotal - win.hub.notifIndex > leaf.depth
-                readonly property real s: 1 - 0.06 * leaf.depth
+            Item {
+                property bool isBlob: true
+                width: 70
+                height: 12
+                x: dropHost.width / 2 - width / 2
+                y: 0
+                visible: dropHost.rest > 0 || dropGoo.anyLeft
+            }
 
-                width: surface.width * leaf.s
-                height: 40
-                x: surface.x + (surface.width - width) / 2
-                y: surface.y + surface.height - height + 9 * leaf.depth * leaf.show
-                z: -leaf.depth
-                radius: Math.min(surface.corner, height / 2)
-                antialiasing: true
-                color: Qt.tint(win.bodyColor, Colors.alpha(win.tint, leaf.depth === 1 ? 0.16 : 0.09))
-                border.width: 1
-                border.color: Colors.alpha(win.tint, leaf.depth === 1 ? 0.5 : 0.3)
-                opacity: (leaf.depth === 1 ? 0.95 : 0.75) * leaf.show * morph.value
+            Repeater {
+                model: 3
+                Item {
+                    id: drop
+                    required property int index
+                    property bool isBlob: true
+                    property real k: dropHost.rest > drop.index && morph.value > 0.9 ? 1 : 0
+                    Behavior on k { NumberAnimation { duration: 460; easing.type: Easing.OutCubic } }
+                    readonly property real size: (13 - drop.index * 3.2) * drop.k
+                    readonly property var fall: [20, 37, 51]
 
-                property real show: leaf.on ? 1 : 0
-                Behavior on show { SpringAnimation { spring: 3; damping: 0.32; mass: 0.8; epsilon: 0.005 } }
-                visible: opacity > 0.01
+                    width: Math.max(0.1, drop.size)
+                    height: Math.max(0.1, drop.size * 1.1)
+                    x: dropHost.width / 2 - width / 2
+                    y: 6 + (drop.fall[drop.index] - 6) * drop.k - drop.size / 2
+                    visible: drop.size > 1
+                    onYChanged: dropGoo.applySync()
+                    onWidthChanged: dropGoo.applySync()
+                    onVisibleChanged: dropGoo.applySync()
+                }
+            }
+
+            Blobs {
+                id: dropGoo
+                readonly property bool anyLeft: dropGoo.count > 1
+                host: dropHost
+                visible: count > 1
+                fuse: 14
+                corner: 6
+                stroke: 0
+                shadow: false
+                fillColor: win.bodyColor
+                fillAlpha: IslandConfig.s("fill") / 100
+                hoverColor: win.bodyColor
+                hoverAlpha: IslandConfig.s("fill") / 100
+                strokeAlpha: 0
             }
         }
 
@@ -1329,6 +1536,7 @@ PanelWindow {
                 value: win.rimValue
                 busy: win.rimBusy
                 shimmer: win.ringing || win.hub.wallBusy || win.chiming
+                         || (Timers.anyRinging && IslandConfig.s("tide"))
                          || (IslandConfig.s("shimmer") && win.hub.taskLong
                              && win.hub.leftKind === "task" && win.hub.taskResult === "")
                 shimmerMs: win.ringing ? 1800 : win.hub.wallBusy ? 2200
@@ -1475,6 +1683,78 @@ PanelWindow {
                 }
 
                 Item {
+                    id: tide
+                    anchors.fill: parent
+
+                    readonly property var t: Timers.soonest
+                    readonly property bool want: IslandConfig.s("tide")
+                        && IslandConfig.on("timer") && Timers.anyRunning
+                        && (!win.wide || win.wideKind === "timer") && !win.big
+                        && win.hub.flashKind === "" && !win.seeking
+                    property real heat: tide.t && tide.t.running && Timers.left(tide.t) <= 10 ? 1 : 0
+                    Behavior on heat { NumberAnimation { duration: 900; easing.type: Easing.InOutSine } }
+                    PhaseHold { active: tide.visible; slow: true }
+                    readonly property real level: {
+                        Phase.ts;
+                        const t = tide.t;
+                        if (!t || !t.running || t.total <= 0)
+                            return 0;
+                        return Math.max(0, Math.min(1, (t.endsAt - Date.now()) / (t.total * 1000)));
+                    }
+
+                    property real k: tide.want ? 1 : 0
+                    Behavior on k {
+                        NumberAnimation { duration: 700; easing.type: Easing.InOutCubic }
+                    }
+
+                    visible: tide.k > 0.005
+                    readonly property real phase: Phase.ts / 4.2 * Math.PI * 2
+                    readonly property real quick: Phase.ts / 1.5 * Math.PI * 2
+
+                    readonly property color hue: Colors.accentAlt
+
+                    Water {
+                        anchors.fill: parent
+                        opacity: tide.k
+                        level: tide.height * Math.max(0.04, tide.level) * tide.k
+                        phase1: tide.phase
+                        amp1: 1.3
+                        waves1: 1.2
+                        phase2: tide.quick
+                        amp2: 1.1 * tide.heat
+                        waves2: 2.05
+                        nearColor: tide.hue
+                        nearAlpha: 0.30 + 0.20 * tide.heat
+                        farColor: Qt.darker(tide.hue, 1.8)
+                        farAlpha: 0.22
+                        crestColor: Qt.lighter(tide.hue, 1.4)
+                        crestAlpha: 0.55
+                        crestWidth: 1.2
+                    }
+                }
+
+                Rectangle {
+                    id: tidePulse
+                    anchors.fill: parent
+                    radius: surface.corner
+                    color: "transparent"
+                    antialiasing: true
+                    border.width: 2
+                    border.color: Colors.alpha(Qt.lighter(Colors.bad, 1.15), 0.85)
+                    property real p: 0
+                    readonly property bool on: IslandConfig.s("tide") && Timers.anyRinging
+                    visible: tidePulse.p > 0.01
+                    opacity: tidePulse.p
+                    SequentialAnimation on p {
+                        running: tidePulse.on
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 1; duration: 520; easing.type: Easing.OutCubic }
+                        NumberAnimation { to: 0.12; duration: 900; easing.type: Easing.InOutSine }
+                    }
+                    onOnChanged: if (!tidePulse.on) tidePulse.p = 0
+                }
+
+                Item {
                     id: liquid
                     anchors.fill: parent
 
@@ -1486,21 +1766,6 @@ PanelWindow {
                     readonly property real surfaceY:
                         liquid.height * (1 - liquid.level * liquid.k)
                     readonly property real amp: 2.6 * liquid.k
-
-                    readonly property var crest: {
-                        const pts = [];
-                        const n = 28;
-                        for (let i = 0; i <= n; i++) {
-                            const x = liquid.width * i / n;
-                            pts.push(Qt.point(x, liquid.surfaceY
-                                + liquid.amp * Math.sin(liquid.phase + i / n * Math.PI * 3)));
-                        }
-                        return pts;
-                    }
-                    readonly property var body: liquid.crest.concat([
-                        Qt.point(liquid.width, liquid.height + 2),
-                        Qt.point(0, liquid.height + 2)
-                    ])
 
                     NumberAnimation on phase {
                         running: liquid.visible
@@ -1535,28 +1800,19 @@ PanelWindow {
                         }
                     }
 
-                    Vec.Shape {
+                    Water {
                         anchors.fill: parent
-                        preferredRendererType: Vec.Shape.CurveRenderer
-
-                        Vec.ShapePath {
-                            strokeColor: "transparent"
-                            strokeWidth: 0
-                            fillGradient: Vec.LinearGradient {
-                                x1: 0; y1: liquid.surfaceY
-                                x2: 0; y2: liquid.height
-                                GradientStop { position: 0; color: Colors.alpha(Colors.good, 0.55) }
-                                GradientStop { position: 1; color: Colors.alpha(Qt.darker(Colors.good, 1.6), 0.45) }
-                            }
-                            PathPolyline { path: liquid.body }
-                        }
-
-                        Vec.ShapePath {
-                            strokeColor: Colors.alpha(Qt.lighter(Colors.good, 1.5), 0.85)
-                            strokeWidth: 1.4
-                            fillColor: "transparent"
-                            PathPolyline { path: liquid.crest }
-                        }
+                        level: liquid.height - liquid.surfaceY
+                        phase1: liquid.phase
+                        amp1: liquid.amp
+                        waves1: 1.5
+                        nearColor: Colors.good
+                        nearAlpha: 0.55
+                        farColor: Qt.darker(Colors.good, 1.6)
+                        farAlpha: 0.45
+                        crestColor: Qt.lighter(Colors.good, 1.5)
+                        crestAlpha: 0.85
+                        crestWidth: 1.4
                     }
                 }
 
@@ -1704,9 +1960,10 @@ PanelWindow {
                     anchors.fill: parent
                     readonly property var tm: Timers.soonest
                     readonly property bool want: IslandConfig.on("timer") && Timers.anyRunning
+                        && !IslandConfig.s("tide")
                         && !win.seeking && (!win.wide || win.wideKind === "timer")
-                    level: tm ? Timers.progress(tm) : 0
-                    hot: tm ? Timers.left(tm) <= 10 : false
+                    level: want && tm ? Timers.progress(tm) : 0
+                    hot: want && tm ? Timers.left(tm) <= 10 : false
                     tint: Colors.accentAlt
                     live: opacity > 0.01
                     opacity: want ? 1 : 0
@@ -1850,6 +2107,8 @@ PanelWindow {
                     notifImage: win.hub.notifImage
                     notifIcon: win.hub.notifIcon
                     notifCount: win.hub.notifCount
+                    notifMsgs: win.hub.notifMsgs
+                    notifCritical: win.hub.notifCritical
                     notifLive: win.hub.notifLive
                     notifTools: win.notifTools
                     notifReplying: win.replying
@@ -2156,6 +2415,7 @@ PanelWindow {
                             text: NotifHistory.appLetter(win.hub.notifApp)
                             color: "white"
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Math.max(8, Math.round(parent.height * 0.45))
                             font.weight: Font.Bold
                         }
@@ -2482,6 +2742,7 @@ PanelWindow {
             readonly property color hue: {
                 switch (win.hub.leftKind) {
                 case "print": return Colors.accentAlt;
+                case "remind": return Colors.warn;
                 case "task":
                     return win.hub.taskResult === "ok" ? Colors.good
                          : win.hub.taskResult === "bad" ? Colors.bad
@@ -2522,6 +2783,15 @@ PanelWindow {
                     ? (win.hub.downloadPhase === "ok" ? "ok" : "")
                     : win.hub.taskResult
                 icon: win.hub.launch ? win.hub.launch.icon : ""
+            }
+
+            TapHandler {
+                enabled: win.hub.leftKind === "remind" && Reminders.soon !== null
+                onTapped: IslandBus.calendarAt(Reminders.soon.at)
+            }
+            HoverHandler {
+                enabled: win.hub.leftKind === "remind"
+                cursorShape: Qt.PointingHandCursor
             }
 
             TapHandler {

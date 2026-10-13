@@ -20,7 +20,7 @@ Singleton {
     property bool dimming: false
 
     readonly property string guard:
-        Quickshell.env("HOME") + "/.config/hypr/scripts/idle-guard.sh"
+        Quickshell.env("HOME") + "/.config/hypr/scripts/lock/idle-guard.sh"
 
     property bool screenOff: false
 

@@ -193,6 +193,7 @@ Scope {
                         text: I18n.t("timer.title")
                         color: Colors.fg
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: Fonts.titleSize
                     }
 
@@ -224,7 +225,7 @@ Scope {
                                  : (Timers.running > 0 ? Colors.accent : Colors.fgDim)
                             opacity: Timers.running > 0 || Timers.anyRinging ? 0.9 : 0.45
                             font.family: root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: Fonts.small
                         }
 
                         IconButton {
@@ -291,7 +292,8 @@ Scope {
                                     color: Colors.fg
                                     opacity: 0.75
                                     font.family: Fonts.display
-                                    font.pixelSize: 13
+                                    font.features: { "tnum": 1 }
+                                    font.pixelSize: Fonts.medium
                                 }
 
                                 Text {
@@ -303,7 +305,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.5
                                     font.family: root.mono
-                                    font.pixelSize: 10
+                                    font.pixelSize: Fonts.tiny
                                 }
                             }
                         }
@@ -374,7 +376,7 @@ Scope {
                                     text: "󰂛  " + I18n.t("timer.dismiss")
                                     color: Colors.fg
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
 
                                 TapHandler {
@@ -405,7 +407,7 @@ Scope {
                                     text: "󰒲  +" + Timers.human(Prefs.timerSnoozeSec)
                                     color: Colors.fgDim
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
 
                                 TapHandler {
@@ -431,6 +433,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.55
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Fonts.smallSize
                         }
 
@@ -471,7 +474,7 @@ Scope {
                                         text: Timers.human(chip.modelData)
                                         color: chipHover.hovered ? Colors.accent : Colors.fgDim
                                         font.family: root.mono
-                                        font.pixelSize: 11
+                                        font.pixelSize: Fonts.small
                                     }
 
                                     TapHandler {
@@ -514,7 +517,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.7
                                     font.family: root.mono
-                                    font.pixelSize: 13
+                                    font.pixelSize: Fonts.medium
                                 }
 
                                 TapHandler {
@@ -573,7 +576,7 @@ Scope {
                                                     color: upTap.pressed ? Colors.accent : Colors.fgDim
                                                     opacity: wheelHover.hovered ? 0.9 : 0.3
                                                     font.family: root.mono
-                                                    font.pixelSize: 12
+                                                    font.pixelSize: Fonts.text
                                                     Behavior on opacity { NumberAnimation { duration: Motion.fast } }
 
                                                     TapHandler {
@@ -594,7 +597,7 @@ Scope {
                                                         ? Colors.fg : Qt.rgba(Colors.fgDim.r,
                                                             Colors.fgDim.g, Colors.fgDim.b, 0.45)
                                                     family: root.mono
-                                                    pixelSize: 30
+                                                    pixelSize: Fonts.bigger
                                                     weight: Font.Medium
                                                 }
 
@@ -604,7 +607,7 @@ Scope {
                                                     color: downTap.pressed ? Colors.accent : Colors.fgDim
                                                     opacity: wheelHover.hovered ? 0.9 : 0.3
                                                     font.family: root.mono
-                                                    font.pixelSize: 12
+                                                    font.pixelSize: Fonts.text
                                                     Behavior on opacity { NumberAnimation { duration: Motion.fast } }
 
                                                     TapHandler {
@@ -625,7 +628,7 @@ Scope {
                                                 color: Colors.fgDim
                                                 opacity: 0.4
                                                 font.family: root.mono
-                                                font.pixelSize: 9
+                                                font.pixelSize: Fonts.tiny
                                             }
 
                                             HoverHandler { id: wheelHover }
@@ -683,7 +686,7 @@ Scope {
                                             color: Colors.fgDim
                                             opacity: 0.3
                                             font.family: root.mono
-                                            font.pixelSize: 24
+                                            font.pixelSize: Fonts.big
                                         }
                                     }
                                 }
@@ -735,7 +738,7 @@ Scope {
                                     color: root.composed > 0 ? Colors.fg
                                         : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.4)
                                     font.family: root.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: Fonts.text
                                 }
 
                                 TapHandler {
@@ -755,6 +758,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.55
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: Fonts.smallSize
                             }
 
@@ -778,7 +782,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.4
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
                             }
 
@@ -838,7 +842,7 @@ Scope {
                                             color: row.modelData.ringing ? Colors.bad
                                                 : (row.modelData.running ? Colors.accent : Colors.fgDim)
                                             font.family: root.mono
-                                            font.pixelSize: 13
+                                            font.pixelSize: Fonts.medium
                                         }
 
                                         Text {
@@ -851,7 +855,8 @@ Scope {
                                             color: Colors.fg
                                             opacity: 0.85
                                             font.family: Fonts.display
-                                            font.pixelSize: 12
+                                            font.features: { "tnum": 1 }
+                                            font.pixelSize: Fonts.text
                                         }
 
                                         Text {
@@ -859,7 +864,7 @@ Scope {
                                             text: Timers.clock(Timers.left(row.modelData))
                                             color: row.modelData.ringing ? Colors.bad : Colors.fg
                                             font.family: root.mono
-                                            font.pixelSize: 13
+                                            font.pixelSize: Fonts.medium
                                         }
 
                                         Text {
@@ -868,7 +873,7 @@ Scope {
                                             color: pauseHover.hovered ? Colors.accent : Colors.fgDim
                                             opacity: pauseHover.hovered ? 1 : 0.5
                                             font.family: root.mono
-                                            font.pixelSize: 12
+                                            font.pixelSize: Fonts.text
 
                                             HoverHandler { id: pauseHover }
                                             TapHandler {
@@ -885,7 +890,7 @@ Scope {
                                             color: killHover.hovered ? Colors.bad : Colors.fgDim
                                             opacity: killHover.hovered ? 1 : 0.5
                                             font.family: root.mono
-                                            font.pixelSize: 12
+                                            font.pixelSize: Fonts.text
 
                                             HoverHandler { id: killHover }
                                             TapHandler {
@@ -926,6 +931,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.55
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Fonts.smallSize
                         }
 
@@ -967,7 +973,7 @@ Scope {
                                             : I18n.t("timer.voice." + voice.modelData)
                                         color: voice.active ? Colors.accent : Colors.fgDim
                                         font.family: root.mono
-                                        font.pixelSize: 11
+                                        font.pixelSize: Fonts.small
                                     }
 
                                     TapHandler {
@@ -999,7 +1005,8 @@ Scope {
                                     color: Colors.fg
                                     opacity: 0.8
                                     font.family: Fonts.display
-                                    font.pixelSize: 12
+                                    font.features: { "tnum": 1 }
+                                    font.pixelSize: Fonts.text
                                 }
 
                                 Text {
@@ -1008,7 +1015,7 @@ Scope {
                                     text: Math.round(Prefs.timerVolume * 100) + "%"
                                     color: Colors.accent
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
                             }
 
@@ -1030,7 +1037,8 @@ Scope {
                                 color: Colors.fg
                                 opacity: 0.8
                                 font.family: Fonts.display
-                                font.pixelSize: 12
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.text
                             }
 
                             Segment {
@@ -1055,7 +1063,8 @@ Scope {
                                 color: Colors.fg
                                 opacity: 0.8
                                 font.family: Fonts.display
-                                font.pixelSize: 12
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.text
                             }
 
                             Segment {
@@ -1112,7 +1121,8 @@ Scope {
                                     color: Colors.fg
                                     opacity: 0.85
                                     font.family: Fonts.display
-                                    font.pixelSize: 12
+                                    font.features: { "tnum": 1 }
+                                    font.pixelSize: Fonts.text
                                 }
 
                                 Switch {
@@ -1135,7 +1145,8 @@ Scope {
                                 color: Colors.fg
                                 opacity: 0.8
                                 font.family: Fonts.display
-                                font.pixelSize: 12
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.text
                             }
 
                             Segment {
@@ -1161,7 +1172,8 @@ Scope {
                                 color: Colors.fg
                                 opacity: 0.8
                                 font.family: Fonts.display
-                                font.pixelSize: 12
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.text
                             }
 
                             Text {
@@ -1169,7 +1181,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.45
                                 font.family: root.mono
-                                font.pixelSize: 10
+                                font.pixelSize: Fonts.tiny
                             }
 
                             Field {
@@ -1233,7 +1245,7 @@ Scope {
                                         text: Timers.stopwatchText(Timers.stopwatchMs)
                                         color: Timers.stopwatchRunning ? Colors.accentAlt : Colors.fg
                                         font.family: root.mono
-                                        font.pixelSize: 34
+                                        font.pixelSize: Fonts.huge
                                         font.weight: Font.Medium
                                     }
 
@@ -1245,7 +1257,7 @@ Scope {
                                         color: Colors.fgDim
                                         opacity: 0.5
                                         font.family: root.mono
-                                        font.pixelSize: 10
+                                        font.pixelSize: Fonts.tiny
                                     }
                                 }
                             }
@@ -1280,7 +1292,7 @@ Scope {
                                         : "󰐊  " + I18n.t("timer.start")
                                     color: Colors.fg
                                     font.family: root.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: Fonts.text
                                 }
 
                                 TapHandler {
@@ -1334,6 +1346,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.55
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Fonts.smallSize
                         }
 
@@ -1384,7 +1397,7 @@ Scope {
                                         color: Colors.fgDim
                                         opacity: 0.6
                                         font.family: root.mono
-                                        font.pixelSize: 10
+                                        font.pixelSize: Fonts.tiny
                                     }
 
                                     Text {
@@ -1394,7 +1407,7 @@ Scope {
                                         color: Colors.fg
                                         opacity: 0.9
                                         font.family: root.mono
-                                        font.pixelSize: 12
+                                        font.pixelSize: Fonts.text
                                     }
 
                                     Text {
@@ -1403,7 +1416,7 @@ Scope {
                                         color: Colors.fgDim
                                         opacity: 0.5
                                         font.family: root.mono
-                                        font.pixelSize: 10
+                                        font.pixelSize: Fonts.tiny
                                     }
                                 }
                             }

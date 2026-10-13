@@ -36,7 +36,7 @@ Rectangle {
         verticalAlignment: TextInput.AlignVCenter
         color: Colors.fg
         font.family: field.mono
-        font.pixelSize: 14
+        font.pixelSize: Fonts.medium
         clip: true
         selectByMouse: true
         selectionColor: Qt.rgba(field.tint.r, field.tint.g, field.tint.b, 0.35)
@@ -63,7 +63,7 @@ Rectangle {
         color: Colors.fgDim
         opacity: 0.4
         font.family: field.mono
-        font.pixelSize: 13
+        font.pixelSize: Fonts.medium
     }
 
     Rectangle {

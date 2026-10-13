@@ -15,7 +15,7 @@ Scope {
 
     readonly property string mono: Fonts.mono
     readonly property string home: Quickshell.env("HOME")
-    readonly property string lister: home + "/.config/hypr/scripts/print-browse.sh"
+    readonly property string lister: home + "/.config/hypr/scripts/print/print-browse.sh"
 
     property string dir: home
     property string parentDir: "/"
@@ -192,13 +192,16 @@ Scope {
             Item {
                 anchors.fill: parent
                 z: -1
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 1.0
-                    shadowVerticalOffset: 12
-                    shadowOpacity: 0.5
-                    shadowColor: Colors.shadow(0.9)
+
+                RectangularShadow {
+                    anchors.fill: parent
+                    anchors.topMargin: 12
+                    anchors.bottomMargin: -12
+                    radius: Shape.modal
+                    blur: 34
+                    spread: -2
+                    color: Colors.shadow(0.9)
+                    opacity: 0.5
                 }
 
                 Rectangle {
@@ -246,7 +249,7 @@ Scope {
                             text: "󰐪"
                             color: Colors.accent
                             font.family: root.mono
-                            font.pixelSize: 22
+                            font.pixelSize: Fonts.big
                         }
 
                         Column {
@@ -257,6 +260,7 @@ Scope {
                                 text: I18n.t("print.title")
                                 color: Colors.fg
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: Fonts.titleSize
                                 font.weight: Font.DemiBold
                             }
@@ -472,7 +476,7 @@ Scope {
                                     color: row.isDir ? Colors.accentAlt : Colors.accent
                                     opacity: row.active ? 1 : 0.75
                                     font.family: root.mono
-                                    font.pixelSize: 17
+                                    font.pixelSize: Fonts.large
                                 }
 
                                 Text {
@@ -485,6 +489,7 @@ Scope {
                                     color: row.active ? Colors.fg : Colors.fgDim
                                     opacity: row.active ? 1 : 0.85
                                     font.family: Fonts.display
+                                    font.features: { "tnum": 1 }
                                     font.pixelSize: Fonts.bodySize
                                     font.weight: row.active ? Font.DemiBold : Font.Normal
                                     elide: Text.ElideMiddle
@@ -548,7 +553,7 @@ Scope {
                             text: "󰈦"
                             color: Colors.accent
                             font.family: root.mono
-                            font.pixelSize: 40
+                            font.pixelSize: Fonts.giant
 
                             RotationAnimation on rotation {
                                 running: Printing.preparing
@@ -601,6 +606,7 @@ Scope {
                                         text: Printing.doc ? Printing.doc.name : ""
                                         color: Colors.fg
                                         font.family: Fonts.display
+                                        font.features: { "tnum": 1 }
                                         font.pixelSize: Fonts.headingSize
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideMiddle
@@ -819,7 +825,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.7
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
 
                                 Row {
@@ -985,7 +991,7 @@ Scope {
                                                 color: Colors.fgDim
                                                 opacity: 0.7
                                                 font.family: root.mono
-                                                font.pixelSize: 11
+                                                font.pixelSize: Fonts.small
                                             }
 
                                             Switch {
@@ -1018,7 +1024,7 @@ Scope {
                                                 color: Colors.fgDim
                                                 opacity: 0.7
                                                 font.family: root.mono
-                                                font.pixelSize: 11
+                                                font.pixelSize: Fonts.small
                                             }
 
                                             Text {
@@ -1027,7 +1033,7 @@ Scope {
                                                 text: parent.now + " / " + parent.hi
                                                 color: Colors.fg
                                                 font.family: root.mono
-                                                font.pixelSize: 11
+                                                font.pixelSize: Fonts.small
                                                 font.weight: Font.DemiBold
                                             }
 
@@ -1127,7 +1133,7 @@ Scope {
                                             color: killHover.hovered ? Colors.bad : Colors.fgDim
                                             opacity: killHover.hovered ? 1 : 0.5
                                             font.family: root.mono
-                                            font.pixelSize: 12
+                                            font.pixelSize: Fonts.text
 
                                             HoverHandler { id: killHover }
                                             TapHandler {
@@ -1231,7 +1237,7 @@ Scope {
                                     color: go.armed ? Colors.accentText : Colors.fgDim
                                     opacity: go.armed ? 1 : 0.5
                                     font.family: root.mono
-                                    font.pixelSize: 15
+                                    font.pixelSize: Fonts.medium
                                 }
 
                                 Text {
@@ -1240,6 +1246,7 @@ Scope {
                                     color: go.armed ? Colors.accentText : Colors.fgDim
                                     opacity: go.armed ? 1 : 0.5
                                     font.family: Fonts.display
+                                    font.features: { "tnum": 1 }
                                     font.pixelSize: Fonts.bodySize
                                     font.weight: Font.DemiBold
                                 }

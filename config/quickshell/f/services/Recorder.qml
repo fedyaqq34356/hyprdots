@@ -63,7 +63,7 @@ Singleton {
     Process { id: toggle }
 
     function stop() {
-        toggle.command = [Quickshell.env("HOME") + "/.config/hypr/scripts/record-toggle.sh"];
+        toggle.command = [Quickshell.env("HOME") + "/.config/hypr/scripts/capture/record-toggle.sh"];
         toggle.running = true;
     }
 }

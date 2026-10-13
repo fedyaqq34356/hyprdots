@@ -42,6 +42,7 @@ Item {
             text: tc.d ? tc.d.label : (tc.t && tc.t.label ? tc.t.label : I18n.t("isle.src.timer"))
             color: Colors.alpha(Colors.fg, 0.55)
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             elide: Text.ElideRight
         }

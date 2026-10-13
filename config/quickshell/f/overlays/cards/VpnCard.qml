@@ -45,6 +45,7 @@ Item {
             text: Vpn.iface + (Vpn.exitIp !== "" ? "  ·  " + Vpn.exitIp : "")
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 15
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -73,6 +74,7 @@ Item {
             text: Vpn.exitCountry
             color: Qt.lighter(card.tint, 1.2)
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             font.weight: Font.DemiBold
         }

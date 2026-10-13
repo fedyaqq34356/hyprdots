@@ -171,7 +171,7 @@ Scope {
                                           Colors.outline.b, 0.18)
                             Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
-                            Rectangle {
+                            RectangularShadow {
                                 z: -1
                                 anchors.centerIn: parent
                                 width: parent.width + 12
@@ -181,12 +181,7 @@ Scope {
                                 opacity: root.filter !== "" ? 0.22 : 0.12
                                 Behavior on opacity { NumberAnimation { duration: Motion.slow } }
 
-                                layer.enabled: true
-                                layer.effect: MultiEffect {
-                                    blurEnabled: true
-                                    blur: 1.0
-                                    blurMax: 40
-                                }
+                                blur: 40
                             }
 
                             Row {
@@ -201,7 +196,7 @@ Scope {
                                     color: Colors.accent
                                     opacity: root.filter !== "" ? 1 : 0.6
                                     font.family: root.mono
-                                    font.pixelSize: 16
+                                    font.pixelSize: Fonts.large
                                 }
 
                                 Text {
@@ -212,7 +207,7 @@ Scope {
                                     color: root.filter !== "" ? Colors.fg : Colors.fgDim
                                     opacity: root.filter !== "" ? 1 : 0.45
                                     font.family: root.mono
-                                    font.pixelSize: 14
+                                    font.pixelSize: Fonts.medium
                                 }
 
                                 Rectangle {
@@ -231,7 +226,7 @@ Scope {
                                         color: Colors.fgDim
                                         opacity: 0.75
                                         font.family: root.mono
-                                        font.pixelSize: 10
+                                        font.pixelSize: Fonts.tiny
                                     }
                                 }
                             }
@@ -392,7 +387,8 @@ Scope {
                                                     color: slot.current ? Colors.fg : Colors.fgDim
                                                     opacity: slot.current ? 1 : 0.85
                                                     font.family: Fonts.display
-                                                    font.pixelSize: 13
+                                                    font.features: { "tnum": 1 }
+                                                    font.pixelSize: Fonts.medium
                                                     font.weight: slot.current
                                                         ? Font.DemiBold : Font.Normal
                                                 }
@@ -405,7 +401,7 @@ Scope {
                                                     color: Colors.fgDim
                                                     opacity: 0.55
                                                     font.family: root.mono
-                                                    font.pixelSize: 9
+                                                    font.pixelSize: Fonts.tiny
                                                 }
                                             }
 
@@ -429,7 +425,7 @@ Scope {
                                                     color: slot.current ? Colors.accent : Colors.fgDim
                                                     opacity: slot.current ? 1 : 0.7
                                                     font.family: root.mono
-                                                    font.pixelSize: 11
+                                                    font.pixelSize: Fonts.small
                                                     font.weight: Font.DemiBold
                                                 }
                                             }
@@ -469,7 +465,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.5
                             font.family: root.mono
-                            font.pixelSize: 13
+                            font.pixelSize: Fonts.medium
                         }
 
                         Text {
@@ -478,7 +474,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.4
                             font.family: root.mono
-                            font.pixelSize: 10
+                            font.pixelSize: Fonts.tiny
                         }
                     }
                 }

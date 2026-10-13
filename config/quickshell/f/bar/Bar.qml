@@ -605,6 +605,7 @@ Scope {
                                 text: I18n.t("dots.update")
                                 color: Colors.fg
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: 12
                                 font.weight: Font.DemiBold
                             }
@@ -613,6 +614,7 @@ Scope {
                                 text: DotsUpdate.size()
                                 color: Colors.alpha(Colors.fgDim, 0.7)
                                 font.family: Fonts.mono
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
                             }
@@ -800,6 +802,7 @@ Scope {
                         color: Colors.fgDim
                         horizontalAlignment: Text.AlignHCenter
                         font.family: Fonts.mono
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 10
                         lineHeight: 1.25
                     }

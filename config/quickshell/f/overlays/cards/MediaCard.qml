@@ -514,6 +514,7 @@ Item {
                 text: mc.m.source.toUpperCase()
                 color: Colors.alpha(Colors.fg, 0.45)
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
                 font.letterSpacing: 1.6
@@ -601,6 +602,7 @@ Item {
             color: Colors.alpha(Colors.fg, track.hot ? 0.85 : 0.5)
             Behavior on color { ColorAnimation { duration: Motion.base } }
             font.family: Fonts.mono
+            font.features: { "tnum": 1 }
             font.pixelSize: 10
         }
 
@@ -614,6 +616,7 @@ Item {
             color: Colors.alpha(Colors.fg, track.hot ? 0.85 : 0.5)
             Behavior on color { ColorAnimation { duration: Motion.base } }
             font.family: Fonts.mono
+            font.features: { "tnum": 1 }
             font.pixelSize: 10
         }
 

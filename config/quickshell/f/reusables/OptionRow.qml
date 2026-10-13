@@ -26,7 +26,8 @@ Item {
         width: Math.max(60, opt.width - 170)
         elide: Text.ElideRight
         font.family: Fonts.display
-        font.pixelSize: 11
+        font.features: { "tnum": 1 }
+        font.pixelSize: Fonts.small
     }
 
     Rectangle {
@@ -97,7 +98,8 @@ Item {
             text: opt.value
             color: Colors.fg
             font.family: Fonts.mono
-            font.pixelSize: 11
+            font.features: { "tnum": 1 }
+            font.pixelSize: Fonts.small
         }
     }
 
@@ -133,7 +135,8 @@ Item {
                     text: opt.valueLabel(modelData)
                     color: parent.chosen ? Colors.accentText : Colors.fgDim
                     font.family: Fonts.mono
-                    font.pixelSize: 10
+                    font.features: { "tnum": 1 }
+                    font.pixelSize: Fonts.tiny
                 }
 
                 MouseArea {
@@ -170,7 +173,8 @@ Item {
             verticalAlignment: TextInput.AlignVCenter
             color: Colors.fg
             font.family: Fonts.mono
-            font.pixelSize: 11
+            font.features: { "tnum": 1 }
+            font.pixelSize: Fonts.small
             clip: true
 
             Binding on text {

@@ -38,6 +38,7 @@ Scope {
         if (shown) {
             search.text = "";
             list.currentIndex = 0;
+            root.index = 0;
             search.forceActiveFocus();
         }
     }
@@ -112,6 +113,110 @@ Scope {
     }
 
     Process { id: decoder }
+    readonly property bool decoding: decoder.running
+
+    readonly property bool isle: {
+        if (!Prefs.apple || !IslandConfig.s("enabled"))
+            return false;
+        const top = IslandConfig.s("inBar") ? Prefs.barAtTop : IslandConfig.s("edge") === "top";
+        if (!top)
+            return false;
+        if (IslandConfig.s("hideFull")) {
+            const m = Hyprland.focusedMonitor;
+            const ws = m ? m.activeWorkspace : null;
+            if (ws && ws.hasFullscreen)
+                return false;
+        }
+        return true;
+    }
+
+    property int index: 0
+
+    function step(d) {
+        const n = root.results.length;
+        if (n === 0)
+            return;
+        const next = Math.max(0, Math.min(n - 1, root.index + d));
+        clipDrip.flip(d);
+        if (next !== root.index) {
+            root.index = next;
+            Sfx.tapAlt();
+        }
+    }
+
+    function accept() {
+        const e = root.isle ? root.results[root.index] : root.results[list.currentIndex];
+        if (root.isle)
+            clipDrip.take();
+        root.copyEntry(e);
+    }
+
+    function previewOf(e) {
+        return "file://" + root.previewDir + "/" + e.id;
+    }
+
+    property var fullText: ({})
+    function bodyOf(e) {
+        const t = root.fullText[e.id];
+        return t !== undefined ? t : e.body;
+    }
+    function metaOf(e) {
+        if (e.kind !== "text")
+            return e.meta;
+        const n = root.bodyOf(e).length;
+        const lines = root.bodyOf(e).split("\n").length;
+        return lines > 1 ? lines + " lines · " + n + " chars" : n > 60 ? n + " chars" : "";
+    }
+    function codey(e) {
+        const t = root.bodyOf(e);
+        return /[{};]\s*$|^\s{2,}|=>|\)\s*\{|^\$ |^#!/m.test(t);
+    }
+
+    readonly property var current: root.isle && root.shown && root.results.length > 0
+        ? root.results[Math.min(root.index, root.results.length - 1)] : null
+    onCurrentChanged: {
+        const e = root.current;
+        if (!e || e.isImage || root.fullText[e.id] !== undefined || fuller.running)
+            return;
+        fuller.want = e.id;
+        fuller.command = ["sh", "-c", "cliphist decode " + e.id + " | head -c 4000"];
+        fuller.running = true;
+    }
+
+    Process {
+        id: fuller
+        property string want: ""
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const next = Object.assign({}, root.fullText);
+                next[fuller.want] = this.text.replace(/\s+$/, "");
+                root.fullText = next;
+            }
+        }
+        onRunningChanged: if (!fuller.running) Qt.callLater(root.currentChanged)
+    }
+
+    Binding { target: IslandBus; property: "searching"; value: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "searchScreen"; value: win.screen ? win.screen.name : ""; when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "query"; value: search.text; when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "cursor"; value: search.cursorPosition; when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "mode"; value: "clip"; when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "hint"; value: root.results.length > 0 ? (Math.min(root.index, root.results.length - 1) + 1) + " / " + root.results.length : (search.text.trim() !== "" ? "No matches" : "Empty"); when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "hintGlyph"; value: ""; when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "hue"; value: clipDrip.glow; when: (root.shown || clipDrip.holding) && root.isle }
+    Binding { target: IslandBus; property: "hueOn"; value: true; when: (root.shown || clipDrip.holding) && root.isle }
+
+    property int lastLen: 0
+    Connections {
+        target: search
+        function onTextChanged() {
+            const n = search.text.length;
+            if (root.shown && root.isle && n !== root.lastLen)
+                IslandBus.keyed(n > root.lastLen ? 1 : -1);
+            root.lastLen = n;
+            root.index = 0;
+        }
+    }
 
     Process { id: copier }
 
@@ -157,7 +262,7 @@ Scope {
         WlrLayershell.namespace: "qs-clipboard"
         id: win
         screen: Focus.screen
-        visible: root.shown
+        visible: root.shown || clipDrip.living
         focusable: true
 
         anchors { top: true; bottom: true; left: true; right: true }
@@ -167,7 +272,7 @@ Scope {
         Rectangle {
             anchors.fill: parent
             color: "#000000"
-            opacity: root.shown ? 0.42 : 0
+            opacity: root.shown ? (root.isle ? 0.16 : 0.42) : 0
             Behavior on opacity { NumberAnimation { duration: Motion.base } }
             MouseArea {
                 anchors.fill: parent
@@ -179,7 +284,14 @@ Scope {
             id: emerge
             card: card
             win: win
-            open: root.shown
+            open: root.shown && !root.isle
+        }
+
+        ClipDrip {
+            id: clipDrip
+            anchors.fill: parent
+            c: root
+            open: root.shown && root.isle
         }
 
         Item {
@@ -190,10 +302,10 @@ Scope {
             width: 660
             height: 540
 
-            opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
+            opacity: root.isle ? 0 : emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
             scale: emerge.on ? 1 : (root.shown ? 1 : 0.94)
             transform: Translate {
-                x: emerge.dx
+                x: emerge.dx + (root.isle ? -100000 : 0)
                 y: emerge.on ? emerge.dy : (root.shown ? 0 : 24)
                 Behavior on y {
                     enabled: !emerge.on
@@ -246,7 +358,7 @@ Scope {
                             text: "󰅇"
                             color: Colors.accent
                             font.family: root.mono
-                            font.pixelSize: 16
+                            font.pixelSize: Fonts.large
                         }
 
                         Text {
@@ -254,6 +366,7 @@ Scope {
                             text: "clipboard"
                             color: Colors.fg
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Fonts.titleSize
                         }
 
@@ -272,7 +385,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.75
                                 font.family: root.mono
-                                font.pixelSize: 10
+                                font.pixelSize: Fonts.tiny
                             }
                         }
                     }
@@ -303,7 +416,7 @@ Scope {
                                   Colors.outline.b, 0.14)
                     Behavior on border.color { ColorAnimation { duration: Motion.fast } }
 
-                    Rectangle {
+                    RectangularShadow {
                         z: -1
                         anchors.centerIn: parent
                         width: parent.width + 10
@@ -313,12 +426,7 @@ Scope {
                         opacity: search.activeFocus ? 0.20 : 0
                         Behavior on opacity { NumberAnimation { duration: Motion.slow } }
 
-                        layer.enabled: true
-                        layer.effect: MultiEffect {
-                            blurEnabled: true
-                            blur: 1.0
-                            blurMax: 36
-                        }
+                        blur: 36
                     }
 
                     Row {
@@ -333,7 +441,7 @@ Scope {
                             color: Colors.accent
                             opacity: search.activeFocus ? 1 : 0.7
                             font.family: root.mono
-                            font.pixelSize: 16
+                            font.pixelSize: Fonts.large
                         }
 
                         TextInput {
@@ -342,7 +450,7 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             color: Colors.fg
                             font.family: root.mono
-                            font.pixelSize: 14
+                            font.pixelSize: Fonts.medium
                             clip: true
                             selectByMouse: true
                             selectionColor: Qt.rgba(Colors.accent.r, Colors.accent.g,
@@ -360,10 +468,22 @@ Scope {
                             }
 
                             Keys.onEscapePressed: root.close()
-                            Keys.onDownPressed: list.incrementCurrentIndex()
-                            Keys.onUpPressed: list.decrementCurrentIndex()
-                            Keys.onReturnPressed: root.copyEntry(root.results[list.currentIndex])
-                            Keys.onEnterPressed: root.copyEntry(root.results[list.currentIndex])
+                            Keys.onDownPressed: root.isle ? root.step(1) : list.incrementCurrentIndex()
+                            Keys.onUpPressed: root.isle ? root.step(-1) : list.decrementCurrentIndex()
+                            Keys.onLeftPressed: (event) => {
+                                if (root.isle)
+                                    root.step(-1);
+                                else
+                                    event.accepted = false;
+                            }
+                            Keys.onRightPressed: (event) => {
+                                if (root.isle)
+                                    root.step(1);
+                                else
+                                    event.accepted = false;
+                            }
+                            Keys.onReturnPressed: root.accept()
+                            Keys.onEnterPressed: root.accept()
 
                             Keys.onPressed: (event) => {
                                 if (!(event.modifiers & Qt.AltModifier))
@@ -532,7 +652,7 @@ Scope {
                                         text: root.glyphFor(clipRow.modelData.kind)
                                         color: Colors.accent
                                         font.family: root.mono
-                                        font.pixelSize: 15
+                                        font.pixelSize: Fonts.medium
                                     }
                                 }
                             }
@@ -548,7 +668,7 @@ Scope {
                                     color: Colors.fg
                                     opacity: clipRow.selected ? 1 : 0.9
                                     font.family: root.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: Fonts.text
                                     elide: Text.ElideRight
                                     maximumLineCount: 1
                                 }
@@ -573,7 +693,7 @@ Scope {
                                             color: Colors.fgDim
                                             opacity: 0.7
                                             font.family: root.mono
-                                            font.pixelSize: 8
+                                            font.pixelSize: Fonts.tiny
                                             font.letterSpacing: 1
                                         }
                                     }
@@ -585,7 +705,7 @@ Scope {
                                         color: Colors.fgDim
                                         opacity: 0.55
                                         font.family: root.mono
-                                        font.pixelSize: 9
+                                        font.pixelSize: Fonts.tiny
                                         elide: Text.ElideRight
                                         maximumLineCount: 1
                                     }
@@ -615,7 +735,7 @@ Scope {
                                 color: clipRow.selected ? Colors.accent : Colors.fgDim
                                 opacity: clipRow.selected ? 1 : 0.6
                                 font.family: root.mono
-                                font.pixelSize: 9
+                                font.pixelSize: Fonts.tiny
                             }
                         }
 
@@ -635,7 +755,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.5
                         font.family: root.mono
-                        font.pixelSize: 13
+                        font.pixelSize: Fonts.medium
                     }
                 }
 
@@ -677,7 +797,7 @@ Scope {
                                         color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                                        Colors.fgDim.b, 0.7)
                                         font.family: root.mono
-                                        font.pixelSize: 9
+                                        font.pixelSize: Fonts.tiny
                                     }
                                 }
 
@@ -687,7 +807,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.4
                                     font.family: root.mono
-                                    font.pixelSize: 9
+                                    font.pixelSize: Fonts.tiny
                                 }
                             }
                         }
