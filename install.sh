@@ -193,15 +193,15 @@ deploy_tree() {
     done < <(find "$src" -type f -print0)
 }
 
-# Files that need the real home directory rather than a tilde: qt6ct and
-# fuzzel do not expand ~, so the published copies carry an @HOME@ marker that
-# is filled in here.
+# Files that need the real home directory rather than a tilde: qt6ct, fuzzel,
+# hyprlock and the screencast portal do not expand ~, so the published copies
+# carry an @HOME@ marker that is filled in here.
 expand_home() {
     local file
     while IFS= read -r -d '' file; do
         grep -q '@HOME@' "$file" 2>/dev/null || continue
         run sed -i "s|@HOME@|$HOME|g" "$file"
-    done < <(find "$HOME/.config/serezha" "$HOME/.local/bin" \
+    done < <(find "$HOME/.config/serezha" "$HOME/.config/hypr" "$HOME/.local/bin" \
         "$HOME/.local/share/applications" -type f -print0 2>/dev/null)
 }
 
@@ -267,8 +267,33 @@ enable_services() {
     ok "network and bluetooth enabled"
 }
 
+# Scripts used to sit flat in ~/.config/hypr/scripts; they now live in one
+# folder per job. An update would otherwise leave the old flat copies behind
+# next to the new ones, so every flat script that has a namesake in the new
+# layout is backed up and removed. Machine state moves out of the config dir.
+migrate_layout() {
+    local scripts="$HOME/.config/hypr/scripts" state="$HOME/.local/state/hypr"
+    local file name
+    if [[ -d "$scripts" ]]; then
+        while IFS= read -r -d '' file; do
+            name="${file##*/}"
+            compgen -G "$SRC_DIR/config/hypr/scripts/*/$name" >/dev/null || continue
+            backup_path "$file"
+            run rm -rf "$file"
+        done < <(find "$scripts" -mindepth 1 -maxdepth 1 \
+            \( -type f -o -name print-root \) -print0)
+    fi
+    run mkdir -p "$state"
+    for name in mic-level lock-choice; do
+        [[ -f "$HOME/.config/hypr/$name" && ! -e "$state/$name" ]] \
+            && run mv "$HOME/.config/hypr/$name" "$state/$name"
+    done
+    return 0
+}
+
 deploy_config() {
     log "Deploying the configuration"
+    migrate_layout
     deploy_tree "$SRC_DIR/config" "$HOME/.config"
     deploy_tree "$SRC_DIR/home" "$HOME"
     deploy_tree "$SRC_DIR/bin" "$HOME/.local/bin"

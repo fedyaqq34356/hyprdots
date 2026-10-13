@@ -4,7 +4,7 @@ set -uo pipefail
 
 MODE="${1:-region}"
 OUTDIR="${SCREENSHOT_DIR:-$HOME/Pictures/Screenshots}"
-NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
+NOTIFY="$HOME/.config/hypr/scripts/notify/dbus-notify.sh"
 FILE="$OUTDIR/$(date +%Y-%m-%d_%H-%M-%S).png"
 
 mkdir -p "$OUTDIR"

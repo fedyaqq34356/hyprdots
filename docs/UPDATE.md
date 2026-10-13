@@ -202,7 +202,7 @@ session is locked and while the screen is off. Two weeks of history, in
 ### Idle handling
 
 Replaces `hypridle`. Lock and screen-off timers live in the shell's settings;
-the decision of *whether* to fire stays in `hypr/scripts/idle-guard.sh`, which
+the decision of *whether* to fire stays in `hypr/scripts/lock/idle-guard.sh`, which
 already knows about fullscreen windows, playing audio, recordings and the
 personal inhibit list.
 

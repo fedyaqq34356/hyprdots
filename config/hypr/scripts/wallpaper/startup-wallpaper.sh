@@ -18,4 +18,4 @@ for i in $(seq 1 20); do
     sleep 0.3
 done
 
-"$HOME/.config/hypr/scripts/set-wallpaper.sh" "$WALLPAPER"
+"$HOME/.config/hypr/scripts/wallpaper/set-wallpaper.sh" "$WALLPAPER"
