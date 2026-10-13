@@ -8,6 +8,6 @@ while true; do
     WALLPAPER=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | shuf -n 1)
     [[ -z "$WALLPAPER" ]] && continue
 
-    "$HOME/.config/hypr/scripts/set-wallpaper.sh" "$WALLPAPER"
+    "$HOME/.config/hypr/scripts/wallpaper/set-wallpaper.sh" "$WALLPAPER"
 
 done

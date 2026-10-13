@@ -21,7 +21,9 @@ PREV=""
 [[ -f "$HOME/.config/hypr/current-wallpaper" ]] && PREV=$(<"$HOME/.config/hypr/current-wallpaper")
 
 if pgrep -x awww-daemon >/dev/null 2>&1; then
-    if [[ -n "${WALL_POS:-}" ]]; then
+    if [[ -n "${WALL_INSTANT:-}" ]]; then
+        awww img "$WALLPAPER" --transition-type none >/dev/null 2>&1
+    elif [[ -n "${WALL_POS:-}" ]]; then
         awww img "$WALLPAPER" \
             --transition-type grow --transition-pos "$WALL_POS" \
             --transition-duration 1.6 --transition-fps 60 \

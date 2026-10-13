@@ -103,7 +103,7 @@ SKIP_EXACT = {
     "colors.conf", "lock-colors.conf", "current-wallpaper", "hyprpaper.conf",
     "matugen.rasi", "colors.css", "colors-matugen.css", "gtk.css",
     "idle-inhibit.list", "outbound-ignore.list", "list.rasi", "grid.rasi",
-    "dunstrc", "config", "matugen.conf",
+    "dunstrc", "config", "matugen.conf", "mic-level", "lock-choice",
     # Записывают в себя абсолютный путь к сгенерированной палитре, то есть
     # домашний каталог этой машины.
     "qt5ct.conf", "qt6ct.conf",

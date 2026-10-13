@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
+NOTIFY="$HOME/.config/hypr/scripts/notify/dbus-notify.sh"
 
 COUNT=$(cliphist list 2>/dev/null | wc -l)
 cliphist wipe

@@ -49,7 +49,7 @@ output_path = "~/.config/wlogout/colors.css"
 [templates.gtk3]
 input_path  = "~/.config/matugen/templates/gtk-colors.css"
 output_path = "~/.config/gtk-3.0/gtk.css"
-post_hook   = "python3 $HOME/.config/hypr/scripts/papirus-tint.py"
+post_hook   = "python3 $HOME/.config/hypr/scripts/theme/papirus-tint.py"
 
 [templates.gtk4]
 input_path  = "~/.config/matugen/templates/gtk-colors.css"
@@ -58,17 +58,17 @@ output_path = "~/.config/gtk-4.0/colors-matugen.css"
 [templates.librewolf]
 input_path  = "~/.config/matugen/templates/librewolf-userchrome.css"
 output_path = "~/.config/matugen/out/librewolf-userchrome.css"
-post_hook   = "python3 $HOME/.config/hypr/scripts/apply-browser-theme.py"
+post_hook   = "python3 $HOME/.config/hypr/scripts/theme/apply-browser-theme.py"
 
 [templates.chromium]
 input_path  = "~/.config/matugen/templates/chromium-colors.json"
 output_path = "~/.config/matugen/out/chromium-colors.json"
-post_hook   = "python3 $HOME/.config/hypr/scripts/gen-chromium-theme.py"
+post_hook   = "python3 $HOME/.config/hypr/scripts/theme/gen-chromium-theme.py"
 
 [templates.cursor]
 input_path  = "~/.config/matugen/templates/cursor-trigger.txt"
 output_path = "~/.config/matugen/out/cursor-trigger.txt"
-post_hook   = "python3 $HOME/.config/hypr/scripts/gen-cursor-theme.py --reload"
+post_hook   = "python3 $HOME/.config/hypr/scripts/theme/gen-cursor-theme.py --reload"
 
 [templates.rofi-list]
 input_path  = "~/.config/matugen/templates/rofi-list.rasi"
@@ -89,7 +89,7 @@ output_path = "~/.config/zed/themes/matugen.json"
 [templates.kvantum]
 input_path  = "~/.config/matugen/templates/kvantum-source.json"
 output_path = "~/.config/matugen/out/kvantum-source.json"
-post_hook   = "python3 $HOME/.config/hypr/scripts/gen-kvantum-theme.py --reload"
+post_hook   = "python3 $HOME/.config/hypr/scripts/theme/gen-kvantum-theme.py --reload"
 
 [templates.qt6ct]
 input_path  = "~/.config/matugen/templates/qtct-colors.conf"
@@ -102,4 +102,4 @@ output_path = "~/.config/qt5ct/colors/matugen.conf"
 [templates.libreoffice]
 input_path  = "~/.config/matugen/templates/libreoffice-source.json"
 output_path = "~/.config/matugen/out/libreoffice-source.json"
-post_hook   = "python3 $HOME/.config/hypr/scripts/gen-libreoffice-theme.py"
+post_hook   = "python3 $HOME/.config/hypr/scripts/theme/gen-libreoffice-theme.py"

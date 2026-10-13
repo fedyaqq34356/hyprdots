@@ -35,7 +35,7 @@ if [[ ! -f "$COLORS" ]]; then
 EOF
 fi
 
-CHOICE_FILE="$CONFIG_DIR/lock-choice"
+CHOICE_FILE="$HOME/.local/state/hypr/lock-choice"
 choice=$(cat "$CHOICE_FILE" 2>/dev/null || echo hyprlock)
 
 case "${1:-}" in

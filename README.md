@@ -771,6 +771,34 @@ The installer requires `pacman`, must be run as a normal user (not root), and co
 configuration to `~/.config/dotfiles-backup-<timestamp>` before writing anything.
 
 <details>
+<summary><b>Layout</b> — <sub>where each piece lives</sub></summary>
+
+| Path | What is there |
+| --- | --- |
+| `config/hypr/hyprland.conf` | entry point; sources everything in `config/hypr/config/` |
+| `config/hypr/config/` | one file per topic: `env`, `monitors`, `startup`, `binds`, `rules`, `animations`, `shape`, modes |
+| `config/hypr/scripts/audio/` | volume, the microphone level lock, WirePlumber start |
+| `config/hypr/scripts/capture/` | screenshots, screen recording, image upscaling |
+| `config/hypr/scripts/clipboard/` | history store, guard, wipe, island preview |
+| `config/hypr/scripts/lock/` | the lock screen, its status lines and the idle guard |
+| `config/hypr/scripts/notify/` | missed-notification counter, D-Bus test and trace helpers |
+| `config/hypr/scripts/print/` | the print panel backend; `print/print-root/` holds the root-side files |
+| `config/hypr/scripts/system/` | cache cleanup, updates, monitor fix, sysmon, focus mode, power menu |
+| `config/hypr/scripts/theme/` | palette generators for browsers, cursors, Kvantum, LibreOffice, icons, sounds |
+| `config/hypr/scripts/tools/` | calculator, file lists, downloads sorter, git activity |
+| `config/hypr/scripts/wallpaper/` | setting, rotating, indexing and picking wallpapers |
+| `config/quickshell/f/` | the shell: `bar`, `panels`, `overlays`, `desk`, `services`, `design`, `reusables`, `lang` |
+| `config/matugen/` | templates the palette is rendered into |
+| `bin/` | commands that land in `~/.local/bin` |
+| `home/` | dotfiles that land in `~` |
+| `extras/` | optional pieces the installer does not deploy |
+
+Machine state stays out of the config: the microphone level and the lock choice live in
+`~/.local/state/hypr/`. An update moves them there and removes the old flat copies of the scripts.
+
+</details>
+
+<details>
 <summary><b>Updating</b> — <sub>one command, and what it will not overwrite</sub></summary>
 
 
@@ -820,7 +848,7 @@ wallpaper ──▶ matugen ──┬──▶ hyprland   window borders
                         └──▶ cava       audio visualiser
 ```
 
-`~/.config/hypr/scripts/set-wallpaper.sh` is the single entry point: it paints every connected
+`~/.config/hypr/scripts/wallpaper/set-wallpaper.sh` is the single entry point: it paints every connected
 monitor, persists the choice to `~/.config/hypr/current-wallpaper`, and re-runs matugen. Templates
 live in `~/.config/matugen/templates` — add a file there plus one block in
 `~/.config/matugen/config.toml` and any other application joins the scheme.
@@ -878,7 +906,7 @@ plays — the `dec` column stays at zero when decoding is still on the CPU.
 
 The shell locks the session after 50 minutes without input and turns the panels off five minutes
 later. Both timers live in the shell's own settings rather than in a third config file with its own
-syntax, and both actions still go through `config/hypr/scripts/idle-guard.sh`, which refuses to fire
+syntax, and both actions still go through `config/hypr/scripts/lock/idle-guard.sh`, which refuses to fire
 while a window is fullscreen, audio is genuinely playing (uncorked, not merely holding the device
 open), a recording is running, or any process named in `~/.config/hypr/idle-inhibit.list` is alive.
 
@@ -916,7 +944,7 @@ same palette and stays available as a standalone power menu.
 <summary><b>Screen capture</b> — <sub>region, window, monitor, colour picker, OCR</sub></summary>
 
 
-`config/hypr/scripts/screenshot.sh` takes one argument and covers every case:
+`config/hypr/scripts/capture/screenshot.sh` takes one argument and covers every case:
 
 | Mode | What it grabs |
 | --- | --- |
@@ -939,7 +967,7 @@ save somewhere else.
 <summary><b>Screen recording</b> — <sub>monitor or region, with system audio</sub></summary>
 
 
-`config/hypr/scripts/record-toggle.sh` toggles: the first call starts, the second stops, whatever
+`config/hypr/scripts/capture/record-toggle.sh` toggles: the first call starts, the second stops, whatever
 mode started it.
 
 | Argument | Effect |
@@ -1016,7 +1044,7 @@ the current one. `Tab` switches between outputs and inputs, `+`/`-` change the l
 `Escape` closes.
 
 Folder icons follow as well. Papirus ships one folder set per colour, and
-`config/hypr/scripts/papirus-tint.py` picks whichever is closest to the current accent in CIE Lab
+`config/hypr/scripts/theme/papirus-tint.py` picks whichever is closest to the current accent in CIE Lab
 and builds a small user icon theme that inherits Papirus-Dark and overrides only the folders — no
 root, no touching `/usr/share`. It runs from a matugen hook, so a new wallpaper repaints the
 folders with everything else.
@@ -1503,7 +1531,7 @@ the systemd variants.
   removes them by itself when there is no NVIDIA card.
 * Monitors are declared in `config/hypr/config/monitors.conf`; adjust it for your outputs.
 * Wallpapers are read from `~/Pictures/Wallpapers` and rotate every three hours; the interval is
-  set in `config/hypr/scripts/wallpaper-rotate.sh`.
+  set in `config/hypr/scripts/wallpaper/wallpaper-rotate.sh`.
 
 </details>
 
@@ -1940,6 +1968,34 @@ cd hyprdots
 конфигурация сохраняется в `~/.config/dotfiles-backup-<время>`.
 
 <details>
+<summary><b>Структура</b> — <sub>что где лежит</sub></summary>
+
+| Путь | Что там |
+| --- | --- |
+| `config/hypr/hyprland.conf` | точка входа, подключает всё из `config/hypr/config/` |
+| `config/hypr/config/` | по файлу на тему: `env`, `monitors`, `startup`, `binds`, `rules`, `animations`, `shape`, режимы |
+| `config/hypr/scripts/audio/` | громкость, удержание уровня микрофона, запуск WirePlumber |
+| `config/hypr/scripts/capture/` | скриншоты, запись экрана, апскейл картинок |
+| `config/hypr/scripts/clipboard/` | история, сторож, очистка, превью на острове |
+| `config/hypr/scripts/lock/` | экран блокировки, его строки статуса и сторож простоя |
+| `config/hypr/scripts/notify/` | счётчик пропущенных уведомлений, тест и трассировка D-Bus |
+| `config/hypr/scripts/print/` | бэкенд панели печати; в `print/print-root/` — файлы для root |
+| `config/hypr/scripts/system/` | чистка кэша, обновления, фикс монитора, sysmon, фокус, меню питания |
+| `config/hypr/scripts/theme/` | генераторы палитры для браузеров, курсора, Kvantum, LibreOffice, иконок, звуков |
+| `config/hypr/scripts/tools/` | калькулятор, списки файлов, сортировка загрузок, git-активность |
+| `config/hypr/scripts/wallpaper/` | установка, ротация, индекс и выбор обоев |
+| `config/quickshell/f/` | шелл: `bar`, `panels`, `overlays`, `desk`, `services`, `design`, `reusables`, `lang` |
+| `config/matugen/` | шаблоны, в которые рендерится палитра |
+| `bin/` | команды, которые ложатся в `~/.local/bin` |
+| `home/` | дотфайлы, которые ложатся в `~` |
+| `extras/` | необязательное, установщик это не раскладывает |
+
+Состояние машины в конфиге не живёт: уровень микрофона и выбор локскрина лежат в
+`~/.local/state/hypr/`. Обновление само переносит их туда и убирает старые плоские копии скриптов.
+
+</details>
+
+<details>
 <summary><b>Обновление</b> — <sub>одна команда и что она не тронет</sub></summary>
 
 
@@ -1988,7 +2044,7 @@ cd hyprdots && ./install.sh --update
                    └──▶ cava       визуализатор звука
 ```
 
-Единая точка входа — `~/.config/hypr/scripts/set-wallpaper.sh`: он красит все подключённые
+Единая точка входа — `~/.config/hypr/scripts/wallpaper/set-wallpaper.sh`: он красит все подключённые
 мониторы, сохраняет выбор в `~/.config/hypr/current-wallpaper` и перезапускает matugen. Шаблоны
 лежат в `~/.config/matugen/templates` — добавьте туда файл и один блок в
 `~/.config/matugen/config.toml`, и в общую схему войдёт любое другое приложение.
@@ -2044,7 +2100,7 @@ user_pref("media.av1.enabled", false);
 
 Шелл блокирует сессию через 50 минут без ввода и гасит панели ещё через пять. Оба таймера лежат в
 настройках самого шелла, а не в третьем конфиге со своим синтаксисом, но решение «стоит ли» осталось
-за `config/hypr/scripts/idle-guard.sh`: он не даёт сработать, пока окно развёрнуто на весь экран,
+за `config/hypr/scripts/lock/idle-guard.sh`: он не даёт сработать, пока окно развёрнуто на весь экран,
 пока реально играет звук (поток откупорен, а не просто держит устройство), пока идёт запись и пока
 жив любой процесс из `~/.config/hypr/idle-inhibit.list`.
 
@@ -2079,7 +2135,7 @@ QML, только спорило бы с ним.
 <summary><b>Скриншоты</b> — <sub>область, окно, монитор, пипетка, распознавание текста</sub></summary>
 
 
-`config/hypr/scripts/screenshot.sh` принимает один аргумент и закрывает все случаи:
+`config/hypr/scripts/capture/screenshot.sh` принимает один аргумент и закрывает все случаи:
 
 | Режим | Что снимает |
 | --- | --- |
@@ -2101,7 +2157,7 @@ QML, только спорило бы с ним.
 <summary><b>Запись экрана</b> — <sub>монитор или область, со звуком системы</sub></summary>
 
 
-`config/hypr/scripts/record-toggle.sh` работает переключателем: первый вызов запускает, второй
+`config/hypr/scripts/capture/record-toggle.sh` работает переключателем: первый вызов запускает, второй
 останавливает — в каком бы режиме запись ни началась.
 
 | Аргумент | Что делает |
@@ -2169,7 +2225,7 @@ QML, только спорило бы с ним.
 берут только проблемные состояния — отвалившийся Wi-Fi или выключенный микрофон.
 
 Иконки папок тоже. Papirus содержит по набору папок на каждый цвет, а
-`config/hypr/scripts/papirus-tint.py` выбирает ближайший к текущему акценту в пространстве CIE Lab
+`config/hypr/scripts/theme/papirus-tint.py` выбирает ближайший к текущему акценту в пространстве CIE Lab
 и собирает маленькую пользовательскую тему иконок: она наследует Papirus-Dark и подменяет только
 папки — без root и без записи в `/usr/share`. Запускается хуком matugen, поэтому новые обои
 перекрашивают папки вместе со всем остальным.
@@ -2656,7 +2712,7 @@ systemd-вариантов.
   установщик убирает их сам.
 * Мониторы описаны в `config/hypr/config/monitors.conf`, поправьте под свои выходы.
 * Обои берутся из `~/Pictures/Wallpapers` и меняются раз в три часа; интервал задаётся в
-  `config/hypr/scripts/wallpaper-rotate.sh`.
+  `config/hypr/scripts/wallpaper/wallpaper-rotate.sh`.
 
 </details>
 

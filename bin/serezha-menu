@@ -99,7 +99,7 @@ main_menu() {
             "$BIN/serezha-mode" reload
             ;;
         "питание"*)
-            "$HOME/.config/hypr/scripts/power-menu.sh"
+            "$HOME/.config/hypr/scripts/system/power-menu.sh"
             ;;
     esac
 }
