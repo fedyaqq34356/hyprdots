@@ -63,7 +63,7 @@ if [[ ! -f "$WALLPAPER" ]]; then
     exit 1
 fi
 
-"$HOME/.config/hypr/scripts/set-wallpaper.sh" "$WALLPAPER" >> "$LOG" 2>&1
+"$HOME/.config/hypr/scripts/wallpaper/set-wallpaper.sh" "$WALLPAPER" >> "$LOG" 2>&1
 echo "set-wallpaper exit=$?" >> "$LOG"
 
 notify-send "Wallpaper" "Changed to $SELECTED" --icon=image-x-generic -t 2000

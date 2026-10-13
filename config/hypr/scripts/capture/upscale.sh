@@ -2,7 +2,7 @@
 
 set -uo pipefail
 
-NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
+NOTIFY="$HOME/.config/hypr/scripts/notify/dbus-notify.sh"
 notify() { bash "$NOTIFY" "$@" >/dev/null 2>&1; }
 
 command -v realesrgan-ncnn-vulkan >/dev/null || {

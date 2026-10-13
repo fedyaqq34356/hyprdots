@@ -3,7 +3,7 @@
 set -uo pipefail
 
 OUTDIR="${RECORD_DIR:-$HOME/Videos}"
-NOTIFY="$HOME/.config/hypr/scripts/dbus-notify.sh"
+NOTIFY="$HOME/.config/hypr/scripts/notify/dbus-notify.sh"
 STATE="${XDG_RUNTIME_DIR:-/tmp}/recording.state"
 
 TAB=$'\t'

@@ -3,7 +3,7 @@
 SRC="@DEFAULT_SOURCE@"
 DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 TARGET_FILE="$DIR/mic-lock.target"
-PERSIST_FILE="$HOME/.config/hypr/mic-level"
+PERSIST_FILE="$HOME/.local/state/hypr/mic-level"
 
 saved=$(cat "$PERSIST_FILE" 2>/dev/null)
 case "$saved" in

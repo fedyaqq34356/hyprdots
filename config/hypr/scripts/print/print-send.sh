@@ -24,7 +24,7 @@ fail() {
 [[ -n "$PDF" && -e "$PDF" ]] || fail nodoc "нечего печатать"
 [[ -n "$PRINTER" ]] || fail noprinter "принтер не выбран"
 
-"$HOME/.config/hypr/scripts/print-doctor.sh" --quiet >/dev/null 2>&1 || true
+"$HOME/.config/hypr/scripts/print/print-doctor.sh" --quiet >/dev/null 2>&1 || true
 
 args=(-d "$PRINTER" -t "$TITLE")
 

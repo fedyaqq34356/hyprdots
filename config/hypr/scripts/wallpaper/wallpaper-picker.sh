@@ -14,6 +14,6 @@ SELECTED=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname
 
 WALLPAPER="$WALLPAPER_DIR/$SELECTED"
 
-"$HOME/.config/hypr/scripts/set-wallpaper.sh" "$WALLPAPER"
+"$HOME/.config/hypr/scripts/wallpaper/set-wallpaper.sh" "$WALLPAPER"
 
 notify-send "Wallpaper" "Changed to $SELECTED" --icon=image-x-generic -t 2000
