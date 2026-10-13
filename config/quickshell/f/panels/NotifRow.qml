@@ -114,7 +114,7 @@ Rectangle {
             text: NotifHistory.appLetter(row.entry.app)
             color: row.critical ? row.edge : row.avatar
             font.family: row.mono
-            font.pixelSize: 14
+            font.pixelSize: Fonts.medium
             font.weight: Font.DemiBold
         }
     }
@@ -147,7 +147,8 @@ Rectangle {
                 color: Colors.fg
                 opacity: 0.95
                 font.family: Fonts.display
-                font.pixelSize: 12
+                font.features: { "tnum": 1 }
+                font.pixelSize: Fonts.text
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
                 maximumLineCount: 1
@@ -161,7 +162,7 @@ Rectangle {
             color: Colors.fgDim
             opacity: 0.62
             font.family: row.mono
-            font.pixelSize: 10
+            font.pixelSize: Fonts.tiny
             wrapMode: Text.WordWrap
             elide: Text.ElideRight
             maximumLineCount: 2
@@ -178,7 +179,7 @@ Rectangle {
         color: Colors.fgDim
         opacity: hover.hovered ? 0 : 0.45
         font.family: row.mono
-        font.pixelSize: 9
+        font.pixelSize: Fonts.tiny
         Behavior on opacity { NumberAnimation { duration: Motion.fast } }
     }
 
@@ -214,7 +215,7 @@ Rectangle {
             color: closeHover.hovered ? Colors.bad : Colors.fgDim
             opacity: closeHover.hovered ? 1 : 0.6
             font.family: row.mono
-            font.pixelSize: 10
+            font.pixelSize: Fonts.tiny
         }
     }
 }

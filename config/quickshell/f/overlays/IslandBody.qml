@@ -20,6 +20,9 @@ Item {
     property string notifImage: ""
     property string notifIcon: ""
     property int notifCount: 1
+    property var notifMsgs: []
+    property bool notifCritical: false
+    readonly property real want: card.item && card.item.wantH !== undefined ? card.item.wantH : 0
     property var notifLive: null
     property bool notifTools: false
     property bool notifReplying: false
@@ -45,6 +48,7 @@ Item {
     readonly property string glyph: {
         switch (body.kind) {
         case "alarm":  return "󰀠";
+        case "remind": return "󰂞";
         case "record": return "󰑊";
         case "osd":    return Feedback.icon !== "" ? Feedback.icon : "󰕾";
         case "notif":  return "󰂚";
@@ -64,6 +68,7 @@ Item {
     readonly property string headline: {
         switch (body.kind) {
         case "alarm":  return I18n.t("isle.alarm");
+        case "remind": return Reminders.ringing ? Reminders.ringing.title : "";
         case "record": return Recorder.clock;
         case "osd":    return Feedback.label !== "" ? Feedback.label
                                                     : Feedback.percent(Feedback.value);
@@ -190,6 +195,7 @@ Item {
             case "timer":  return timerCard;
             case "gta":    return gtaCard;
             case "alarm":  return alarmCard;
+            case "remind": return remindCard;
             case "record": return recordCard;
             case "notif":  return notifCard;
             case "call":   return callCard;
@@ -213,6 +219,7 @@ Item {
     Component { id: timerCard;  TimerCard  { tint: body.tint; demo: body.demo } }
     Component { id: gtaCard;    GtaCard    {} }
     Component { id: alarmCard;  AlarmCard  {} }
+    Component { id: remindCard; RemindCard { tint: body.tint } }
     Component { id: recordCard; RecordCard { demo: body.demo } }
     Component {
         id: notifCard
@@ -224,6 +231,8 @@ Item {
             notifImage: body.notifImage
             notifIcon: body.notifIcon
             count: body.notifCount
+            msgs: body.notifMsgs
+            critical: body.notifCritical
             live: body.notifLive
             tools: body.notifTools
             replying: body.notifReplying

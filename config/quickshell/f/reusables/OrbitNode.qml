@@ -200,7 +200,7 @@ Item {
                         opacity: node.active ? 1 : 0.94
                         elide: Text.ElideRight
                         font.family: node.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                         font.weight: node.active ? Font.DemiBold : Font.Normal
                     }
 
@@ -237,7 +237,7 @@ Item {
                             color: node.active ? node.tint : Colors.fgDim
                             opacity: node.active ? 1 : 0.75
                             font.family: node.mono
-                            font.pixelSize: 11
+                            font.pixelSize: Fonts.small
                         }
 
                         Text {
@@ -246,7 +246,7 @@ Item {
                             color: node.active ? node.tint : Colors.fgDim
                             opacity: node.active ? 0.9 : 0.5
                             font.family: node.mono
-                            font.pixelSize: 9
+                            font.pixelSize: Fonts.tiny
                         }
 
                         Text {
@@ -256,7 +256,7 @@ Item {
                             color: Colors.fgDim
                             opacity: 0.4
                             font.family: node.mono
-                            font.pixelSize: 9
+                            font.pixelSize: Fonts.tiny
                         }
                     }
                 }

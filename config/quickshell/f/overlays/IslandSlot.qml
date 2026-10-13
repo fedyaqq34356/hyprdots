@@ -17,6 +17,7 @@ Item {
     property string icon: ""
 
     readonly property var timer: Timers.soonest
+    readonly property var remind: Reminders.soon
     readonly property bool busy:
         slot.kind === "print"
         || ((slot.kind === "task" || slot.kind === "launch" || slot.kind === "download")
@@ -28,6 +29,8 @@ Item {
     readonly property real value: {
         if (slot.finished)
             return 1;
+        if (slot.kind === "remind" && slot.remind)
+            return Math.max(0, Math.min(1, (slot.remind.at - Reminders.now) / 3600000));
         if (slot.kind !== "timer" || !slot.timer)
             return 0;
         return Math.max(0, Math.min(1, Timers.progress(slot.timer)));
@@ -36,13 +39,16 @@ Item {
     readonly property int secs:
         slot.kind === "timer" && slot.timer
             ? Math.max(0, Timers.left(slot.timer))
+            : slot.kind === "remind" && slot.remind
+            ? Math.max(0, Math.ceil((slot.remind.at - Reminders.now) / 1000))
             : 0
-    readonly property bool counting: slot.kind === "timer" && slot.secs <= 60
+    readonly property bool counting: (slot.kind === "timer" || slot.kind === "remind") && slot.secs <= 60
 
     readonly property string glyph: {
         switch (slot.kind) {
         case "print": return "󰐪";
         case "timer": return "󰔛";
+        case "remind": return "󰂚";
         case "task":
             return slot.result === "ok" ? "󰄬"
                  : slot.result === "bad" ? "󰅖" : slot.taskGlyph;
@@ -67,7 +73,7 @@ Item {
 
     SequentialAnimation {
         id: okPop
-        NumberAnimation { target: slot; property: "scale"; to: 1.28; duration: 130; easing.type: Easing.OutBack; easing.overshoot: 2.2 }
+        NumberAnimation { target: slot; property: "scale"; to: 1.28; duration: 130; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
         NumberAnimation { target: slot; property: "scale"; to: 1.0;  duration: 300; easing.type: Easing.OutCubic }
     }
 

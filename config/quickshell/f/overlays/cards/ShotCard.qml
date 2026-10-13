@@ -136,6 +136,7 @@ Item {
                 text: I18n.t("isle.shot.title")
                 color: Colors.alpha(Colors.fg, 0.5)
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 11
                 font.capitalization: Font.AllUppercase
                 font.letterSpacing: 0.4
@@ -147,6 +148,7 @@ Item {
                 text: shot.implicitWidth + " × " + shot.implicitHeight
                 color: Colors.alpha(Colors.fg, 0.75)
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 11
             }
         }

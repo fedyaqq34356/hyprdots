@@ -7,7 +7,7 @@ Item {
     property string text: ""
     property color color: "white"
     property string family: Fonts.mono
-    property int pixelSize: 11
+    property int pixelSize: Fonts.small
     property int weight: Font.Normal
     property real letterSpacing: 0
 
@@ -25,6 +25,7 @@ Item {
     TextMetrics {
         id: metrics
         font.family: root.family
+        font.features: { "tnum": 1 }
         font.pixelSize: root.pixelSize
         font.weight: root.weight
         font.letterSpacing: root.letterSpacing
@@ -64,6 +65,7 @@ Item {
             textFormat: Text.PlainText
             color: root.color
             font.family: root.family
+            font.features: { "tnum": 1 }
             font.pixelSize: root.pixelSize
             font.weight: root.weight
             font.letterSpacing: root.letterSpacing
@@ -77,6 +79,7 @@ Item {
             textFormat: Text.PlainText
             color: root.color
             font.family: root.family
+            font.features: { "tnum": 1 }
             font.pixelSize: root.pixelSize
             font.weight: root.weight
             font.letterSpacing: root.letterSpacing

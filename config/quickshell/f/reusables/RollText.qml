@@ -7,7 +7,7 @@ Row {
     property string text: ""
     property color color: "white"
     property string family: Fonts.mono
-    property int pixelSize: 12
+    property int pixelSize: Fonts.text
     property int weight: Font.DemiBold
     property int rollDuration: 320
     property real overshoot: 1.5
@@ -33,6 +33,7 @@ Row {
             TextMetrics {
                 id: own
                 font.family: root.family
+                font.features: { "tnum": 1 }
                 font.pixelSize: root.pixelSize
                 font.weight: root.weight
                 text: cell.ch

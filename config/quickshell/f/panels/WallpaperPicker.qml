@@ -134,7 +134,7 @@ Scope {
             "nice -n 19 ffmpeg -i \"$wp\" -vf " +
             "'scale=600:400:force_original_aspect_ratio=increase,crop=600:400' " +
             "-vframes 1 \"$t\" -y -loglevel quiet </dev/null 2>/dev/null; done; " +
-            "'" + Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper-index.sh' '" + root.dir + "'"]
+            "'" + Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper/wallpaper-index.sh' '" + root.dir + "'"]
         onExited: toneFile.reload()
     }
 
@@ -209,9 +209,15 @@ Scope {
             }
             const tone = root.toneOf(path);
             IslandBus.wallApplied(path, tone !== "" ? tone : Colors.accent);
-            setter.command = ["env", "WALL_POS=" + pos,
-                              Quickshell.env("HOME") + "/.config/hypr/scripts/set-wallpaper.sh", path];
-            setter.running = true;
+            if (IslandBus.pourReady && scr) {
+                const sx = IslandBus.isleW > 0 ? IslandBus.isleX + IslandBus.isleW / 2 : scr.width / 2;
+                const sy = IslandBus.isleW > 0 ? IslandBus.isleY + IslandBus.isleH / 2 : 16;
+                IslandBus.wallPour(path, scr.name, sx, sy);
+            } else {
+                setter.command = ["env", "WALL_POS=" + pos,
+                                  Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper/set-wallpaper.sh", path];
+                setter.running = true;
+            }
 
             historyWriter.command = ["sh", "-c",
                 "printf '%s\\n' \"$1\" >> '" + root.historyPath + "'; " +
@@ -670,7 +676,7 @@ Scope {
                                 text: "󰄬"
                                 color: "white"
                                 font.family: Fonts.glyph
-                                font.pixelSize: 14
+                                font.pixelSize: Fonts.medium
                             }
                         }
 
@@ -731,7 +737,8 @@ Scope {
                         text: caption.name
                         color: "white"
                         font.family: Fonts.display
-                        font.pixelSize: 26
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.bigger
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
@@ -753,7 +760,8 @@ Scope {
                             text: root.focused === root.current ? "On screen" : "↵  Apply"
                             color: Qt.rgba(1, 1, 1, 0.55)
                             font.family: Fonts.display
-                            font.pixelSize: 13
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.medium
                         }
                     }
                 }
@@ -804,7 +812,8 @@ Scope {
                             text: dotItem.modelData.name.toLowerCase()
                             color: Qt.rgba(1, 1, 1, dotItem.on ? 0.95 : 0.6)
                             font.family: Fonts.display
-                            font.pixelSize: 11
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.small
                         }
 
                         MouseArea {
@@ -828,7 +837,8 @@ Scope {
                 text: "←→ browse     ↵ apply     tab colour     type to search"
                 color: Qt.rgba(1, 1, 1, 0.32)
                 font.family: Fonts.display
-                font.pixelSize: 11
+                font.features: { "tnum": 1 }
+                font.pixelSize: Fonts.small
             }
 
             Text {
@@ -838,7 +848,8 @@ Scope {
                 text: search.text !== "" ? search.text : "Type to search"
                 color: Qt.rgba(1, 1, 1, search.text !== "" ? 0.9 : 0.35)
                 font.family: Fonts.display
-                font.pixelSize: 16
+                font.features: { "tnum": 1 }
+                font.pixelSize: Fonts.large
             }
 
             Text {
@@ -847,7 +858,8 @@ Scope {
                 text: "No wallpapers"
                 color: Qt.rgba(1, 1, 1, 0.5)
                 font.family: Fonts.display
-                font.pixelSize: 16
+                font.features: { "tnum": 1 }
+                font.pixelSize: Fonts.large
             }
         }
 

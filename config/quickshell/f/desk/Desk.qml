@@ -56,6 +56,10 @@ Scope {
             exclusiveZone: 0
             color: "transparent"
 
+            property real pourFade: IslandBus.pouring ? 0 : 1
+            Behavior on pourFade { NumberAnimation { duration: 420; easing.type: Easing.InOutCubic } }
+            Binding { target: win.contentItem; property: "opacity"; value: win.pourFade }
+
             visible: DeskLayout.editing || Stage.free(win.modelData.name)
 
             mask: DeskLayout.editing ? full : nothing

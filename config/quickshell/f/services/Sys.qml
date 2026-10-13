@@ -28,7 +28,7 @@ Singleton {
 
     Process {
         running: root.users > 0
-        command: [Quickshell.env("HOME") + "/.config/hypr/scripts/sysmon.py"]
+        command: [Quickshell.env("HOME") + "/.config/hypr/scripts/system/sysmon.py"]
 
         stdout: SplitParser {
             onRead: function (line) {

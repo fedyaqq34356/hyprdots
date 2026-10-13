@@ -133,6 +133,7 @@ Item {
                         text: face.monthNames[face.month] || ""
                         color: Colors.fg
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 15
                     }
 
@@ -224,6 +225,7 @@ Item {
                 color: Colors.accent
                 opacity: 0.9
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 20
                 font.letterSpacing: 4
             }
@@ -473,6 +475,7 @@ Item {
                     color: Colors.bg
                     opacity: 0.65
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 16
                     font.letterSpacing: 3
                 }
@@ -526,6 +529,7 @@ Item {
                     color: Colors.fgDim
                     opacity: 0.65
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 13
                 }
 
@@ -605,6 +609,7 @@ Item {
                                 ? Colors.accentAlt : Colors.fgDim
                             opacity: agendaRow.modelData.isToday ? 0.9 : 0.6
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: 12
                         }
 
@@ -664,6 +669,7 @@ Item {
                         text: face.weekdaysFull[(face.now.getDay() + 6) % 7] || ""
                         color: Colors.fg
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 14
                     }
 

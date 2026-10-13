@@ -96,7 +96,7 @@ Rectangle {
         text: control.glyph
         color: control.holding || hover.hovered ? control.tint : Colors.fgDim
         font.family: control.mono
-        font.pixelSize: 14
+        font.pixelSize: Fonts.medium
         Behavior on color { ColorAnimation { duration: Motion.fast } }
     }
 
@@ -144,7 +144,7 @@ Rectangle {
             text: control.holding ? "…" : control.tip
             color: Colors.fgDim
             font.family: control.mono
-            font.pixelSize: 10
+            font.pixelSize: Fonts.tiny
         }
     }
 }

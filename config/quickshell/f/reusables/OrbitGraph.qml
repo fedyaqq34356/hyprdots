@@ -377,7 +377,7 @@ Item {
                 color: graph.hubLive ? Colors.fg : Colors.fgDim
                 opacity: graph.hubLive ? 1 : 0.55
                 font.family: graph.mono
-                font.pixelSize: 30
+                font.pixelSize: Fonts.bigger
             }
 
             HoverHandler { id: hubHover }

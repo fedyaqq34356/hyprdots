@@ -32,3 +32,6 @@ IslandMeter IslandMeter.qml
 IslandSearch IslandSearch.qml
 LockFace LockFace.qml
 IslandSand IslandSand.qml
+LockView LockView.qml
+Ferro Ferro.qml
+WallPour WallPour.qml

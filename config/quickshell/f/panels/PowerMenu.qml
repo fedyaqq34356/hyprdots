@@ -20,7 +20,7 @@ Scope {
         {
             key: "l", glyph: "󰌾", label: I18n.t("power.lock"),
             hint: I18n.t("power.lockSub"),
-            run: ["/bin/sh", "-c", Quickshell.env("HOME") + "/.config/hypr/scripts/lock.sh"]
+            run: ["/bin/sh", "-c", Quickshell.env("HOME") + "/.config/hypr/scripts/lock/lock.sh"]
         },
         {
             key: "s", glyph: "󰒲", label: I18n.t("power.sleep"),
@@ -147,7 +147,7 @@ Scope {
             }
         }
 
-        Rectangle {
+        RectangularShadow {
             anchors.centerIn: card
             width: card.width * 1.5
             height: card.height * 1.7
@@ -160,12 +160,7 @@ Scope {
             Behavior on opacity { NumberAnimation { duration: Motion.slow } }
             Behavior on color { ColorAnimation { duration: Motion.base } }
 
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 64
-            }
+            blur: 64
         }
 
         Emerge {
@@ -280,7 +275,8 @@ Scope {
                                 text: "󰀄"
                                 color: Colors.accent
                                 font.family: Fonts.mono
-                                font.pixelSize: 24
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.big
                             }
                         }
                     }
@@ -294,7 +290,8 @@ Scope {
                                 + (root.hostText !== "" ? "@" + root.hostText : "")
                             color: Colors.fg
                             font.family: Fonts.display
-                            font.pixelSize: 17
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.large
                             font.weight: Font.DemiBold
                         }
 
@@ -310,7 +307,8 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.65
                             font.family: Fonts.mono
-                            font.pixelSize: 11
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.small
                         }
                     }
 
@@ -327,7 +325,8 @@ Scope {
                         text: Qt.formatDateTime(clock.date, "HH:mm")
                         color: Colors.fg
                         font.family: Fonts.mono
-                        font.pixelSize: 40
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.giant
                         font.weight: Font.Light
                     }
                 }
@@ -460,6 +459,7 @@ Scope {
                                             color: tile.current ? tile.tint : Colors.fgDim
                                             opacity: tile.current ? 1 : 0.75
                                             font.family: Fonts.mono
+                                            font.features: { "tnum": 1 }
                                             font.pixelSize: 27
                                             Behavior on color {
                                                 ColorAnimation { duration: Motion.fast }
@@ -473,7 +473,8 @@ Scope {
                                         color: tile.current ? Colors.fg : Colors.fgDim
                                         opacity: tile.current ? 1 : 0.7
                                         font.family: Fonts.display
-                                        font.pixelSize: 12
+                                        font.features: { "tnum": 1 }
+                                        font.pixelSize: Fonts.text
                                         font.weight: tile.current ? Font.DemiBold : Font.Normal
                                     }
                                 }
@@ -497,7 +498,8 @@ Scope {
                                         text: tile.modelData.key
                                         color: tile.current ? Colors.accentText : Colors.fgDim
                                         font.family: Fonts.mono
-                                        font.pixelSize: 9
+                                        font.features: { "tnum": 1 }
+                                        font.pixelSize: Fonts.tiny
                                         font.weight: Font.Bold
                                     }
                                 }
@@ -533,7 +535,8 @@ Scope {
                             ? Colors.bad : Colors.fgDim
                         opacity: 0.7
                         font.family: Fonts.mono
-                        font.pixelSize: 11
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.small
                         Behavior on color { ColorAnimation { duration: Motion.fast } }
                     }
 
@@ -560,7 +563,8 @@ Scope {
                                 color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                                Colors.fgDim.b, 0.65)
                                 font.family: Fonts.mono
-                                font.pixelSize: 9
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                             }
                         }
 

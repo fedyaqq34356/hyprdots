@@ -60,43 +60,23 @@ Item {
 
         readonly property real amp: 1.2 + water.slosh + 5 * water.voice
 
-        readonly property var crest: {
-            const pts = [];
-            const n = 24;
-            const h = water.height;
-            for (let i = 0; i <= n; i++) {
-                const y = h * i / n;
-                const k = i / n;
-                pts.push(Qt.point(Math.max(0, front.value
-                    + water.amp * Math.sin(water.phase + k * Math.PI * 2.2)
-                    + water.voice * 2 * Math.sin(water.phase * 2 + k * Math.PI * 4)), y));
-            }
-            return pts;
-        }
-        readonly property var body: [Qt.point(0, 0)].concat(water.crest).concat([Qt.point(0, water.height)])
-
-        Vec.Shape {
+        Water {
             anchors.fill: parent
-            preferredRendererType: Vec.Shape.CurveRenderer
-
-            Vec.ShapePath {
-                strokeColor: "transparent"
-                strokeWidth: 0
-                fillGradient: Vec.LinearGradient {
-                    x1: 0; y1: 0
-                    x2: Math.max(1, front.value); y2: 0
-                    GradientStop { position: 0; color: Colors.alpha(card.tint, 0.14) }
-                    GradientStop { position: 1; color: Colors.alpha(card.tint, 0.40) }
-                }
-                PathPolyline { path: water.body }
-            }
-
-            Vec.ShapePath {
-                strokeColor: Colors.alpha(Qt.lighter(card.tint, 1.35), 0.9)
-                strokeWidth: 2
-                fillColor: "transparent"
-                PathPolyline { path: water.crest }
-            }
+            axis: 1
+            level: Math.max(0, front.value)
+            phase1: water.phase
+            amp1: water.amp
+            waves1: 1.1
+            phase2: water.phase * 2
+            amp2: water.voice * 2
+            waves2: 2.0
+            nearColor: card.tint
+            nearAlpha: 0.40
+            farColor: card.tint
+            farAlpha: 0.14
+            crestColor: Qt.lighter(card.tint, 1.35)
+            crestAlpha: 0.9
+            crestWidth: 2
         }
 
         RectangularShadow {
@@ -136,6 +116,7 @@ Item {
                   : I18n.t("audio.volume2")
             color: Colors.alpha(Colors.fg, 0.6)
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             font.weight: Font.DemiBold
         }
@@ -163,6 +144,7 @@ Item {
         TextMetrics {
             id: osdEm
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 26
             font.weight: Font.DemiBold
             text: "100%"

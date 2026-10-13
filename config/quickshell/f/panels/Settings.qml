@@ -127,7 +127,7 @@ Scope {
                             text: "󰒓"
                             color: Colors.accent
                             font.family: root.mono
-                            font.pixelSize: 18
+                            font.pixelSize: Fonts.large
                         }
                     }
 
@@ -139,6 +139,7 @@ Scope {
                             text: I18n.t("set.title")
                             color: Colors.fg
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: Fonts.titleSize
                         }
 
@@ -147,7 +148,7 @@ Scope {
                             color: Colors.accent
                             opacity: Prefs.wellbeingEnabled ? 0.85 : 0.25
                             font.family: root.mono
-                            font.pixelSize: 10
+                            font.pixelSize: Fonts.tiny
                         }
                     }
                 }
@@ -310,7 +311,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.7
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
 
                                 Item { width: parent.width - 190; height: 1 }
@@ -319,7 +320,7 @@ Scope {
                                     text: Math.round(Prefs.sfxVolume * 100) + "%"
                                     color: Colors.fg
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
                             }
 
@@ -390,7 +391,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.7
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
 
                                 Item { width: parent.width - 190; height: 1 }
@@ -399,7 +400,7 @@ Scope {
                                     text: Prefs.weatherEveryMin + I18n.t("set.minShort")
                                     color: Colors.fg
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
                             }
 
@@ -425,7 +426,7 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.7
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                 }
 
                                 Item { width: parent.width - 230; height: 1 }
@@ -439,7 +440,7 @@ Scope {
                                     opacity: Weather.ready ? 0.9 : 0.45
                                     elide: Text.ElideRight
                                     font.family: root.mono
-                                    font.pixelSize: 10
+                                    font.pixelSize: Fonts.tiny
                                 }
                             }
 
@@ -482,6 +483,7 @@ Scope {
                                     color: Colors.fg
                                     elide: Text.ElideRight
                                     font.family: Fonts.display
+                                    font.features: { "tnum": 1 }
                                     font.pixelSize: Fonts.headingSize
                                 }
 
@@ -492,7 +494,7 @@ Scope {
                                     opacity: 0.8
                                     wrapMode: Text.WordWrap
                                     font.family: root.mono
-                                    font.pixelSize: 10
+                                    font.pixelSize: Fonts.tiny
                                 }
                             }
 

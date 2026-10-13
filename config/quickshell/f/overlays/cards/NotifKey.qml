@@ -26,6 +26,7 @@ Rectangle {
         color: Colors.fg
         elide: Text.ElideRight
         font.family: Fonts.display
+        font.features: { "tnum": 1 }
         font.pixelSize: 12
         font.weight: Font.Medium
     }

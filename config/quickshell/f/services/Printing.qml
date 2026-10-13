@@ -8,7 +8,7 @@ import "root:/services"
 Singleton {
     id: root
 
-    readonly property string scripts: Quickshell.env("HOME") + "/.config/hypr/scripts/"
+    readonly property string scripts: Quickshell.env("HOME") + "/.config/hypr/scripts/print/"
 
     property int users: 0
 

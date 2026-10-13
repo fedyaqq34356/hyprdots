@@ -143,6 +143,7 @@ Scope {
                 body: entry && entry.body ? entry.body : "",
                 image: entry && entry.image ? entry.image : "",
                 icon: src.appIcon(entry, live),
+                critical: entry && entry.critical === true,
                 live: live
             };
             if (src.isCall(e, live)) {
@@ -331,7 +332,7 @@ Scope {
         id: clipWatch
         running: IslandConfig.s("enabled") && IslandConfig.on("clip")
         command: ["wl-paste", "--watch",
-                  Quickshell.env("HOME") + "/.config/hypr/scripts/island-clip.sh"]
+                  Quickshell.env("HOME") + "/.config/hypr/scripts/clipboard/island-clip.sh"]
         onRunningChanged: {
             src.clipPrimed = false;
             if (clipWatch.running)

@@ -103,6 +103,7 @@ Item {
                                    : Qt.rgba(Colors.fgDim.r, Colors.fgDim.g,
                                              Colors.fgDim.b, 0.4)
             font.family: Fonts.mono
+            font.features: { "tnum": 1 }
             font.pixelSize: gauge.available ? 17 : 11
             font.weight: Font.DemiBold
         }
@@ -112,7 +113,8 @@ Item {
             text: gauge.caption
             color: Qt.rgba(Colors.fgDim.r, Colors.fgDim.g, Colors.fgDim.b, 0.6)
             font.family: Fonts.mono
-            font.pixelSize: 8
+            font.features: { "tnum": 1 }
+            font.pixelSize: Fonts.tiny
             font.weight: Font.Medium
         }
     }

@@ -21,7 +21,7 @@ Column {
             color: Colors.accent
             opacity: 0.85
             font.family: section.mono
-            font.pixelSize: 13
+            font.pixelSize: Fonts.medium
         }
 
         Text {
@@ -30,7 +30,7 @@ Column {
             color: Colors.fgDim
             opacity: 0.7
             font.family: section.mono
-            font.pixelSize: 10
+            font.pixelSize: Fonts.tiny
             font.letterSpacing: 2
         }
     }

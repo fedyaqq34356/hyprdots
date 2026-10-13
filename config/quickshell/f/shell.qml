@@ -37,7 +37,7 @@ ShellRoot {
     function setMicTarget(vol) {
         const pct = Math.round(Math.max(0, Math.min(1, vol)) * 100);
         micTarget.command = [
-            Quickshell.env("HOME") + "/.config/hypr/scripts/mic-target.sh",
+            Quickshell.env("HOME") + "/.config/hypr/scripts/audio/mic-target.sh",
             String(pct)
         ];
         micTarget.running = true;
@@ -104,6 +104,9 @@ ShellRoot {
         onUnlocked: curtain.up()
     }
     Curtain { id: curtain; armed: lock.locked }
+
+    Ferro { locked: lock.locked }
+    WallPour {}
 
     IpcHandler {
         target: "diag"

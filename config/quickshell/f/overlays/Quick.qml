@@ -111,6 +111,7 @@ Scope {
                     text: Timers.clock(Timers.left(root.soon))
                     color: Timers.anyRinging ? Colors.bad : Colors.accent
                     font.family: Fonts.mono
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 9
                     rotation: 90
                 }

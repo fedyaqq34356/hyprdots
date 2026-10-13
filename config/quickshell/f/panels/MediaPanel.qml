@@ -206,7 +206,8 @@ Scope {
                         color: Colors.accent
                         opacity: 0.8
                         font.family: Fonts.mono
-                        font.pixelSize: 12
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.text
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -216,7 +217,8 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.5
                         font.family: Fonts.mono
-                        font.pixelSize: 9
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.tiny
                         font.letterSpacing: 1.2
                         elide: Text.ElideRight
                         anchors.verticalCenter: parent.verticalCenter
@@ -356,7 +358,8 @@ Scope {
                                     color: Colors.fgDim
                                     opacity: 0.4
                                     font.family: Fonts.mono
-                                    font.pixelSize: 34
+                                    font.features: { "tnum": 1 }
+                                    font.pixelSize: Fonts.huge
                                 }
                             }
 
@@ -438,7 +441,7 @@ Scope {
                         text: Media.title !== "" ? Media.title : I18n.t("bar.nothingPlaying")
                         color: Colors.fg
                         family: Fonts.display
-                        pixelSize: 15
+                        pixelSize: Fonts.medium
                         weight: Font.DemiBold
                     }
 
@@ -448,7 +451,8 @@ Scope {
                         text: Media.artist
                         color: Colors.fgDim
                         font.family: Fonts.display
-                        font.pixelSize: 12
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.text
                         elide: Text.ElideRight
                     }
                 }
@@ -505,7 +509,8 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.65
                             font.family: Fonts.mono
-                            font.pixelSize: 10
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.tiny
                         }
 
                         Text {
@@ -514,7 +519,8 @@ Scope {
                             color: Colors.accent
                             opacity: 0.85
                             font.family: Fonts.mono
-                            font.pixelSize: 10
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.tiny
                         }
                     }
                 }
@@ -549,6 +555,7 @@ Scope {
                             text: parent.glyph
                             color: parent.primary ? Colors.accent : Colors.fg
                             font.family: Fonts.mono
+                            font.features: { "tnum": 1 }
                             font.pixelSize: parent.primary ? 17 : 13
                         }
 

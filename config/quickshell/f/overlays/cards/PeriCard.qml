@@ -43,6 +43,7 @@ Item {
             text: I18n.t(pc.bad ? "isle.peri.dying" : "isle.peri.low")
             color: pc.bad ? Colors.bad : Colors.warn
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -53,6 +54,7 @@ Item {
             text: pc.d ? pc.d.model : pc.headline
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 16
             font.weight: Font.DemiBold
             elide: Text.ElideRight

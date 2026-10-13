@@ -50,7 +50,7 @@ Scope {
     function setMicTarget(vol) {
         const pct = Math.round(Math.max(0, Math.min(1, vol)) * 100);
         micTarget.command = [
-            Quickshell.env("HOME") + "/.config/hypr/scripts/mic-target.sh",
+            Quickshell.env("HOME") + "/.config/hypr/scripts/audio/mic-target.sh",
             String(pct)
         ];
         micTarget.running = true;
@@ -262,13 +262,16 @@ Scope {
             Item {
                 anchors.fill: parent
                 z: -1
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 1.0
-                    shadowVerticalOffset: 12
-                    shadowOpacity: 0.5
-                    shadowColor: "#000000"
+
+                RectangularShadow {
+                    anchors.fill: parent
+                    anchors.topMargin: 12
+                    anchors.bottomMargin: -12
+                    radius: Shape.modal
+                    blur: 34
+                    spread: -2
+                    color: "#000000"
+                    opacity: 0.5
                 }
 
                 Rectangle {
@@ -356,7 +359,7 @@ Scope {
                                 color: root.muted ? Colors.fgDim : Colors.accent
                                 opacity: root.muted ? 0.55 : 1
                                 font.family: root.mono
-                                font.pixelSize: 14
+                                font.pixelSize: Fonts.medium
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
@@ -365,7 +368,7 @@ Scope {
                                 color: root.muted ? Colors.fgDim : Colors.fg
                                 opacity: root.muted ? 0.55 : 0.9
                                 font.family: root.mono
-                                font.pixelSize: 11
+                                font.pixelSize: Fonts.small
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
@@ -418,7 +421,7 @@ Scope {
                             text: String(Math.round(root.level * 100))
                             color: root.muted ? Colors.fgDim : Colors.fg
                             family: root.mono
-                            pixelSize: 30
+                            pixelSize: Fonts.bigger
                             weight: Font.DemiBold
                             opacity: root.muted ? 0.4 : 0.95
                             Behavior on opacity { NumberAnimation { duration: Motion.base } }
@@ -431,7 +434,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.4
                             font.family: root.mono
-                            font.pixelSize: 13
+                            font.pixelSize: Fonts.medium
                         }
                     }
                 }
@@ -445,7 +448,7 @@ Scope {
                     height: 456
                     clip: true
 
-                    Rectangle {
+                    RectangularShadow {
                         anchors.centerIn: parent
                         width: Math.min(parent.width, parent.height) * 0.62
                         height: width
@@ -459,12 +462,7 @@ Scope {
                         Behavior on scale { NumberAnimation { duration: Motion.fast } }
                         Behavior on opacity { NumberAnimation { duration: Motion.slow } }
 
-                        layer.enabled: true
-                        layer.effect: MultiEffect {
-                            blurEnabled: true
-                            blur: 1.0
-                            blurMax: 64
-                        }
+                        blur: 64
                     }
 
                     OrbitGraph {
@@ -509,7 +507,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.5
                             font.family: root.mono
-                            font.pixelSize: 12
+                            font.pixelSize: Fonts.text
                         }
                     }
                 }
@@ -530,7 +528,7 @@ Scope {
                         color: Colors.fg
                         elide: Text.ElideRight
                         font.family: root.mono
-                        font.pixelSize: 15
+                        font.pixelSize: Fonts.medium
                         font.weight: Font.DemiBold
                     }
 
@@ -543,7 +541,7 @@ Scope {
                         opacity: root.hoveredNode ? 0.85 : 0.5
                         elide: Text.ElideRight
                         font.family: root.mono
-                        font.pixelSize: 11
+                        font.pixelSize: Fonts.small
                     }
                 }
 
@@ -577,7 +575,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: stepDown.containsMouse ? 1 : 0.6
                             font.family: root.mono
-                            font.pixelSize: 15
+                            font.pixelSize: Fonts.medium
 
                             MouseArea {
                                 id: stepDown
@@ -603,7 +601,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: stepUp.containsMouse ? 1 : 0.6
                             font.family: root.mono
-                            font.pixelSize: 15
+                            font.pixelSize: Fonts.medium
 
                             MouseArea {
                                 id: stepUp
@@ -678,7 +676,7 @@ Scope {
                                             color: root.tab === modelData.key ? Colors.accent : Colors.fgDim
                                             opacity: root.tab === modelData.key ? 1 : 0.55
                                             font.family: root.mono
-                                            font.pixelSize: 14
+                                            font.pixelSize: Fonts.medium
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
                                         Text {
@@ -686,7 +684,7 @@ Scope {
                                             color: root.tab === modelData.key ? Colors.fg : Colors.fgDim
                                             opacity: root.tab === modelData.key ? 1 : 0.55
                                             font.family: root.mono
-                                            font.pixelSize: 12
+                                            font.pixelSize: Fonts.text
                                             font.weight: root.tab === modelData.key
                                                 ? Font.DemiBold : Font.Normal
                                             anchors.verticalCenter: parent.verticalCenter
@@ -715,7 +713,7 @@ Scope {
                         opacity: 0.4
                         elide: Text.ElideRight
                         font.family: root.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                     }
 
                     Text {
@@ -726,7 +724,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.3
                         font.family: root.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                     }
                 }
             }

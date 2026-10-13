@@ -101,7 +101,7 @@ Rectangle {
                 color: row.active ? row.tint : Colors.fgDim
                 opacity: row.active ? 1 : 0.7
                 font.family: row.mono
-                font.pixelSize: 16
+                font.pixelSize: Fonts.large
             }
         }
 
@@ -117,7 +117,8 @@ Rectangle {
                 opacity: row.active ? 1 : 0.9
                 elide: Text.ElideRight
                 font.family: Fonts.display
-                font.pixelSize: 13
+                font.features: { "tnum": 1 }
+                font.pixelSize: Fonts.medium
                 font.weight: row.active ? Font.DemiBold : Font.Normal
             }
 
@@ -148,7 +149,7 @@ Rectangle {
                 opacity: row.active ? 0.75 : 0.45
                 elide: Text.ElideRight
                 font.family: row.mono
-                font.pixelSize: 10
+                font.pixelSize: Fonts.tiny
             }
         }
 
@@ -188,7 +189,7 @@ Rectangle {
                 color: Colors.fgDim
                 opacity: 0.4
                 font.family: row.mono
-                font.pixelSize: 12
+                font.pixelSize: Fonts.text
             }
 
             Rectangle {
@@ -209,7 +210,7 @@ Rectangle {
                     text: "󰅖"
                     color: disconnectHover.hovered ? Colors.bad : row.tint
                     font.family: row.mono
-                    font.pixelSize: 11
+                    font.pixelSize: Fonts.small
                 }
 
                 MouseArea {
@@ -241,7 +242,7 @@ Rectangle {
                     color: forgetHover.hovered ? Colors.bad : Colors.fgDim
                     opacity: forgetHover.hovered ? 1 : 0.45
                     font.family: row.mono
-                    font.pixelSize: 12
+                    font.pixelSize: Fonts.text
                 }
 
                 MouseArea {

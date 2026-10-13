@@ -168,6 +168,7 @@ Item {
                                 opacity: 0.85
                                 elide: Text.ElideRight
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: 13
                             }
 
@@ -384,6 +385,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 11
                 }
             }
@@ -425,6 +427,7 @@ Item {
                         opacity: entry.index === 0 ? 1 : 0.8
                         elide: Text.ElideRight
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: entry.index === 0 ? 18 : 15
                     }
 
@@ -471,6 +474,7 @@ Item {
                     : "—"
                 color: Colors.fg
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 34
                 font.weight: Font.DemiBold
             }
@@ -561,6 +565,7 @@ Item {
                                 opacity: 0.9
                                 elide: Text.ElideRight
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: 13
                             }
 

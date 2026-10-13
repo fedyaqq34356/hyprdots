@@ -277,6 +277,7 @@ Rectangle {
                 text: NotifHistory.appLetter(card.modelData.appName)
                 color: card.appTint
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 15
                 font.weight: Font.Bold
             }
@@ -301,6 +302,7 @@ Rectangle {
                     text: card.modelData.summary
                     color: Colors.fg
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
@@ -312,6 +314,7 @@ Rectangle {
                     text: card.modelData.appName
                     color: Colors.alpha(Colors.fgDim, 0.45)
                     font.family: Fonts.mono
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 9
                     y: 3
                 }
@@ -323,6 +326,7 @@ Rectangle {
                 text: card.modelData.body.replace(/<[^>]*>/g, "").trim()
                 color: Colors.alpha(Colors.fgDim, 0.72)
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 10
                 lineHeight: 1.25
                 wrapMode: Text.WordWrap
@@ -451,6 +455,7 @@ Rectangle {
                         color: actHover.hovered ? Colors.fg : Colors.fgDim
                         elide: Text.ElideRight
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 11
                     }
 
@@ -540,6 +545,7 @@ Rectangle {
                                             : I18n.t("state.checking")
                     color: Colors.accent
                     font.family: Fonts.mono
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 10
                 }
             }
@@ -552,6 +558,7 @@ Rectangle {
                 opacity: 0.6
                 elide: Text.ElideRight
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 9
             }
         }
@@ -569,6 +576,7 @@ Rectangle {
                 text: Weather.glyph
                 color: Weather.tint
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 26
             }
 
@@ -577,6 +585,7 @@ Rectangle {
                 text: Math.round(Weather.temp) + "°  " + Weather.text.toLowerCase()
                 color: Colors.fgDim
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 11
             }
         }

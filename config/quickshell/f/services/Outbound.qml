@@ -36,7 +36,7 @@ Singleton {
 
     Process {
         id: probe
-        command: [Quickshell.env("HOME") + "/.config/hypr/scripts/outbound-scan.sh"]
+        command: [Quickshell.env("HOME") + "/.config/hypr/scripts/system/outbound-scan.sh"]
 
         stdout: StdioCollector {
             onStreamFinished: {

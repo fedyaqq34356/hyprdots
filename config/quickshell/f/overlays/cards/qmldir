@@ -20,3 +20,4 @@ ShotCard ShotCard.qml
 WeatherCard WeatherCard.qml
 NotifKey NotifKey.qml
 CallCard CallCard.qml
+RemindCard RemindCard.qml

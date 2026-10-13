@@ -318,6 +318,7 @@ Item {
                             color: sender.modelData.critical ? Colors.bad : Colors.fg
                             opacity: 0.9
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: 14
                         }
 
@@ -567,6 +568,7 @@ Item {
                     color: Colors.fg
                     elide: Text.ElideRight
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 18
                     font.weight: Font.DemiBold
                 }

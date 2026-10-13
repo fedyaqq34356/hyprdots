@@ -142,7 +142,7 @@ Item {
                     PropertyAction {}
                     NumberAnimation {
                         target: sign; property: "scale"; to: 1; duration: 320
-                        easing.type: Easing.OutBack; easing.overshoot: 2.4
+                        easing.type: Easing.OutBack; easing.overshoot: 1.3
                     }
                 }
             }

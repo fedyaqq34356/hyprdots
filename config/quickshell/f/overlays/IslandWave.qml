@@ -169,7 +169,7 @@ Item {
                 to: 0
                 duration: 260
                 easing.type: Easing.OutBack
-                easing.overshoot: 2.0
+                easing.overshoot: 1.2
             }
         }
 

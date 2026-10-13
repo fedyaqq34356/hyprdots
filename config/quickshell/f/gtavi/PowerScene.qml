@@ -21,7 +21,7 @@ FocusScope {
     readonly property string home: Quickshell.env("HOME")
     readonly property var actions: [
         { key: "L", label: "LOCK", sub: "SCREEN OFF · SESSION STAYS",
-          run: ["/bin/sh", "-c", home + "/.config/hypr/scripts/lock.sh"], farewell: false },
+          run: ["/bin/sh", "-c", home + "/.config/hypr/scripts/lock/lock.sh"], farewell: false },
         { key: "S", label: "SLEEP", sub: "TO RAM · WAKES INSTANTLY",
           run: ["loginctl", "suspend"], farewell: false },
         { key: "E", label: "LOG OUT", sub: "END THE HYPRLAND SESSION",

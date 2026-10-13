@@ -17,6 +17,7 @@ Scope {
         if (root.showing)
             return;
         root.showing = true;
+        faceTex.scheduleUpdate();
         absorb.restart();
     }
 
@@ -42,8 +43,8 @@ Scope {
         PauseAnimation { duration: 60 }
         NumberAnimation {
             target: root; property: "k"
-            from: 0; to: 1; duration: 760
-            easing.type: Easing.InOutCubic
+            from: 0; to: 1; duration: 1500
+            easing.type: Easing.Linear
         }
         ScriptAction {
             script: {
@@ -76,36 +77,35 @@ Scope {
             ? BarConfig.s("barHeight", win.screen ? win.screen.name : "") / 2
             : IslandConfig.s("offsetY") + win.th / 2
 
-        readonly property real e: root.k
-        readonly property real ew: Math.pow(win.e, 0.85)
-        readonly property real eh: Math.pow(win.e, 1.15)
-
-        ClippingRectangle {
-            id: shell
-
-            width: Motion.mix(win.width, win.tw, win.ew)
-            height: Motion.mix(win.height, win.th, win.eh)
-            x: Motion.mix(win.width / 2, win.tcx, win.e) - width / 2
-            y: Motion.mix(win.height / 2, win.tcy, win.e) - height / 2
-            radius: Motion.mix(0, win.th / 2, Math.min(1, win.e * 1.6))
-                    + Math.sin(win.e * Math.PI) * 60 * (1 - win.e)
-            color: "black"
-            opacity: win.e < 0.82 ? 1 : Math.max(0, 1 - (win.e - 0.82) / 0.18)
+        Item {
+            id: faceBox
+            anchors.fill: parent
 
             LockFace {
-                width: win.width
-                height: win.height
-                x: (shell.width - width) / 2
-                y: (shell.height - height) / 2
-                live: root.armed || root.showing || root.peek
-                scale: Math.max(shell.width / win.width, shell.height / win.height)
-            }
-
-            Rectangle {
                 anchors.fill: parent
-                color: "black"
-                opacity: Math.max(0, (win.e - 0.45) / 0.55)
+                live: root.armed || root.showing || root.peek
             }
+        }
+
+        ShaderEffectSource {
+            id: faceTex
+            sourceItem: faceBox
+            hideSource: true
+            live: root.peek
+            visible: false
+        }
+
+        ShaderEffect {
+            anchors.fill: parent
+            fragmentShader: "root:/design/shaders/melt.frag.qsb"
+            blending: true
+
+            property var source: faceTex
+            property real progress: root.k
+            property vector2d sink: Qt.vector2d(win.tcx / Math.max(1, win.width),
+                                                (win.tcy + win.th * 0.25) / Math.max(1, win.height))
+            property real aspect: win.width / Math.max(1, win.height)
+            property color rimColor: Colors.accent
         }
     }
 }

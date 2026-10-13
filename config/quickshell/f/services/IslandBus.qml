@@ -31,8 +31,15 @@ Singleton {
     property real isleW: 0
     property real isleH: 0
     property string isleScreen: ""
+    property int watch: 0
 
     signal launching(var info)
 
+    property bool pourReady: false
+    property bool pouring: false
+    signal wallPour(string path, string screen, real x, real y)
+
     signal wallApplied(string path, color tone)
+
+    signal calendarAt(real ms)
 }

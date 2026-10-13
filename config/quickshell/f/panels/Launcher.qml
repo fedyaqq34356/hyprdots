@@ -191,7 +191,7 @@ Scope {
     onHighlightedChanged: Running.query = root.highlighted
 
     readonly property string home: Quickshell.env("HOME")
-    readonly property string calcScript: home + "/.config/hypr/scripts/calc.py"
+    readonly property string calcScript: home + "/.config/hypr/scripts/tools/calc.py"
     readonly property string calcHistPath: home + "/.local/share/rofi-calc-history"
 
     readonly property bool calcMode: {
@@ -993,7 +993,7 @@ Scope {
                                 NumberAnimation {
                                     duration: Motion.base
                                     easing.type: Easing.Bezier
-                                    easing.bezierCurve: Motion.snap
+                                    easing.bezierCurve: [0.20, 1.28, 0.30, 1.00, 1, 1]
                                 }
                             }
                             Behavior on opacity { NumberAnimation { duration: Motion.fast } }

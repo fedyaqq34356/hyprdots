@@ -155,6 +155,7 @@ Scope {
                 text: I18n.t("hello." + root.part)
                 color: Colors.fg
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 52
                 font.weight: Font.Light
             }
@@ -164,6 +165,7 @@ Scope {
                 text: root.name
                 color: Colors.accent
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 15
                 font.letterSpacing: 6
                 opacity: 0.9
@@ -186,6 +188,7 @@ Scope {
                 text: root.date.toLowerCase()
                 color: Colors.fgDim
                 font.family: Fonts.mono
+                font.features: { "tnum": 1 }
                 font.pixelSize: 12
                 font.letterSpacing: 2
                 opacity: 0.75
@@ -225,6 +228,7 @@ Scope {
                             text: modelData.text
                             color: Colors.fgDim
                             font.family: Fonts.mono
+                            font.features: { "tnum": 1 }
                             font.pixelSize: 12
                         }
                     }

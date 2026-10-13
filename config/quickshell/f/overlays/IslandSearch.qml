@@ -42,7 +42,7 @@ Item {
         x: 17
         anchors.verticalCenter: parent.verticalCenter
         text: bar.mode === "run" ? "󰞷" : bar.mode === "calc" ? "󰃬"
-            : bar.mode === "wall" ? "󰸉" : "󰍉"
+            : bar.mode === "wall" ? "󰸉" : bar.mode === "clip" ? "󰅌" : bar.mode === "notif" ? "󰂚" : "󰍉"
         color: Qt.rgba(1, 1, 1, 0.5)
         font.family: Fonts.glyph
         font.pixelSize: 15

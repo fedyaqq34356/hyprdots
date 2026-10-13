@@ -125,7 +125,7 @@ Scope {
         property string text: ""
         property color color: Colors.fg
         property string family: Fonts.display
-        property int pixelSize: 14
+        property int pixelSize: Fonts.medium
         property int weight: Font.Medium
 
         implicitWidth: Math.max(a.implicitWidth, b.implicitWidth)
@@ -147,6 +147,7 @@ Scope {
             text: sw.shownA
             color: sw.color
             font.family: sw.family
+            font.features: { "tnum": 1 }
             font.pixelSize: sw.pixelSize
             font.weight: sw.weight
             opacity: sw.flip ? 0 : 1
@@ -160,6 +161,7 @@ Scope {
             text: sw.shownB
             color: sw.color
             font.family: sw.family
+            font.features: { "tnum": 1 }
             font.pixelSize: sw.pixelSize
             font.weight: sw.weight
             opacity: sw.flip ? 1 : 0
@@ -180,7 +182,7 @@ Scope {
             anchors.horizontalCenter: parent.horizontalCenter
             text: fact.value
             family: Fonts.mono
-            pixelSize: 16
+            pixelSize: Fonts.large
             weight: Font.DemiBold
             color: Colors.fg
         }
@@ -189,7 +191,8 @@ Scope {
             text: fact.label
             color: Colors.alpha(Colors.fgDim, 0.6)
             font.family: Fonts.mono
-            font.pixelSize: 9
+            font.features: { "tnum": 1 }
+            font.pixelSize: Fonts.tiny
             font.weight: Font.DemiBold
             font.letterSpacing: 2
         }
@@ -212,7 +215,7 @@ Scope {
                     right: true
                 }
 
-                exclusiveZone: 0
+                exclusiveZone: -1
                 color: "transparent"
 
                 MouseArea {
@@ -227,49 +230,29 @@ Scope {
                     Component.onCompleted: forceActiveFocus()
                 }
 
-                Emerge {
-                    id: emerge
-                    card: card
-                    win: null
-                    open: root.shown
-                    cache: false
+                Rectangle {
+                    anchors.fill: parent
+                    color: "black"
+                    opacity: root.shown ? 0.22 : 0
+                    Behavior on opacity { NumberAnimation { duration: 320; easing.type: Easing.InOutCubic } }
                 }
 
-                Rectangle {
-                    id: card
-                    anchors.centerIn: parent
-                    width: 440
-                    height: body.height + 64
-                    radius: Shape.modal
-                    clip: true
-
-                    color: Qt.rgba(Colors.bg.r, Colors.bg.g, Colors.bg.b, 0.94)
-                    border.width: 1
-                    border.color: Colors.alpha(root.ink, 0.22)
-                    Behavior on border.color { ColorAnimation { duration: 600 } }
+                IsleDrip {
+                    id: drip
+                    anchors.fill: parent
+                    open: root.shown
+                    cardW: 440
+                    cardH: body.height + 64
+                    radius: 34
+                    glow: root.ink
 
                     MouseArea { anchors.fill: parent }
-
-                    opacity: emerge.on ? emerge.cardOpacity : (root.shown ? 1 : 0)
-                    scale: emerge.on ? 1 : (root.shown ? 1 : 0.92)
-                    transform: Translate { x: emerge.dx; y: emerge.dy }
-
-                    Behavior on opacity { enabled: !emerge.on; NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-                    Behavior on scale {
-                        enabled: !emerge.on
-                        SpringAnimation {
-                            spring: Motion.panelSpring
-                            damping: Motion.panelDamping
-                            mass: Motion.panelMass
-                            epsilon: 0.001
-                        }
-                    }
 
                     Canvas {
                         id: halo
                         width: 520
                         height: 360
-                        x: (card.width - width) / 2
+                        x: (parent.width - width) / 2
                         y: hero.y + body.y + hero.height / 2 - height / 2
                         property color tone: root.ink
                         onToneChanged: requestPaint()
@@ -310,7 +293,8 @@ Scope {
                             text: I18n.t("bat.title")
                             color: Colors.alpha(Colors.fgDim, 0.55)
                             font.family: Fonts.mono
-                            font.pixelSize: 10
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.tiny
                             font.weight: Font.DemiBold
                             font.letterSpacing: 3
                         }
@@ -378,61 +362,47 @@ Scope {
                                 radius: shell.radius - 7
                                 color: "transparent"
 
-                                Canvas {
+                                Item {
                                     id: liquid
                                     anchors.fill: parent
-                                    renderStrategy: Canvas.Cooperative
 
-                                    property real level: hero.fill
+                                    readonly property real amp: Power.charging ? 6 : 3
+                                    readonly property real edge: width * hero.fill
                                     property color tone: root.ink
-                                    onLevelChanged: requestPaint()
-                                    onToneChanged: requestPaint()
-                                    Connections {
-                                        target: hero
-                                        function onPhaseChanged() { liquid.requestPaint(); }
+                                    Behavior on tone { ColorAnimation { duration: 600; easing.type: Easing.InOutCubic } }
+
+                                    Water {
+                                        anchors.fill: parent
+                                        visible: liquid.edge > 0.5
+                                        axis: 1
+                                        level: liquid.edge + 4
+                                        phase1: hero.phase + Math.PI * 0.7; amp1: liquid.amp; waves1: 1
+                                        phase2: hero.phase * 2 + Math.PI * 0.7; amp2: liquid.amp * 0.35; waves2: 0.5
+                                        nearColor: liquid.tone; nearAlpha: 0.35
+                                        farColor: liquid.tone; farAlpha: 0.35
+                                        crestAlpha: 0
                                     }
 
-                                    function wave(ctx, w, h, edge, amp, shift) {
-                                        ctx.beginPath();
-                                        ctx.moveTo(0, 0);
-                                        const steps = 24;
-                                        for (let i = 0; i <= steps; i++) {
-                                            const y = h * i / steps;
-                                            const x = edge + Math.sin(hero.phase + shift + i / steps * Math.PI * 2) * amp
-                                                      + Math.sin(hero.phase * 2 + shift + i / steps * Math.PI) * amp * 0.35;
-                                            ctx.lineTo(Math.max(0, x), y);
+                                    Water {
+                                        anchors.fill: parent
+                                        visible: liquid.edge > 0.5
+                                        axis: 1
+                                        level: liquid.edge
+                                        phase1: hero.phase; amp1: liquid.amp; waves1: 1
+                                        phase2: hero.phase * 2; amp2: liquid.amp * 0.35; waves2: 0.5
+                                        nearColor: Qt.lighter(liquid.tone, 1.35); nearAlpha: 1
+                                        farColor: Qt.darker(liquid.tone, 1.45); farAlpha: 1
+                                        crestColor: Qt.lighter(liquid.tone, 1.6); crestAlpha: 0.7
+                                        crestWidth: 1.6
+                                    }
+
+                                    Rectangle {
+                                        width: Math.max(0, liquid.edge - liquid.amp)
+                                        height: parent.height * 0.45
+                                        gradient: Gradient {
+                                            GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.22) }
+                                            GradientStop { position: 1.0; color: "transparent" }
                                         }
-                                        ctx.lineTo(0, h);
-                                        ctx.closePath();
-                                    }
-
-                                    onPaint: {
-                                        const ctx = getContext("2d");
-                                        const w = width, h = height;
-                                        ctx.clearRect(0, 0, w, h);
-                                        const edge = w * level;
-                                        if (edge <= 0.5)
-                                            return;
-                                        const amp = Power.charging ? 6 : 3;
-                                        const c = liquid.tone;
-
-                                        liquid.wave(ctx, w, h, edge + 4, amp, Math.PI * 0.7);
-                                        ctx.fillStyle = Colors.alpha(c, 0.35);
-                                        ctx.fill();
-
-                                        liquid.wave(ctx, w, h, edge, amp, 0);
-                                        const g = ctx.createLinearGradient(0, 0, 0, h);
-                                        g.addColorStop(0, Qt.lighter(c, 1.35));
-                                        g.addColorStop(0.55, c);
-                                        g.addColorStop(1, Qt.darker(c, 1.45));
-                                        ctx.fillStyle = g;
-                                        ctx.fill();
-
-                                        const s = ctx.createLinearGradient(0, 0, 0, h * 0.45);
-                                        s.addColorStop(0, "rgba(255,255,255,0.22)");
-                                        s.addColorStop(1, "rgba(255,255,255,0)");
-                                        ctx.fillStyle = s;
-                                        ctx.fill();
                                     }
                                 }
 
@@ -542,7 +512,8 @@ Scope {
                                 anchors.baseline: pct.baseline
                                 color: Colors.alpha(Colors.fg, 0.45)
                                 font.family: Fonts.display
-                                font.pixelSize: 26
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.bigger
                                 font.weight: Font.DemiBold
                             }
                         }
@@ -552,7 +523,7 @@ Scope {
                         Swap {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: root.headline
-                            pixelSize: 17
+                            pixelSize: Fonts.large
                             weight: Font.DemiBold
                             color: Colors.fg
                         }
@@ -562,7 +533,7 @@ Scope {
                         Swap {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: root.subline
-                            pixelSize: 12
+                            pixelSize: Fonts.text
                             weight: Font.Normal
                             color: Colors.alpha(Colors.fgDim, 0.75)
                         }
@@ -606,7 +577,7 @@ Scope {
 
     Timer {
         id: closeDelay
-        interval: 380
+        interval: 760
     }
 
     onShownChanged: {

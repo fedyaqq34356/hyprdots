@@ -59,6 +59,8 @@ Scope {
             return "";
         if (IslandConfig.on("alarm") && Timers.anyRinging)
             return "alarm";
+        if (Reminders.ringing !== null && root.remindLanded)
+            return "remind";
         if (root.callState === "ring")
             return "call";
         if (root.mediaBig)
@@ -100,6 +102,8 @@ Scope {
             return "task";
         if (IslandConfig.on("timer") && Timers.anyRunning)
             return "timer";
+        if (Reminders.soon !== null && Reminders.ringing === null)
+            return "remind";
         return "";
     }
 
@@ -297,6 +301,34 @@ Scope {
         onTriggered: root.taskResult = ""
     }
 
+    property bool remindLanded: false
+
+    Connections {
+        target: Reminders
+        function onDue(r) {
+            Sfx.isleRemind();
+            if (IslandConfig.s("comet") && IslandConfig.s("enabled")) {
+                root.incoming({ app: I18n.t("isle.remind"), summary: r.title,
+                                icon: "appointment-soon", image: "" });
+                remindLand.restart();
+            } else {
+                root.remindLanded = true;
+            }
+        }
+        function onRingingChanged() {
+            if (Reminders.ringing === null) {
+                remindLand.stop();
+                root.remindLanded = false;
+            }
+        }
+    }
+
+    Timer {
+        id: remindLand
+        interval: Motion.isleCometMs
+        onTriggered: root.remindLanded = true
+    }
+
     property string shotPath: ""
     property real shotAt: 0
 
@@ -305,9 +337,38 @@ Scope {
             return false;
         root.shotPath = path;
         root.shotAt = Date.now();
-        root.flash("shot", "󰹑", path.split("/").pop(), -1);
-        root.snapped();
+        root.takeShot(path.split("/").pop(), false);
         return true;
+    }
+
+    signal shotFly(string path)
+
+    function takeShot(name, force) {
+        if (IslandConfig.s("suck")) {
+            shotLand.name = name;
+            shotLand.force = force;
+            root.shotFly(root.shotPath);
+            shotLand.restart();
+            return;
+        }
+        root.flash("shot", "󰹑", name, -1, force);
+        root.snapped();
+    }
+
+    Timer {
+        id: shotLand
+        property string name: ""
+        property bool force: false
+        interval: Motion.isleSuckMs - 40
+        onTriggered: {
+            root.flash("shot", "󰹑", shotLand.name, -1, shotLand.force);
+            root.snapped();
+            if (shotLand.force) {
+                root.demoKind = "shot";
+                root.demoWide = true;
+                demoLife.restart();
+            }
+        }
     }
 
     property var launch: null
@@ -535,6 +596,8 @@ Scope {
     property string notifImage: ""
     property string notifIcon: ""
     property int notifCount: 1
+    property var notifMsgs: []
+    property bool notifCritical: false
 
     readonly property string notifIconUrl:
         root.notifIcon === "" ? ""
@@ -552,6 +615,7 @@ Scope {
     property string lastNotifKey: ""
     property real lastNotifAt: 0
     property int lastNotifCount: 0
+    property var lastNotifMsgs: []
 
     function pushNotif(e) {
         const key = e.app + "\n" + e.summary;
@@ -559,16 +623,21 @@ Scope {
         const next = root.notifStack.slice();
         const at = next.findIndex(x => x.key === key);
         let count = 1;
+        let msgs = [e.body];
         if (at >= 0) {
             const old = next.splice(at, 1)[0];
             count = old.count + 1;
+            msgs = (old.msgs || [old.body]).concat([e.body]).slice(-3);
             if (old.live && old.live !== e.live && old.live.tracked)
                 old.live.expire();
         } else if (key === root.lastNotifKey && now - root.lastNotifAt < 15000) {
             count = root.lastNotifCount + 1;
+            msgs = root.lastNotifMsgs.concat([e.body]).slice(-3);
         }
         e.key = key;
         e.count = count;
+        e.msgs = msgs;
+        root.lastNotifMsgs = msgs;
         next.unshift(e);
         while (next.length > 5) {
             const gone = next.pop();
@@ -630,6 +699,8 @@ Scope {
         root.notifImage = e.image;
         root.notifIcon = e.icon;
         root.notifCount = e.count;
+        root.notifMsgs = e.msgs || [e.body];
+        root.notifCritical = e.critical === true;
         root.notifLive = e.live || null;
         root.replyOn = "";
     }
@@ -877,7 +948,7 @@ Scope {
         "media", "osd", "notif", "timer", "alarm", "record", "bt", "btoff",
         "peri", "power", "low", "net", "vpn", "print", "clip", "clipimg",
         "keys", "desk", "route", "focus", "cmd", "cmdfail", "task", "taskfail",
-        "shot", "fail", "done", "gta", "rain", "snow", "stack", "call"
+        "shot", "fail", "done", "gta", "rain", "snow", "stack", "call", "chat", "urgent", "photo"
     ]
 
     Timer {
@@ -966,6 +1037,28 @@ Scope {
                              body: "Кто сегодня на рейд в девять?", live: null });
             root.pushNotif({ app: "Telegram", summary: "Саша", image: "", icon: "org.telegram.desktop",
                              body: "Мы уже на месте, ты где?", live: null });
+            root.flash("notif", "󰂚", root.notifSummary, -1, true);
+            held = "notif";
+            break;
+        case "chat":
+            root.pushNotif({ app: "Telegram", summary: "Саша", image: "", icon: "org.telegram.desktop",
+                             body: "Привет! Ты сегодня свободен?", live: null });
+            root.flash("notif", "󰂚", root.notifSummary, -1, true);
+            chatDemo.step = 0;
+            chatDemo.restart();
+            held = "notif";
+            break;
+        case "urgent":
+            root.pushNotif({ app: "Система", summary: "Батарея почти разряжена",
+                             image: "", icon: "battery-caution", critical: true,
+                             body: "Осталось 4% — подключи зарядку.", live: null });
+            root.flash("notif", "󰂚", root.notifSummary, -1, true);
+            held = "notif";
+            break;
+        case "photo":
+            root.pushNotif({ app: "Telegram", summary: "Лёша прислал фото", icon: "org.telegram.desktop",
+                             image: Quickshell.shellDir + "/assets/demo-photo.jpg",
+                             body: "Смотри, какой закат 🔥", live: null });
             root.flash("notif", "󰂚", root.notifSummary, -1, true);
             held = "notif";
             break;
@@ -1083,8 +1176,11 @@ Scope {
         case "shot":
             root.shotPath = Quickshell.shellDir + "/assets/grain.png";
             root.shotAt = Date.now();
-            root.flash("shot", "󰹑", "2026-10-07_12-00-00.png", -1, true);
-            root.snapped();
+            root.takeShot("2026-10-07_12-00-00.png", true);
+            if (IslandConfig.s("suck")) {
+                held = "";
+                card = false;
+            }
             break;
         case "fail":
             root.fail("󰅙", "polkit · wrong password");
@@ -1098,6 +1194,25 @@ Scope {
         root.demoKind = held;
         root.demoWide = card && held !== "";
         demoLife.restart();
+    }
+
+    Timer {
+        id: chatDemo
+        property int step: 0
+        interval: 1600
+        repeat: true
+        onTriggered: {
+            const lines = ["Можно в кино в восемь 🎬", "Я уже взял билеты, не опаздывай!"];
+            if (chatDemo.step >= lines.length || root.demoKind !== "notif") {
+                chatDemo.stop();
+                return;
+            }
+            root.pushNotif({ app: "Telegram", summary: "Саша", image: "", icon: "org.telegram.desktop",
+                             body: lines[chatDemo.step], live: null });
+            root.flash("notif", "󰂚", root.notifSummary, -1, true);
+            demoLife.restart();
+            chatDemo.step++;
+        }
     }
 
     Timer {

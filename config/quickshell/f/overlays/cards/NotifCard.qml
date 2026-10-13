@@ -18,6 +18,18 @@ Item {
     property string notifIcon: ""
     property color tint: Colors.accent
     property int count: 1
+    property var msgs: []
+    property bool critical: false
+
+    readonly property bool expanded: card.near && !card.replying
+
+    readonly property bool picture: avatar.status === Image.Ready && avatar.implicitHeight > 0
+        && Math.abs(avatar.implicitWidth / avatar.implicitHeight - 1) > 0.22
+    readonly property real picH: card.picture ? 128 : 0
+
+    readonly property real wantH: Math.max(mark.height, words.implicitHeight)
+        + (card.picture ? card.picH + 12 : 0)
+        + (card.toolsH + 10) * card.toolsShow + 4
     property int page: 0
     property int total: 1
 
@@ -81,13 +93,8 @@ Item {
         card.done();
     }
 
-    property real t: 0
-    NumberAnimation on t {
-        running: card.visible
-        loops: Animation.Infinite
-        from: 0; to: Math.PI * 2
-        duration: 11000
-    }
+    readonly property real t: card.visible ? (Phase.ts % 11) / 11 * Math.PI * 2 : 0
+    PhaseHold { active: card.visible; slow: true }
 
     property real enter: 1
     NumberAnimation {
@@ -97,53 +104,53 @@ Item {
         easing.type: Easing.OutCubic
     }
     onVisibleChanged: if (card.visible) enterRun.restart()
-    Component.onCompleted: enterRun.restart()
+    Component.onCompleted: {
+        enterRun.restart();
+        card.syncChat();
+    }
 
     Item {
         id: ambient
         anchors.fill: parent
         anchors.margins: -12
-        opacity: 0.55 * card.enter
-
-        IconImage {
-            readonly property real size: 320
-            width: size
-            height: size
-            implicitSize: size
-            x: 70 + Math.sin(card.t) * 26 - size / 2
-            y: ambient.height / 2 + Math.cos(card.t * 2) * 12 - size / 2
-            rotation: card.t * 180 / Math.PI
-            scale: 0.9 + 0.1 * card.enter
-            source: card.iconSrc !== "" ? card.iconSrc
-                  : card.notifImage !== "" ? card.notifImage : ""
-            asynchronous: true
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 64
-                saturation: 0.3
-            }
-        }
+        opacity: card.enter
 
         RectangularShadow {
-            x: ambient.width * (0.12 + 0.08 * Math.sin(card.t * 2)) - 60
-            y: ambient.height * (0.3 + 0.2 * Math.cos(card.t)) - 50
-            width: 180
-            height: 120
-            radius: 60
-            blur: 70
-            color: Colors.alpha(card.tint, 0.35)
+            x: ambient.width * (0.08 + 0.10 * Math.sin(card.t)) - 30
+            y: ambient.height * (0.30 + 0.16 * Math.cos(card.t * 2)) - 55
+            width: 190
+            height: 130
+            radius: 65
+            blur: 80
+            color: Colors.alpha(card.tint, 0.40)
         }
+        RectangularShadow {
+            x: ambient.width * (0.58 + 0.14 * Math.cos(card.t)) - 40
+            y: ambient.height * (0.55 + 0.18 * Math.sin(card.t * 2 + 1)) - 60
+            width: 220
+            height: 140
+            radius: 70
+            blur: 90
+            color: Colors.alpha(Qt.lighter(card.tint, 1.3), 0.17)
+        }
+    }
 
-        Rectangle {
-            anchors.fill: parent
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.12) }
-                GradientStop { position: 0.5; color: Qt.rgba(0, 0, 0, 0.55) }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.82) }
-            }
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -11
+        radius: Math.max(0, IslandConfig.s("radius") - 1)
+        color: "transparent"
+        antialiasing: true
+        border.width: 1.6
+        border.color: Colors.bad
+        visible: card.critical
+        property real p: 0.3
+        opacity: p
+        SequentialAnimation on p {
+            running: card.critical && card.visible
+            loops: Animation.Infinite
+            NumberAnimation { to: 0.85; duration: 900; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 0.25; duration: 1100; easing.type: Easing.InOutSine }
         }
     }
 
@@ -153,7 +160,7 @@ Item {
         anchors.right: parent.right
         height: Math.max(mark.height, words.implicitHeight)
         y: Math.max(0, (card.height - (card.toolsH + 10) * card.toolsShow
-                        - top.height) / 2)
+                        - card.picH - (card.picture ? 12 : 0) - top.height) / 2)
         transform: [
             Translate { id: pageShift },
             Translate { y: 10 * (1 - card.enter) },
@@ -169,11 +176,11 @@ Item {
         Item {
             id: mark
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
             width: 42
             height: 42
 
-            readonly property bool face: card.notifImage !== "" && avatar.status === Image.Ready
+            readonly property bool face: card.notifImage !== "" && avatar.status === Image.Ready && !card.picture
             readonly property bool logo: !mark.face && card.iconSrc !== ""
                                          && logoImg.status === Image.Ready
 
@@ -196,6 +203,7 @@ Item {
                     text: NotifHistory.appLetter(card.notifApp)
                     color: "white"
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 19
                     font.weight: Font.Bold
                 }
@@ -220,8 +228,8 @@ Item {
                     anchors.fill: parent
                     source: card.notifImage
                     fillMode: Image.PreserveAspectCrop
-                    sourceSize.width: 84
-                    sourceSize.height: 84
+                    sourceSize.width: 360
+                    sourceSize.height: 360
                     asynchronous: true
                     smooth: true
                 }
@@ -278,37 +286,20 @@ Item {
             anchors.leftMargin: 12
             anchors.right: parent.right
             anchors.rightMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.topMargin: words.implicitHeight < mark.height ? (mark.height - words.implicitHeight) / 2 : 0
             spacing: 2
 
-            Item {
+            Text {
+                id: appName
                 width: parent.width
-                height: appName.implicitHeight
-
-                Text {
-                    id: appName
-                    anchors.left: parent.left
-                    anchors.right: nowText.left
-                    anchors.rightMargin: 8
-                    text: card.notifApp
-                    color: Colors.alpha(Colors.fg, 0.45)
-                    font.family: Fonts.display
-                    font.pixelSize: 11
-                    font.capitalization: Font.AllUppercase
-                    font.letterSpacing: 0.4
-                    elide: Text.ElideRight
-                }
-
-                Text {
-                    id: nowText
-                    anchors.right: parent.right
-                    text: card.total > 1 ? (card.page + 1) + " / " + card.total
-                                         : I18n.t("isle.now")
-                    font.features: { "tnum": 1 }
-                    color: Colors.alpha(Colors.fg, 0.4)
-                    font.family: Fonts.display
-                    font.pixelSize: 11
-                }
+                text: card.notifApp + "  ·  " + I18n.t("isle.now")
+                color: Colors.alpha(Colors.fg, 0.45)
+                font.family: Fonts.display
+                font.features: { "tnum": 1 }
+                font.pixelSize: 11
+                font.letterSpacing: 0.2
+                elide: Text.ElideRight
             }
 
             Text {
@@ -316,6 +307,7 @@ Item {
                 text: card.notifSummary
                 color: Colors.fg
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 14
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
@@ -324,17 +316,118 @@ Item {
             Text {
                 id: bodyText
                 width: parent.width
-                visible: bodyText.text !== ""
+                visible: bodyText.text !== "" && chatModel.count <= 1
                 text: card.notifBody
                 color: Colors.alpha(Colors.fg, 0.68)
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 12
                 lineHeight: 1.15
                 wrapMode: Text.WordWrap
                 elide: Text.ElideRight
-                maximumLineCount: 2
+                maximumLineCount: card.expanded ? 6 : 2
                 transform: Translate { id: bodyShift }
             }
+
+            ListView {
+                id: chat
+                width: parent.width
+                height: chat.contentHeight
+                visible: chatModel.count > 1
+                interactive: false
+                spacing: 4
+                topMargin: 3
+                model: chatModel
+
+                add: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 420; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "scale"; from: 0.92; to: 1; duration: 480; easing.type: Easing.OutCubic }
+                    }
+                }
+                remove: Transition {
+                    ParallelAnimation {
+                        NumberAnimation { property: "opacity"; to: 0; duration: 260; easing.type: Easing.InCubic }
+                        NumberAnimation { property: "scale"; to: 0.94; duration: 260 }
+                    }
+                }
+                displaced: Transition {
+                    NumberAnimation { properties: "x,y"; duration: 460; easing.type: Easing.OutCubic }
+                }
+
+                delegate: Item {
+                    id: bubble
+                    required property string t
+                    required property int index
+                    readonly property bool last: bubble.index === chatModel.count - 1
+                    width: chat.width
+                    height: bubbleText.height + 10
+                    transformOrigin: Item.BottomLeft
+                    opacity: bubble.last ? 1 : 0.55 + 0.2 * bubble.index
+
+                    Rectangle {
+                        width: Math.min(chat.width, bubbleText.implicitWidth + 22)
+                        height: parent.height
+                        radius: Math.min(13, height / 2)
+                        color: bubble.last ? Colors.alpha(card.tint, 0.20) : Qt.rgba(1, 1, 1, 0.06)
+                        border.width: bubble.last ? 1 : 0
+                        border.color: Colors.alpha(card.tint, 0.32)
+                    }
+                    Text {
+                        id: bubbleText
+                        x: 11
+                        y: 5
+                        width: chat.width - 22
+                        text: bubble.t
+                        color: Colors.alpha(Colors.fg, bubble.last ? 0.92 : 0.7)
+                        font.family: Fonts.display
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                        elide: Text.ElideRight
+                        maximumLineCount: bubble.last ? (card.expanded ? 5 : 2) : 1
+                    }
+                }
+            }
+        }
+    }
+
+    ListModel { id: chatModel }
+
+    onMsgsChanged: card.syncChat()
+
+    function syncChat() {
+        const m = card.msgs && card.msgs.length > 0 ? card.msgs : [card.notifBody];
+        const n = chatModel.count;
+        if (n > 0 && m.length >= 2 && chatModel.get(n - 1).t === m[m.length - 2]) {
+            chatModel.append({ t: m[m.length - 1] });
+            while (chatModel.count > 3)
+                chatModel.remove(0);
+            return;
+        }
+        chatModel.clear();
+        for (const x of m.slice(-3))
+            chatModel.append({ t: x });
+    }
+
+    ClippingRectangle {
+        id: pic
+        visible: card.picture
+        anchors.left: parent.left
+        anchors.right: parent.right
+        y: top.y + top.height + 12
+        height: card.picH
+        radius: 16
+        color: Qt.rgba(1, 1, 1, 0.05)
+        opacity: card.enter
+
+        Image {
+            anchors.fill: parent
+            source: card.picture ? card.notifImage : ""
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            sourceSize.width: 720
+            smooth: true
         }
     }
 
@@ -345,8 +438,16 @@ Item {
         anchors.bottom: parent.bottom
         height: card.toolsH
         visible: card.toolsShow > 0.01
-        opacity: card.toolsShow
-        transform: Translate { y: 8 * (1 - card.toolsShow) }
+        opacity: Math.min(1, card.toolsShow * 1.4)
+        transform: [
+            Translate { y: 10 * (1 - card.toolsShow) },
+            Scale {
+                origin.x: tray.width / 2
+                origin.y: tray.height
+                xScale: 0.82 + 0.18 * card.toolsShow
+                yScale: 0.25 + 0.75 * card.toolsShow
+            }
+        ]
 
         Row {
             anchors.fill: parent
@@ -400,6 +501,7 @@ Item {
                 color: Colors.fg
                 selectionColor: Colors.alpha(card.tint, 0.5)
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 13
                 clip: true
 

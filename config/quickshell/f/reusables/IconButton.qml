@@ -46,7 +46,7 @@ Rectangle {
         }
     }
 
-    Rectangle {
+    RectangularShadow {
         z: -1
         anchors.centerIn: parent
         width: parent.width + 14
@@ -57,12 +57,7 @@ Rectangle {
         visible: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: Motion.base } }
 
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            blurEnabled: true
-            blur: 1.0
-            blurMax: 32
-        }
+        blur: 32
     }
 
     Rectangle {
@@ -124,7 +119,7 @@ Rectangle {
         color: Prefs.apple ? Colors.fg : hover.hovered ? button.tint : Colors.fgDim
         opacity: Prefs.apple ? 1 : hover.hovered ? 1 : 0.7
         font.family: button.mono
-        font.pixelSize: 14
+        font.pixelSize: Fonts.medium
 
         Behavior on color { ColorAnimation { duration: Motion.fast } }
         Behavior on opacity { NumberAnimation { duration: Motion.fast } }
@@ -173,7 +168,7 @@ Rectangle {
             text: button.tip
             color: Colors.fgDim
             font.family: button.mono
-            font.pixelSize: 10
+            font.pixelSize: Fonts.tiny
         }
     }
 }

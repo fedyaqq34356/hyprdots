@@ -184,6 +184,7 @@ Scope {
                                     text: slot.modelData.appId
                                     color: Colors.fgDim
                                     font.family: Fonts.mono
+                                    font.features: { "tnum": 1 }
                                     font.pixelSize: 10
                                 }
                             }

@@ -59,6 +59,7 @@ Item {
             text: card.headline
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 16
             font.weight: Font.DemiBold
             elide: Text.ElideRight
