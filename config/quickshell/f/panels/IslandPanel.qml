@@ -100,7 +100,8 @@ Scope {
                     text: I18n.t("isle.title")
                     color: Colors.fg
                     font.family: Fonts.display
-                    font.pixelSize: 19
+                    font.features: { "tnum": 1 }
+                    font.pixelSize: Fonts.larger
                     font.weight: Font.DemiBold
                 }
 
@@ -126,7 +127,7 @@ Scope {
                             text: IslandConfig.s("enabled") ? "󰔡" : "󰔢"
                             color: IslandConfig.s("enabled") ? Colors.accent : Colors.fgDim
                             font.family: Fonts.glyph
-                            font.pixelSize: 13
+                            font.pixelSize: Fonts.medium
                         }
 
                         Text {
@@ -136,7 +137,8 @@ Scope {
                                                             : I18n.t("state.off")
                             color: IslandConfig.s("enabled") ? Colors.accent : Colors.fgDim
                             font.family: Fonts.display
-                            font.pixelSize: 12
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.text
                             font.weight: Font.DemiBold
                         }
                     }
@@ -219,7 +221,8 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.5
                                 font.family: Fonts.mono
-                                font.pixelSize: 9
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                                 font.letterSpacing: 2
                             }
 

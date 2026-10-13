@@ -23,6 +23,23 @@ Scope {
     function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a); }
 
     function toggle() { root.shown = !root.shown; }
+
+    readonly property bool isle: {
+        if (!Prefs.apple || !IslandConfig.s("enabled"))
+            return false;
+        const top = IslandConfig.s("inBar") ? Prefs.barAtTop : IslandConfig.s("edge") === "top";
+        if (!top)
+            return false;
+        if (IslandConfig.s("hideFull")) {
+            const m = Hyprland.focusedMonitor;
+            const ws = m ? m.activeWorkspace : null;
+            if (ws && ws.hasFullscreen)
+                return false;
+        }
+        return true;
+    }
+
+    NotifDeck { c: root }
     function close()  { root.shown = false; }
 
     function isCollapsed(app) { return root.collapsed[app] === true; }
@@ -39,14 +56,15 @@ Scope {
         Sfx.panel(root.shown);
         if (shown) {
             root.freshCount = NotifHistory.unseen;
-            drawer.forceActiveFocus();
+            if (!root.isle)
+                drawer.forceActiveFocus();
         } else {
             NotifHistory.markSeen();
         }
     }
 
     HyprlandFocusGrab {
-        active: root.shown
+        active: root.shown && !root.isle
         windows: [win]
         onCleared: root.close()
     }
@@ -55,7 +73,7 @@ Scope {
         id: win
         WlrLayershell.namespace: "qs-notifcenter"
         screen: Focus.screen
-        visible: root.shown
+        visible: root.shown && !root.isle
         focusable: true
 
         anchors { top: true; bottom: true; left: true; right: true }
@@ -115,13 +133,16 @@ Scope {
             Item {
                 anchors.fill: parent
                 z: -1
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 1.0
-                    shadowVerticalOffset: 8
-                    shadowOpacity: 0.55
-                    shadowColor: "#000000"
+
+                RectangularShadow {
+                    anchors.fill: parent
+                    anchors.topMargin: 8
+                    anchors.bottomMargin: -8
+                    radius: Shape.card
+                    blur: 34
+                    spread: -2
+                    color: "#000000"
+                    opacity: 0.55
                 }
 
                 Rectangle {
@@ -204,7 +225,7 @@ Scope {
                                 text: Dnd.active ? "󰂛" : "󰂚"
                                 color: root.tint
                                 font.family: root.mono
-                                font.pixelSize: 18
+                                font.pixelSize: Fonts.large
                                 Behavior on color { ColorAnimation { duration: Motion.base } }
                             }
 
@@ -227,7 +248,7 @@ Scope {
                                     text: root.freshCount > 99 ? "99+" : String(root.freshCount)
                                     color: Colors.accentText
                                     font.family: root.mono
-                                    font.pixelSize: 9
+                                    font.pixelSize: Fonts.tiny
                                     font.weight: Font.Bold
                                 }
                             }
@@ -241,7 +262,8 @@ Scope {
                                 text: I18n.t("notif.title")
                                 color: Colors.fg
                                 font.family: Fonts.display
-                                font.pixelSize: 14
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.medium
                                 font.weight: Font.DemiBold
                             }
 
@@ -257,7 +279,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.7
                                 font.family: root.mono
-                                font.pixelSize: 10
+                                font.pixelSize: Fonts.tiny
                             }
                         }
                     }
@@ -308,7 +330,7 @@ Scope {
                             color: Dnd.active ? Colors.fgDim : Colors.accent
                             opacity: Dnd.active ? 0.6 : 1
                             font.family: root.mono
-                            font.pixelSize: 15
+                            font.pixelSize: Fonts.medium
                         }
 
                         Column {
@@ -320,7 +342,7 @@ Scope {
                                 color: Dnd.active ? Colors.fgDim : Colors.fg
                                 opacity: Dnd.active ? 0.75 : 0.95
                                 font.family: root.mono
-                                font.pixelSize: 12
+                                font.pixelSize: Fonts.text
                                 font.weight: Font.DemiBold
                             }
 
@@ -330,7 +352,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.55
                                 font.family: root.mono
-                                font.pixelSize: 9
+                                font.pixelSize: Fonts.tiny
                             }
                         }
                     }
@@ -450,7 +472,7 @@ Scope {
                                         color: Colors.fgDim
                                         opacity: 0.65
                                         font.family: root.mono
-                                        font.pixelSize: 11
+                                        font.pixelSize: Fonts.small
                                         rotation: group.folded ? -90 : 0
                                         Behavior on rotation {
                                             NumberAnimation {
@@ -483,7 +505,7 @@ Scope {
                                             text: NotifHistory.appLetter(group.modelData.app)
                                             color: NotifHistory.appColor(group.modelData.app)
                                             font.family: root.mono
-                                            font.pixelSize: 10
+                                            font.pixelSize: Fonts.tiny
                                             font.weight: Font.DemiBold
                                         }
                                     }
@@ -494,7 +516,7 @@ Scope {
                                         color: group.modelData.critical ? Colors.bad : Colors.fg
                                         opacity: 0.9
                                         font.family: root.mono
-                                        font.pixelSize: 11
+                                        font.pixelSize: Fonts.small
                                         font.weight: Font.DemiBold
                                     }
 
@@ -511,7 +533,7 @@ Scope {
                                             text: String(group.modelData.entries.length)
                                             color: Colors.fgDim
                                             font.family: root.mono
-                                            font.pixelSize: 9
+                                            font.pixelSize: Fonts.tiny
                                         }
                                     }
                                 }
@@ -523,7 +545,7 @@ Scope {
                                     text: "󰅖"
                                     color: Colors.bad
                                     font.family: root.mono
-                                    font.pixelSize: 11
+                                    font.pixelSize: Fonts.small
                                     opacity: headHover.hovered ? 0.85 : 0
                                     Behavior on opacity { NumberAnimation { duration: Motion.fast } }
 
@@ -590,7 +612,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.7
                         font.family: root.mono
-                        font.pixelSize: 13
+                        font.pixelSize: Fonts.medium
                     }
 
                     Text {
@@ -601,7 +623,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.45
                         font.family: root.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                     }
                 }
 
@@ -619,7 +641,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.45
                         font.family: root.mono
-                        font.pixelSize: 9
+                        font.pixelSize: Fonts.tiny
                         visible: NotifHistory.count > 0
                     }
 
@@ -631,7 +653,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.45
                         font.family: root.mono
-                        font.pixelSize: 9
+                        font.pixelSize: Fonts.tiny
                     }
                 }
             }

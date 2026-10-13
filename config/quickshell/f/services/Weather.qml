@@ -208,6 +208,7 @@ Singleton {
         cache.text = root.text;
         cache.city = root.city;
         cache.fetchedAt = root.fetchedAt;
+        cache.forecast = JSON.stringify(root.forecast);
         store.writeAdapter();
     }
 
@@ -222,6 +223,11 @@ Singleton {
             root.text = cache.text;
             root.city = cache.city;
             root.fetchedAt = cache.fetchedAt;
+            try {
+                root.forecast = JSON.parse(cache.forecast || "[]");
+            } catch (e) {
+                root.forecast = [];
+            }
             root.ready = true;
         }
         onLoadFailed: (error) => {
@@ -236,6 +242,7 @@ Singleton {
             property string text: ""
             property string city: ""
             property real fetchedAt: 0
+            property string forecast: "[]"
         }
     }
 }

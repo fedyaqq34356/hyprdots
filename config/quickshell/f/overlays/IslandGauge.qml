@@ -96,6 +96,7 @@ Item {
             text: g.centerText !== "" ? g.centerText : Math.round(g.shown * 100) + "%"
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: Math.round(g.width * (g.glyph !== "" ? 0.2 : 0.26))
             font.weight: Font.DemiBold
         }

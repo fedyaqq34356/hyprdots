@@ -26,7 +26,7 @@ Item {
     SequentialAnimation {
         id: puffRun
         NumberAnimation { target: meter; property: "puff"; to: 1; duration: 90; easing.type: Easing.OutCubic }
-        NumberAnimation { target: meter; property: "puff"; to: 0; duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.8 }
+        NumberAnimation { target: meter; property: "puff"; to: 0; duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.2 }
     }
 
     readonly property real thick: Math.round(meter.height * (0.62 + 0.38 * meter.puff) * 2) / 2

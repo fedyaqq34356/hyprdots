@@ -390,6 +390,7 @@ Item {
                 color: Colors.fgDim
                 opacity: 0.75
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 34
                 font.weight: Font.Light
             }
@@ -398,6 +399,7 @@ Item {
                 text: face.spokenHour
                 color: Colors.accent
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 72
                 font.weight: Font.DemiBold
                 Behavior on color { ColorAnimation { duration: Colors.morph } }

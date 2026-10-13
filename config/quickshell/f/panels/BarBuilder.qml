@@ -141,7 +141,8 @@ Scope {
                     text: I18n.t("barc.title")
                     color: Colors.fg
                     font.family: Fonts.display
-                    font.pixelSize: 19
+                    font.features: { "tnum": 1 }
+                    font.pixelSize: Fonts.larger
                     font.weight: Font.DemiBold
                 }
 
@@ -170,7 +171,8 @@ Scope {
                             text: parent.label
                             color: root.tab === parent.key ? Colors.accent : Colors.fgDim
                             font.family: Fonts.display
-                            font.pixelSize: 12
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.text
                             font.weight: root.tab === parent.key ? Font.DemiBold : Font.Normal
                         }
 
@@ -261,7 +263,7 @@ Scope {
                                 text: BarConfig.perScreen ? "󰍺" : "󰕮"
                                 color: BarConfig.perScreen ? Colors.accent : Colors.fgDim
                                 font.family: Fonts.glyph
-                                font.pixelSize: 12
+                                font.pixelSize: Fonts.text
                             }
 
                             Text {
@@ -270,7 +272,8 @@ Scope {
                                 text: I18n.t("barc.perScreen")
                                 color: BarConfig.perScreen ? Colors.accent : Colors.fgDim
                                 font.family: Fonts.display
-                                font.pixelSize: 11
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.small
                             }
                         }
 
@@ -311,7 +314,8 @@ Scope {
                                 text: parent.modelData
                                 color: parent.chosen ? Colors.accentAlt : Colors.fgDim
                                 font.family: Fonts.mono
-                                font.pixelSize: 10
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                             }
 
                             MouseArea {
@@ -355,7 +359,8 @@ Scope {
                         color: Colors.accentAlt
                         opacity: 0.85
                         font.family: Fonts.mono
-                        font.pixelSize: 10
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.tiny
                     }
 
                     MouseArea {
@@ -404,7 +409,8 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.6
                             font.family: Fonts.mono
-                            font.pixelSize: 10
+                            font.features: { "tnum": 1 }
+                            font.pixelSize: Fonts.tiny
                             font.letterSpacing: 2
                         }
 
@@ -456,7 +462,8 @@ Scope {
                                                     color: Colors.fgDim
                                                     opacity: 0.45
                                                     font.family: Fonts.mono
-                                                    font.pixelSize: 10
+                                                    font.features: { "tnum": 1 }
+                                                    font.pixelSize: Fonts.tiny
                                                 }
 
                                                 Item {
@@ -512,7 +519,8 @@ Scope {
                                                 color: Colors.fgDim
                                                 opacity: 0.35
                                                 font.family: Fonts.mono
-                                                font.pixelSize: 10
+                                                font.features: { "tnum": 1 }
+                                                font.pixelSize: Fonts.tiny
                                             }
 
                                             Repeater {
@@ -556,7 +564,7 @@ Scope {
                                                                 text: modRow.spec ? modRow.spec.glyph : "󰘨"
                                                                 color: Colors.accent
                                                                 font.family: Fonts.glyph
-                                                                font.pixelSize: 13
+                                                                font.pixelSize: Fonts.medium
                                                             }
 
                                                             Text {
@@ -565,7 +573,8 @@ Scope {
                                                                                   : modRow.modelData.type
                                                                 color: Colors.fg
                                                                 font.family: Fonts.display
-                                                                font.pixelSize: 12
+                                                                font.features: { "tnum": 1 }
+                                                                font.pixelSize: Fonts.text
                                                                 elide: Text.ElideRight
                                                                 width: Math.min(implicitWidth,
                                                                                 modRow.width - 130)
@@ -671,7 +680,8 @@ Scope {
                                                     color: Colors.accent
                                                     opacity: 0.85
                                                     font.family: Fonts.mono
-                                                    font.pixelSize: 10
+                                                    font.features: { "tnum": 1 }
+                                                    font.pixelSize: Fonts.tiny
                                                 }
 
                                                 MouseArea {
@@ -706,7 +716,8 @@ Scope {
                                 text: "+  " + I18n.t("barc.addIsland")
                                 color: Colors.accentAlt
                                 font.family: Fonts.mono
-                                font.pixelSize: 10
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                             }
 
                             MouseArea {
@@ -756,7 +767,8 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.5
                                 font.family: Fonts.mono
-                                font.pixelSize: 9
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                                 font.letterSpacing: 2
                             }
 
@@ -819,7 +831,8 @@ Scope {
                 text: I18n.t("barc.pickModule")
                 color: Colors.fg
                 font.family: Fonts.display
-                font.pixelSize: 14
+                font.features: { "tnum": 1 }
+                font.pixelSize: Fonts.medium
                 font.weight: Font.DemiBold
             }
 
@@ -850,7 +863,8 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.5
                                 font.family: Fonts.mono
-                                font.pixelSize: 9
+                                font.features: { "tnum": 1 }
+                                font.pixelSize: Fonts.tiny
                                 font.letterSpacing: 2
                             }
 
@@ -890,7 +904,7 @@ Scope {
                                                 text: BarConfig.registry[parent.parent.modelData].glyph
                                                 color: Colors.accent
                                                 font.family: Fonts.glyph
-                                                font.pixelSize: 13
+                                                font.pixelSize: Fonts.medium
                                             }
 
                                             Text {
@@ -898,7 +912,8 @@ Scope {
                                                 text: BarConfig.registry[parent.parent.modelData].title
                                                 color: Colors.fg
                                                 font.family: Fonts.display
-                                                font.pixelSize: 11
+                                                font.features: { "tnum": 1 }
+                                                font.pixelSize: Fonts.small
                                             }
                                         }
 

@@ -100,6 +100,7 @@ Singleton {
     function isleClose()   { root.play(root.isle + "close.wav", root.isleLevel * 0.7, 120); }
     function isleShutter() { root.play(root.isle + "shutter.wav", root.isleLevel * 1.3, 150); }
     function isleOk()      { root.play(root.isle + "ok.wav", root.isleLevel, 200); }
+    function isleRemind()  { root.play(root.isle + "remind.wav", root.isleLevel * 1.2, 400); }
     function isleFail()    { root.play(root.isle + "fail.wav", root.isleLevel, 200); }
 
     function tap()      { root.play(root.serp + "reusables/clickbutton/click.wav",  root.tapLevel, 40); }

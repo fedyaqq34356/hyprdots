@@ -97,6 +97,7 @@ Item {
                     color: Colors.fgDim
                     opacity: 0.7
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 12
                 }
             }
@@ -168,6 +169,7 @@ Item {
                             color: Colors.fg
                             opacity: 0.85
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: 12
                         }
 
@@ -218,6 +220,7 @@ Item {
                 color: Colors.fgDim
                 opacity: 0.65
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 15
             }
         }
@@ -267,6 +270,7 @@ Item {
                         color: Colors.fgDim
                         opacity: 0.6
                         font.family: Fonts.display
+                        font.features: { "tnum": 1 }
                         font.pixelSize: 12
                     }
                 }
@@ -366,6 +370,7 @@ Item {
                     color: Colors.fgDim
                     opacity: 0.6
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 12
                 }
             }
@@ -425,6 +430,7 @@ Item {
                     color: Colors.fgDim
                     opacity: 0.65
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 11
                 }
             }
@@ -568,6 +574,7 @@ Item {
                 color: Colors.fgDim
                 opacity: 0.55
                 font.family: Fonts.display
+                font.features: { "tnum": 1 }
                 font.pixelSize: 13
             }
         }
@@ -632,6 +639,7 @@ Item {
                             color: Colors.fgDim
                             opacity: 0.6
                             font.family: Fonts.display
+                            font.features: { "tnum": 1 }
                             font.pixelSize: 10
                         }
                     }

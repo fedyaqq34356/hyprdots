@@ -259,13 +259,16 @@ Scope {
             Item {
                 anchors.fill: parent
                 z: -1
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowBlur: 1.0
-                    shadowVerticalOffset: 12
-                    shadowOpacity: 0.5
-                    shadowColor: Colors.shadowTone
+
+                RectangularShadow {
+                    anchors.fill: parent
+                    anchors.topMargin: 12
+                    anchors.bottomMargin: -12
+                    radius: Shape.modal
+                    blur: 34
+                    spread: -2
+                    color: Colors.shadowTone
+                    opacity: 0.5
                 }
 
                 Rectangle {
@@ -382,7 +385,7 @@ Scope {
                                 color: root.radioOn ? root.tint : Colors.fgDim
                                 opacity: root.radioOn ? 1 : 0.55
                                 font.family: root.mono
-                                font.pixelSize: 14
+                                font.pixelSize: Fonts.medium
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
@@ -391,7 +394,7 @@ Scope {
                                 color: root.radioOn ? Colors.fg : Colors.fgDim
                                 opacity: root.radioOn ? 0.9 : 0.55
                                 font.family: root.mono
-                                font.pixelSize: 11
+                                font.pixelSize: Fonts.small
                                 anchors.verticalCenter: parent.verticalCenter
                             }
 
@@ -460,7 +463,7 @@ Scope {
                                     color: rate.modelData.tint
                                     opacity: 0.9
                                     font.family: root.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: Fonts.text
                                 }
 
                                 Text {
@@ -469,7 +472,7 @@ Scope {
                                     color: Colors.fg
                                     opacity: 0.85
                                     font.family: root.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: Fonts.text
                                 }
                             }
                         }
@@ -515,7 +518,7 @@ Scope {
 
                     Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
-                    Rectangle {
+                    RectangularShadow {
                         anchors.centerIn: parent
                         visible: root.graphMode && root.radioOn
                         width: Math.min(parent.width, parent.height) * 0.6
@@ -526,12 +529,7 @@ Scope {
                         Behavior on color { ColorAnimation { duration: Motion.slow } }
                         Behavior on opacity { NumberAnimation { duration: Motion.slow } }
 
-                        layer.enabled: true
-                        layer.effect: MultiEffect {
-                            blurEnabled: true
-                            blur: 1.0
-                            blurMax: 64
-                        }
+                        blur: 64
                     }
 
                     OrbitGraph {
@@ -632,7 +630,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.5
                             font.family: root.mono
-                            font.pixelSize: 12
+                            font.pixelSize: Fonts.text
                         }
                     }
 
@@ -655,7 +653,7 @@ Scope {
                                 text: "󰌾"
                                 color: root.tint
                                 font.family: root.mono
-                                font.pixelSize: 32
+                                font.pixelSize: Fonts.huge
                             }
 
                             Text {
@@ -665,7 +663,7 @@ Scope {
                                 color: Colors.fg
                                 elide: Text.ElideRight
                                 font.family: root.mono
-                                font.pixelSize: 14
+                                font.pixelSize: Fonts.medium
                                 font.weight: Font.DemiBold
                             }
 
@@ -692,7 +690,7 @@ Scope {
                                         anchors.verticalCenter: parent.verticalCenter
                                         color: Colors.fg
                                         font.family: root.mono
-                                        font.pixelSize: 14
+                                        font.pixelSize: Fonts.medium
                                         echoMode: TextInput.Password
                                         passwordCharacter: "•"
                                         selectByMouse: true
@@ -711,7 +709,7 @@ Scope {
                                             color: Colors.fgDim
                                             opacity: 0.35
                                             font.family: root.mono
-                                            font.pixelSize: 13
+                                            font.pixelSize: Fonts.medium
                                         }
                                     }
 
@@ -730,7 +728,7 @@ Scope {
                                             color: password.text === "" ? Colors.fgDim : root.tint
                                             opacity: password.text === "" ? 0.3 : 1
                                             font.family: root.mono
-                                            font.pixelSize: 14
+                                            font.pixelSize: Fonts.medium
                                         }
 
                                         MouseArea {
@@ -748,7 +746,7 @@ Scope {
                                 color: Colors.fgDim
                                 opacity: 0.35
                                 font.family: root.mono
-                                font.pixelSize: 10
+                                font.pixelSize: Fonts.tiny
                             }
                         }
                     }
@@ -770,7 +768,8 @@ Scope {
                         color: Colors.fg
                         elide: Text.ElideRight
                         font.family: Fonts.display
-                        font.pixelSize: 18
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.large
                         font.weight: Font.DemiBold
 
                         Behavior on opacity { NumberAnimation { duration: Motion.fast } }
@@ -786,7 +785,7 @@ Scope {
                         opacity: (root.hoveredEntry || root.live) ? 0.85 : 0.45
                         elide: Text.ElideRight
                         font.family: root.mono
-                        font.pixelSize: 11
+                        font.pixelSize: Fonts.small
                     }
                 }
 
@@ -852,7 +851,7 @@ Scope {
                                             color: root.tab === modelData.key ? root.tint : Colors.fgDim
                                             opacity: root.tab === modelData.key ? 1 : 0.55
                                             font.family: root.mono
-                                            font.pixelSize: 14
+                                            font.pixelSize: Fonts.medium
                                             anchors.verticalCenter: parent.verticalCenter
                                         }
                                         Text {
@@ -860,7 +859,7 @@ Scope {
                                             color: root.tab === modelData.key ? Colors.fg : Colors.fgDim
                                             opacity: root.tab === modelData.key ? 1 : 0.55
                                             font.family: root.mono
-                                            font.pixelSize: 12
+                                            font.pixelSize: Fonts.text
                                             font.weight: root.tab === modelData.key
                                                 ? Font.DemiBold : Font.Normal
                                             anchors.verticalCenter: parent.verticalCenter
@@ -891,7 +890,7 @@ Scope {
                         elide: Text.ElideRight
                         wrapMode: Text.NoWrap
                         font.family: root.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                     }
 
                     Text {
@@ -904,7 +903,7 @@ Scope {
                         color: Colors.fgDim
                         opacity: 0.3
                         font.family: root.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                     }
                 }
             }

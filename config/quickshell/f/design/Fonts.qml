@@ -21,4 +21,17 @@ Singleton {
     readonly property real headingSize: Scaler.f(14)
     readonly property real bodySize: Scaler.f(12)
     readonly property real smallSize: Scaler.f(10)
+
+    readonly property int tiny:   10
+    readonly property int small:  11
+    readonly property int text:   12
+    readonly property int medium: 14
+    readonly property int large:  17
+    readonly property int larger: 20
+    readonly property int big:    24
+    readonly property int bigger: 28
+    readonly property int huge:   34
+    readonly property int giant:  40
+
+    readonly property var nums: ({ "tnum": 1 })
 }

@@ -54,6 +54,7 @@ Item {
             text: I18n.t("isle.alarm")
             color: Colors.bad
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -63,6 +64,7 @@ Item {
             text: Qt.formatDateTime(alarmNow.date, "HH:mm")
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 28
             font.weight: Font.DemiBold
         }

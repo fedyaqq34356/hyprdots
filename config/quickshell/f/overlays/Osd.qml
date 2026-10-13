@@ -26,7 +26,7 @@ Scope {
         color: "transparent"
         mask: Region {}
 
-        Rectangle {
+        RectangularShadow {
             anchors.centerIn: card
             width: card.width + 40
             height: card.height + 40
@@ -35,12 +35,7 @@ Scope {
             opacity: 0
             visible: opacity > 0.01
 
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 48
-            }
+            blur: 48
 
             SequentialAnimation on opacity {
                 running: root.active

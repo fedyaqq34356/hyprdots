@@ -84,6 +84,7 @@ Item {
                     text: NotifHistory.appLetter(cc.name)
                     color: "white"
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 20
                     font.weight: Font.Bold
                 }
@@ -137,6 +138,7 @@ Item {
             text: cc.name
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 16
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -147,6 +149,7 @@ Item {
             text: cc.app + " · " + I18n.t("isle.call")
             color: Colors.alpha(Colors.fg, 0.55)
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             elide: Text.ElideRight
         }

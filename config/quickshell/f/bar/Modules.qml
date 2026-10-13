@@ -1022,6 +1022,7 @@ Item {
                     text: Recorder.clock
                     color: Colors.bad
                     font.family: Fonts.mono
+                    font.features: { "tnum": 1 }
                     font.pixelSize: kit.fontSize
                     font.weight: Font.DemiBold
                     anchors.verticalCenter: parent.verticalCenter

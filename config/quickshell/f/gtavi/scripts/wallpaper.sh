@@ -2,7 +2,7 @@
 set -u
 
 img="${1:-}"; theme="${2:-1}"; delay="${3:-6000}"
-setter="$HOME/.config/hypr/scripts/set-wallpaper.sh"
+setter="$HOME/.config/hypr/scripts/wallpaper/set-wallpaper.sh"
 current="$HOME/.config/hypr/current-wallpaper"
 
 [[ -f "$img" ]] || { echo "gtavi-wallpaper: missing $img" >&2; exit 1; }

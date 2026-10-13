@@ -27,6 +27,7 @@ Row {
         text: sl.text
         color: sl.tint
         font.family: Fonts.display
+        font.features: { "tnum": 1 }
         font.pixelSize: 12
         font.weight: Font.DemiBold
     }

@@ -62,6 +62,7 @@ Item {
                        : pw.low ? "isle.power.low" : "isle.power.off")
             color: pw.hue
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 16
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -75,6 +76,7 @@ Item {
                   + Power.timeLabel
             color: Colors.alpha(Colors.fg, 0.55)
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
             elide: Text.ElideRight
         }

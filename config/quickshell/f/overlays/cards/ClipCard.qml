@@ -58,6 +58,7 @@ Item {
             text: I18n.t("isle.clip.copied")
             color: Colors.alpha(Colors.fg, 0.45)
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 11
             font.capitalization: Font.AllUppercase
             font.letterSpacing: 0.4
@@ -68,6 +69,7 @@ Item {
             text: card.clipText !== "" ? card.clipText : I18n.t("isle.clip.image")
             color: Colors.fg
             font.family: Fonts.display
+            font.features: { "tnum": 1 }
             font.pixelSize: 14
             font.weight: Font.DemiBold
             elide: Text.ElideRight
@@ -78,6 +80,7 @@ Item {
             text: shot.implicitWidth + " × " + shot.implicitHeight
             color: card.tint
             font.family: Fonts.mono
+            font.features: { "tnum": 1 }
             font.pixelSize: 12
         }
     }

@@ -19,6 +19,14 @@ Scope {
 
     property string error: ""
 
+    readonly property bool isle: {
+        if (!Prefs.apple || !IslandConfig.s("enabled"))
+            return false;
+        return IslandConfig.s("inBar") ? Prefs.barAtTop : IslandConfig.s("edge") === "top";
+    }
+
+    onActiveChanged: if (root.active) Qt.callLater(() => password.grab())
+
     readonly property var flow: agent.flow
     readonly property bool active: agent.isActive
 
@@ -53,7 +61,7 @@ Scope {
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
 
             screen: Focus.screen
-            visible: root.active
+            visible: root.active || drip.living
 
             anchors {
                 top: true
@@ -74,6 +82,8 @@ Scope {
                 color: Qt.rgba(0, 0, 0, 0.55)
                 opacity: 0
                 Component.onCompleted: dimIn.start()
+                Binding on opacity { when: root.isle; value: root.active ? 0.75 : 0 }
+                Behavior on opacity { enabled: root.isle; NumberAnimation { duration: 320; easing.type: Easing.InOutCubic } }
 
                 NumberAnimation {
                     id: dimIn
@@ -89,16 +99,26 @@ Scope {
                 }
             }
 
+            IsleDrip {
+                id: drip
+                anchors.fill: parent
+                open: root.isle && root.active
+                cardW: 440
+                cardH: body.implicitHeight + 56
+                radius: 30
+                glow: root.error !== "" ? Colors.bad : Colors.accent
+                MouseArea { anchors.fill: parent }
+            }
+
             Glass {
                 id: card
+                visible: !root.isle
 
                 anchors.centerIn: parent
                 width: 420
                 elevation: 3
                 height: body.implicitHeight + 56
                 radius: Shape.modal
-
-                transform: Translate { id: shift; x: 0 }
 
                 opacity: 0
                 scale: 0.94
@@ -131,7 +151,10 @@ Scope {
 
                 Column {
                     id: body
+                    parent: root.isle ? drip.face : card
                     anchors.centerIn: parent
+                    transform: Translate { id: shift; x: 0 }
+                    Keys.onEscapePressed: agent.flow && agent.flow.cancelAuthenticationRequest()
                     width: parent.width - 56
                     spacing: 18
 
@@ -163,6 +186,7 @@ Scope {
                                 text: I18n.t("polkit.title")
                                 color: Colors.fg
                                 font.family: Fonts.display
+                                font.features: { "tnum": 1 }
                                 font.pixelSize: 15
                             }
 

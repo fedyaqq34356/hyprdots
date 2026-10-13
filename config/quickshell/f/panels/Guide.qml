@@ -204,14 +204,15 @@ Scope {
                         text: root.current.glyph
                         color: Colors.accent
                         font.family: root.mono
-                        font.pixelSize: 40
+                        font.pixelSize: Fonts.giant
                     }
 
                     Text {
                         text: root.current.title
                         color: Colors.fg
                         font.family: Fonts.display
-                        font.pixelSize: 22
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.big
                     }
 
                     Text {
@@ -222,7 +223,8 @@ Scope {
                         wrapMode: Text.WordWrap
                         lineHeight: 1.3
                         font.family: Fonts.display
-                        font.pixelSize: 13
+                        font.features: { "tnum": 1 }
+                        font.pixelSize: Fonts.medium
                     }
 
                     Loader {
@@ -265,7 +267,7 @@ Scope {
                                     text: parent.modelData
                                     color: Colors.accentAlt
                                     font.family: root.mono
-                                    font.pixelSize: 10
+                                    font.pixelSize: Fonts.tiny
                                 }
                             }
                         }
@@ -355,7 +357,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.7
                             font.family: root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: Fonts.small
                         }
 
                         Text {
@@ -364,7 +366,7 @@ Scope {
                             text: Prefs.cornerRadius
                             color: Colors.fg
                             font.family: root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: Fonts.small
                         }
 
                         Slider {
@@ -434,7 +436,7 @@ Scope {
                         opacity: Weather.ready ? 0.9 : 0.45
                         elide: Text.ElideRight
                         font.family: root.mono
-                        font.pixelSize: 10
+                        font.pixelSize: Fonts.tiny
                     }
                 }
             }
@@ -466,7 +468,7 @@ Scope {
                             color: Colors.fgDim
                             opacity: 0.7
                             font.family: root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: Fonts.small
                         }
 
                         Text {
@@ -477,7 +479,7 @@ Scope {
                                 : Prefs.idleDimLeadSec + "s"
                             color: Colors.fg
                             font.family: root.mono
-                            font.pixelSize: 11
+                            font.pixelSize: Fonts.small
                         }
 
                         Slider {

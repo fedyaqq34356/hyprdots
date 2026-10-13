@@ -72,7 +72,7 @@ Rectangle {
             color: Colors.accent
             opacity: hover.hovered ? 1 : 0.75
             font.family: badge.mono
-            font.pixelSize: 12
+            font.pixelSize: Fonts.text
         }
 
         Text {
@@ -81,7 +81,7 @@ Rectangle {
             color: hover.hovered ? Colors.fg : Colors.fgDim
             opacity: hover.hovered ? 1 : 0.8
             font.family: badge.mono
-            font.pixelSize: 11
+            font.pixelSize: Fonts.small
         }
 
         Row {

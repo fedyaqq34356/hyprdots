@@ -674,6 +674,7 @@ Item {
                     color: Colors.bg
                     elide: Text.ElideRight
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
                 }
@@ -685,6 +686,7 @@ Item {
                     opacity: 0.6
                     elide: Text.ElideRight
                     font.family: Fonts.display
+                    font.features: { "tnum": 1 }
                     font.pixelSize: 11
                 }
             }
