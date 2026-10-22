@@ -26,3 +26,4 @@ LauncherDrip LauncherDrip.qml
 ClipDrip ClipDrip.qml
 BatteryPanel BatteryPanel.qml
 NotifDeck NotifDeck.qml
+PowerSheet PowerSheet.qml

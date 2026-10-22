@@ -845,6 +845,7 @@ wallpaper ──▶ matugen ──┬──▶ hyprland   window borders
                         ├──▶ gtk 3/4    Thunar and every other GTK app
                         ├──▶ papirus    folder icons tinted to the accent
                         ├──▶ wlogout    power menu
+                        ├──▶ sddm       login screen
                         └──▶ cava       audio visualiser
 ```
 
@@ -929,14 +930,34 @@ anyone who wants it back.
 <summary><b>Power menu</b> — <sub>why it is a panel and not a script</sub></summary>
 
 
-`Super`+`P` opens a native Quickshell menu: the clock, uptime and battery over five tiles — lock,
-sleep, log out, reboot, shut down. Each tile carries its own letter, so `l`, `s`, `e`, `r` and `p`
-fire straight away; arrows move the selection, `Enter` confirms, `Escape` or a click outside
-closes. Reboot and shutdown glow red instead of the theme accent, so the two irreversible entries
-never look like the others.
+`Super`+`P` opens a native Quickshell screen: five round buttons in a row — lock, sleep, log out,
+reboot, shut down — and one glowing lens that glides under the selected one. Picking an action
+spreads the lens over the whole screen and fades it into the background before the session goes.
+`l`, `s`, `e`, `r` and `p` fire straight away; arrows move the selection, `Enter` confirms,
+`Escape` or a click outside closes. The previous tile menu stays bound as
+`quickshell:powerMenuClassic`.
 
 It takes its colours from the wallpaper like everything else. `wlogout` is still themed from the
 same palette and stays available as a standalone power menu.
+
+</details>
+
+<details>
+<summary><b>Login screen</b> — <sub>SDDM on the desktop wallpaper</sub></summary>
+
+
+`extras/sddm` is an SDDM theme in the same style: the current wallpaper under a soft blur, the
+matugen palette, a large clock, the avatar from `~/.face` and one glass password field. On a
+successful login the blur lifts, so the screen hands over to the exact wallpaper the desktop opens on.
+
+```sh
+sudo extras/sddm/install.sh      # copy the theme and select it
+sudo extras/sddm/uninstall.sh    # remove it
+```
+
+The wallpaper, palette and avatar live in `/var/lib/f-sddm`, owned by the user.
+`set-wallpaper.sh` refreshes them through `sddm-sync.sh` on every wallpaper change, so the login
+screen follows the desktop without sudo.
 
 </details>
 
@@ -2047,6 +2068,7 @@ cd hyprdots && ./install.sh --update
                    ├──▶ gtk 3/4    Thunar и остальные GTK-приложения
                    ├──▶ papirus    иконки папок в тон акценту
                    ├──▶ wlogout    меню выключения
+                   ├──▶ sddm       экран входа
                    └──▶ cava       визуализатор звука
 ```
 
@@ -2126,14 +2148,33 @@ QML, только спорило бы с ним.
 <summary><b>Меню выключения</b> — <sub>почему это панель, а не скрипт</sub></summary>
 
 
-`Super`+`P` открывает меню Quickshell: часы, аптайм и заряд батареи над пятью плитками —
-заблокировать, сон, выйти, перезагрузка, выключение. У каждой плитки своя буква, так что `l`, `s`,
-`e`, `r` и `p` срабатывают сразу; стрелки двигают выбор, `Enter` подтверждает, `Escape` или клик
-мимо закрывают. Перезагрузка и выключение подсвечиваются красным вместо цвета темы — два
-необратимых пункта не выглядят как остальные.
+`Super`+`P` открывает экран Quickshell: пять круглых кнопок в ряд — заблокировать, сон, выйти,
+перезагрузка, выключение — и одна светящаяся линза, которая плавно перетекает под выбранную. При
+выборе линза расходится на весь экран и гаснет в фон, и только потом уходит команда. `l`, `s`, `e`,
+`r` и `p` срабатывают сразу; стрелки двигают выбор, `Enter` подтверждает, `Escape` или клик мимо
+закрывают. Прежнее меню с плитками осталось на `quickshell:powerMenuClassic`.
 
 Цвета берутся из обоев, как и везде. `wlogout` по-прежнему красится из той же палитры и остаётся
 отдельным меню выключения.
+
+</details>
+
+<details>
+<summary><b>Экран входа</b> — <sub>SDDM на обоях рабочего стола</sub></summary>
+
+
+`extras/sddm` — тема SDDM в том же стиле: текущие обои под мягким размытием, палитра matugen,
+крупные часы, аватар из `~/.face` и одно стеклянное поле пароля. После входа размытие уходит, и
+экран передаёт управление ровно тем обоям, на которых открывается рабочий стол.
+
+```sh
+sudo extras/sddm/install.sh      # скопировать тему и выбрать её
+sudo extras/sddm/uninstall.sh    # убрать
+```
+
+Обои, палитра и аватар лежат в `/var/lib/f-sddm`, каталог принадлежит пользователю.
+`set-wallpaper.sh` обновляет их через `sddm-sync.sh` при каждой смене обоев, так что экран входа
+следует за рабочим столом без sudo.
 
 </details>
 

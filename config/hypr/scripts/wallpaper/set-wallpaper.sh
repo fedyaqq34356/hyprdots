@@ -70,3 +70,6 @@ echo "$WALLPAPER" > "$HOME/.config/hypr/current-wallpaper"
 if [[ "$NO_THEME" != "--no-theme" ]]; then
     matugen image "$WALLPAPER" --mode dark --type scheme-content --prefer saturation >/dev/null 2>&1 &
 fi
+
+SDDM_SYNC="$HOME/.config/hypr/scripts/wallpaper/sddm-sync.sh"
+[[ -x "$SDDM_SYNC" ]] && setsid "$SDDM_SYNC" --wait >/dev/null 2>&1 &

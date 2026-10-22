@@ -182,7 +182,7 @@ ShellRoot {
 
     GtaVI { id: gtavi }
 
-    PowerScreen { id: gtaviPower }
+    PowerSheet { id: powerSheet }
 
     GlobalShortcut {
         appid: "quickshell"
@@ -396,7 +396,7 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "powerMenu"
-        onPressed: gtaviPower.toggle()
+        onPressed: powerSheet.toggle()
     }
 
     GlobalShortcut {
