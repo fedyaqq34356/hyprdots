@@ -61,6 +61,7 @@ DBUS_ACTIVATED=(
     "gvfs-afc-volume"
     "at-spi-bus-laun"
     "at-spi2-registr"
+    "xdg-desktop-portal-gtk"
 )
 
 KILL_THUNAR_PROCS=(
@@ -77,8 +78,8 @@ have() { command -v "$1" >/dev/null 2>&1; }
 load_config() {
     BAR=yes; BAR_POSITION=top; BAR_HEIGHT=22
     NOTIFY=yes; CLIPBOARD=yes; CLIP_PERSIST=yes; AUTOMOUNT=yes
-    PORTAL=yes; PORTAL_GTK=yes; BRIGHTNESS=""
-    XWAYLAND_IDLE=yes; KILL_THUNAR=yes; KILL_GVFS=yes; POWER=yes
+    PORTAL=yes; BRIGHTNESS=""
+    XWAYLAND_LAZY=yes; KILL_THUNAR=yes; KILL_GVFS=yes; POWER=yes
     EDITOR_CMD=nvim; TERMINAL=foot; FILEMANAGER=nnn
     [[ -r "$CFG" ]] && source "$CFG"
 }
@@ -129,7 +130,11 @@ swap_themes_out() {
 }
 
 stop_proc() {
-    pkill -x "$1" >/dev/null 2>&1
+    if (( ${#1} > 15 )); then
+        pkill -f "^(\S*/)?$1( |\$)" >/dev/null 2>&1
+    else
+        pkill -x "$1" >/dev/null 2>&1
+    fi
     case "$1" in
         *.sh|*.py|shell-watchdog) pkill -f "$1" >/dev/null 2>&1 ;;
     esac
@@ -164,7 +169,7 @@ reap_dbus_activated() {
     [[ "$KILL_GVFS" == yes ]] || return 0
     local p
     for p in "${DBUS_ACTIVATED[@]}"; do
-        pkill -x "$p" >/dev/null 2>&1
+        stop_proc "$p"
     done
     return 0
 }
@@ -191,9 +196,24 @@ start_once() {
     setsid -f "$@" >/dev/null 2>&1
 }
 
+start_maybar() {
+    pgrep -x maybar >/dev/null && return 0
+
+    local bat
+    bat=$(basename "$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)" 2>/dev/null)
+    local gen="${XDG_RUNTIME_DIR:-/tmp}/serezha-maybar.yml"
+    sed -e "s|@HEIGHT@|$BAR_HEIGHT|" \
+        -e "s|@LOCATION@|$BAR_POSITION|" \
+        -e "s|@BATTERY@|${bat:-BAT0}|" \
+        "$CFG_DIR/maybar/config.yml" >"$gen" 2>/dev/null || return 1
+
+    setsid -f maybar -c "$gen" >/dev/null 2>&1
+}
+
 start_bar() {
     [[ "$BAR" == yes ]] || return 0
-    have waybar || { msg "waybar не установлен"; return 0; }
+    have maybar && { start_maybar; return 0; }
+    have waybar || { msg "нет ни maybar, ни waybar"; return 0; }
     pgrep -x waybar >/dev/null && return 0
 
     local src="$CFG_DIR/waybar/config.jsonc"
@@ -229,15 +249,105 @@ start_automount() {
     setsid -f "$HOME/.local/bin/serezha-automount" >/dev/null 2>&1
 }
 
-xwayland_reap() {
-    [[ "$XWAYLAND_IDLE" == yes ]] || return 0
+XLAZY_SRC="$CFG_DIR/src/xlazy.c"
+XLAZY_BIN="$HOME/.local/bin/serezha-xlazy"
+XLAZY_STATE="${XDG_RUNTIME_DIR:-/tmp}/serezha-xdisplay"
+
+xlazy_build() {
+    [[ -x "$XLAZY_BIN" && "$XLAZY_BIN" -nt "$XLAZY_SRC" ]] && return 0
+    [[ -r "$XLAZY_SRC" ]] || return 1
+    have cc || { msg "нет cc: Xwayland по требованию не собрать"; return 1; }
+    cc -O2 -o "$XLAZY_BIN" "$XLAZY_SRC" 2>/dev/null
+}
+
+set_display() {
+    hyprctl keyword env "DISPLAY,$1" >/dev/null 2>&1
+    have dbus-update-activation-environment &&
+        dbus-update-activation-environment "DISPLAY=$1" >/dev/null 2>&1
+    return 0
+}
+
+hypr_xwayland_pid() {
+    local hp
+    hp=$(pgrep -x Hyprland | head -1)
+    [[ -n "$hp" ]] && pgrep -x -P "$hp" Xwayland | head -1
+}
+
+xlazy_owner() {
+    local pid
+    pid=$(tr -d ' ' <"/tmp/.X${1#:}-lock" 2>/dev/null)
+    [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null && echo "$pid"
+}
+
+x_clients() {
+    ss -xp 2>/dev/null |
+        grep -cE "^u_str +ESTAB +[0-9]+ +[0-9]+ +@?/tmp/\.X11-unix/X${1#:} .*\"Xwayland\""
+}
+
+xlazy_arm() {
+    local n="$1" pid i
+    pid=$(xlazy_owner "$n")
+    if [[ -n "$pid" ]]; then
+        [[ "$(cat "/proc/$pid/comm" 2>/dev/null)" == serezha-xlazy ]] && return 0
+        (( $(x_clients "$n") > 0 )) && return 0
+        kill "$pid" 2>/dev/null
+        for i in 1 2 3 4 5 6 7 8 9 10; do
+            kill -0 "$pid" 2>/dev/null || break
+            sleep 0.1
+        done
+        kill -KILL "$pid" 2>/dev/null
+    fi
+
+    rm -f "/tmp/.X${n#:}-lock" "/tmp/.X11-unix/X${n#:}"
+    setsid -f "$XLAZY_BIN" "$n" >/dev/null 2>&1
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        [[ -S "/tmp/.X11-unix/X${n#:}" ]] && return 0
+        sleep 0.1
+    done
+    msg "serezha-xlazy не поднялся на $n"
+    return 1
+}
+
+xwayland_lazy_on() {
+    [[ "$XWAYLAND_LAZY" == yes ]] || return 0
     have hyprctl || return 0
     [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || return 0
-    pgrep -x Xwayland >/dev/null || return 0
+    have xwayland-satellite || { msg "нет xwayland-satellite: Xwayland остаётся"; return 0; }
+    xlazy_build || return 0
 
-    hyprctl clients 2>/dev/null | grep -q "xwayland: 1" && return 0
-    pkill -KILL -x Xwayland >/dev/null 2>&1
-    msg "Xwayland погашен: X11 вернётся только с перезапуском Hyprland"
+    local n="" i hx
+    [[ -r "$XLAZY_STATE" ]] && n=$(cat "$XLAZY_STATE")
+
+    if [[ -z "$n" ]]; then
+        hyprctl clients 2>/dev/null | grep -q "xwayland: 1" && {
+            msg "открыты окна X11: Xwayland оставлен как есть"
+            return 0
+        }
+        for i in $(seq 10 40); do
+            [[ -e "/tmp/.X$i-lock" || -e "/tmp/.X11-unix/X$i" ]] && continue
+            n=":$i"; break
+        done
+        [[ -n "$n" ]] || return 0
+    fi
+
+    xlazy_arm "$n" || return 0
+    echo "$n" >"$XLAZY_STATE"
+
+    hyprctl keyword xwayland:enabled false >/dev/null 2>&1
+    hx=$(hypr_xwayland_pid)
+    if [[ -n "$hx" ]] && ! hyprctl clients 2>/dev/null | grep -q "xwayland: 1"; then
+        kill -KILL "$hx" 2>/dev/null
+    fi
+    set_display "$n"
+    return 0
+}
+
+xwayland_lazy_off() {
+    [[ -r "$XLAZY_STATE" ]] || return 0
+    local n
+    n=$(cat "$XLAZY_STATE")
+    xlazy_arm "$n"
+    set_display "$n"
     return 0
 }
 
@@ -267,7 +377,6 @@ mode_on() {
     [[ "$CLIPBOARD" == yes ]] || { stop_proc "wl-paste"; stop_proc "clipboard-guard.sh"; }
     [[ "$CLIP_PERSIST" == yes ]] || stop_proc wl-clip-persist
     [[ "$PORTAL"      == yes ]] || stop_proc xdg-desktop-portal-hyprland
-    [[ "$PORTAL_GTK"  == yes ]] || stop_proc xdg-desktop-portal-gtk
 
     if [[ "$KILL_THUNAR" == yes ]]; then
         for p in "${KILL_THUNAR_PROCS[@]}"; do stop_proc "$p"; done
@@ -293,7 +402,7 @@ mode_on() {
     start_bar
     start_automount
     power_on
-    xwayland_reap
+    xwayland_lazy_on
 
     msg "серёжа мод включён. назад: serezha-mode off (или Super+Shift+P)"
 }
@@ -302,6 +411,8 @@ mode_off() {
     load_config
 
     stop_proc waybar
+    stop_proc maybar
+    pkill -f "^(\S*/)?bash \S*/serezha-bar-hypr" >/dev/null 2>&1
     stop_proc mako
     stop_proc serezha-automount
     pkill -f "serezha-automount" >/dev/null 2>&1
@@ -316,6 +427,7 @@ mode_off() {
         hyprctl reload >/dev/null 2>&1
         hyprctl setcursor Matugen-Cursor 24 >/dev/null 2>&1
     fi
+    xwayland_lazy_off
 
     local s="$HYPR/scripts"
 
@@ -362,9 +474,13 @@ mode_status() {
     printf 'режим:      %s\n' "$m"
     printf 'mode.conf:  %s\n' "$(readlink -f "$MODE_LINK" 2>/dev/null || echo '—')"
     printf 'quickshell: %s\n' "$(pgrep -x quickshell >/dev/null && echo да || echo нет)"
-    printf 'waybar:     %s\n' "$(pgrep -x waybar     >/dev/null && echo да || echo нет)"
+    printf 'бар:        %s\n' \
+        "$(pgrep -x maybar >/dev/null && echo maybar ||
+           { pgrep -x waybar >/dev/null && echo waybar || echo нет; })"
     printf 'mako:       %s\n' "$(pgrep -x mako       >/dev/null && echo да || echo нет)"
-    printf 'Xwayland:   %s\n' "$(pgrep -x Xwayland   >/dev/null && echo да || echo нет)"
+    printf 'Xwayland:   %s\n' \
+        "$(pgrep -x Xwayland >/dev/null && echo да ||
+           { pgrep -x serezha-xlazy >/dev/null && echo 'по требованию' || echo нет; })"
     printf 'Thunar:     %s\n' "$(pgrep -x Thunar     >/dev/null && echo да || echo нет)"
     printf 'автомонт.:  %s\n' \
         "$(pgrep -f serezha-automount >/dev/null && echo 'serezha-automount' ||
@@ -386,13 +502,15 @@ mode_reload() {
     load_config
     [[ "$(current_mode)" == on ]] || die "не в чёрном режиме, перезапускать нечего"
     stop_proc waybar
+    stop_proc maybar
+    pkill -f "^(\S*/)?bash \S*/serezha-bar-hypr" >/dev/null 2>&1
     stop_proc mako
     have hyprctl && hyprctl reload >/dev/null 2>&1
     start_notify
     start_bar
     start_automount
     power_on
-    xwayland_reap
+    xwayland_lazy_on
     mode_reap
     msg "перечитано"
 }
@@ -402,6 +520,7 @@ mode_reap() {
     reap_orphans
     reap_dbus_activated
     dedupe_watchers
+    [[ -r "$XLAZY_STATE" ]] && xlazy_arm "$(cat "$XLAZY_STATE")"
     return 0
 }
 
