@@ -153,7 +153,7 @@ Scope {
             return;
         Sfx.tapAlt();
         root.close();
-        Hyprland.dispatch("focuswindow address:" + w.addr);
+        Quickshell.execDetached(["hyprdo", "dispatch", "focuswindow", "address:" + w.addr]);
     }
 
     function openWins() {

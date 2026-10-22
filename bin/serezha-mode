@@ -261,7 +261,8 @@ xlazy_build() {
 }
 
 set_display() {
-    hyprctl keyword env "DISPLAY,$1" >/dev/null 2>&1
+    export DISPLAY="$1"
+    hyprdo keyword env "DISPLAY,$1" >/dev/null 2>&1
     have dbus-update-activation-environment &&
         dbus-update-activation-environment "DISPLAY=$1" >/dev/null 2>&1
     return 0
@@ -333,7 +334,7 @@ xwayland_lazy_on() {
     xlazy_arm "$n" || return 0
     echo "$n" >"$XLAZY_STATE"
 
-    hyprctl keyword xwayland:enabled false >/dev/null 2>&1
+    hyprdo keyword xwayland:enabled false >/dev/null 2>&1
     hx=$(hypr_xwayland_pid)
     if [[ -n "$hx" ]] && ! hyprctl clients 2>/dev/null | grep -q "xwayland: 1"; then
         kill -KILL "$hx" 2>/dev/null

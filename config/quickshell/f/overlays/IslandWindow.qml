@@ -596,7 +596,7 @@ PanelWindow {
 
     readonly property bool voicing:
         IslandConfig.s("micRim") && win.mine && win.visible
-        && (win.hub.callState === "live" || Recorder.active)
+        && win.hub.callState === "live"
     onVoicingChanged: win.voicing ? MicLevel.hold() : MicLevel.release()
 
     MorphSpring {
@@ -1594,7 +1594,7 @@ PanelWindow {
                         && !(IslandConfig.s("tapWide") && win.wideKind !== ""))
                         return;
                     if (win.hub.kind === "gta") {
-                        Quickshell.execDetached(["hyprctl", "dispatch", "global", "quickshell:gtavi"]);
+                        Quickshell.execDetached(["hyprdo", "dispatch", "global", "quickshell:gtavi"]);
                         win.hub.gtaOn = false;
                         return;
                     }

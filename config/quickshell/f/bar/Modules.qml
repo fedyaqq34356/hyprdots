@@ -292,7 +292,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 Sfx.pick();
-                                Hyprland.dispatch("workspace " + modelData.id);
+                                Quickshell.execDetached(["hyprdo", "dispatch", "workspace", String(modelData.id)]);
                             }
                         }
                     }
@@ -991,7 +991,7 @@ Item {
 
         Rectangle {
             property var item: null
-            property bool shown: Recorder.active
+            property bool shown: false
             visible: shown
             anchors.verticalCenter: parent ? parent.verticalCenter : undefined
 
@@ -1015,7 +1015,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     opacity: 0.25 + Phase.wave(1.4) * 0.75
 
-                    PhaseHold { active: Recorder.active }
+                    PhaseHold { active: false }
                 }
 
                 Text {

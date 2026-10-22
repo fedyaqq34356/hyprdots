@@ -32,7 +32,7 @@ Singleton {
         if (!root.screenOff)
             return;
         root.screenOff = false;
-        Quickshell.execDetached(["hyprctl", "dispatch", "dpms", "on"]);
+        Quickshell.execDetached(["hyprdo", "dispatch", "dpms", "on"]);
     }
 
     IdleMonitor {

@@ -58,7 +58,7 @@ Scope {
         const cls = /telegram/.test(app) ? "org.telegram.desktop"
                   : de && de.startupClass ? de.startupClass
                   : de ? de.id : app.split(/\s+/)[0];
-        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "class:(?i)" + cls]);
+        Quickshell.execDetached(["hyprdo", "dispatch", "focuswindow", "class:(?i)" + cls]);
         deck.c.close();
     }
 

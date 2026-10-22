@@ -164,7 +164,7 @@ ShellRoot {
             "sh", "-c",
             "printf '$winRounding = %s\\n' \"$1\" "
                 + "> \"$HOME/.config/hypr/config/shape.conf\" && "
-                + "hyprctl keyword decoration:rounding \"$1\"",
+                + "hyprdo keyword decoration:rounding \"$1\"",
             "sh", String(Shape.window)
         ];
         roundingProc.running = true;

@@ -99,6 +99,6 @@ Singleton {
     }
 
     function next() {
-        Hyprland.dispatch("switchxkblayout all next");
+        Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", "next"]);
     }
 }

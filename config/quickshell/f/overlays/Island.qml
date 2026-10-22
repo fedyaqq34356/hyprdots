@@ -73,8 +73,6 @@ Scope {
             return "call";
         if (root.gtaOn)
             return "gta";
-        if (IslandConfig.on("record") && Recorder.active)
-            return "record";
         if (IslandConfig.on("timer") && Timers.anyRunning
             && root.leftKind !== "timer")
             return "timer";
@@ -173,7 +171,7 @@ Scope {
     function focusWindow(win) {
         if (win === "")
             return;
-        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow",
+        Quickshell.execDetached(["hyprdo", "dispatch", "focuswindow",
                                  "address:0x" + root.bareAddr(win)]);
     }
 
@@ -836,7 +834,7 @@ Scope {
         const app = root.call ? root.call.app : "";
         const cls = /telegram/i.test(app) ? "org.telegram.desktop"
                   : /discord/i.test(app) ? "discord" : app;
-        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "class:(?i)" + cls]);
+        Quickshell.execDetached(["hyprdo", "dispatch", "focuswindow", "class:(?i)" + cls]);
     }
 
     property string clipImage: ""

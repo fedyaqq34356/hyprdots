@@ -19,7 +19,7 @@ Scope {
         { key: "s", glyph: "󰒲", label: I18n.t("power.sleep"), farewell: false,
           run: ["loginctl", "suspend"] },
         { key: "e", glyph: "󰗽", label: I18n.t("power.logout"), farewell: true,
-          run: ["hyprctl", "dispatch", "exit"] },
+          run: ["hyprdo", "dispatch", "exit"] },
         { key: "r", glyph: "󰜉", label: I18n.t("power.reboot"), farewell: true,
           run: ["loginctl", "reboot"] },
         { key: "p", glyph: "󰐥", label: I18n.t("power.shutdown"), farewell: true,

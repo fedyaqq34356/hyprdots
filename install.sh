@@ -232,6 +232,22 @@ install_power() {
     ok "power profile helper installed"
 }
 
+# Hyprland 0.55 moved the configuration to Lua: hyprland.lua wins over
+# hyprland.conf whenever both exist. Older builds have no Lua parser, so on
+# them the Lua copy is removed and the hyprlang files take over again.
+configure_parser() {
+    local hypr="$HOME/.config/hypr" ver
+    [[ -f "$hypr/hyprland.lua" ]] || return 0
+    ver=$(Hyprland --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    if [[ -n "$ver" ]] && printf '%s\n0.55\n' "$ver" | sort -V -C; then
+        [[ "$ver" == 0.55 ]] && { ok "config: Lua (Hyprland $ver)"; return 0; }
+        run rm -rf "$hypr/hyprland.lua" "$hypr/cfg"
+        ok "config: hyprlang (Hyprland $ver has no Lua config)"
+        return 0
+    fi
+    ok "config: Lua${ver:+ (Hyprland $ver)}"
+}
+
 configure_gpu() {
     local env="$HOME/.config/hypr/config/env.conf"
     [[ -f "$env" && -w "$env" ]] || return 0
@@ -312,6 +328,7 @@ deploy_config() {
 
     expand_home
     configure_gpu
+    configure_parser
     install_power
     ok "files installed (backup: ${BACKUP_DIR/#$HOME/\~})"
 }
@@ -384,8 +401,19 @@ generate_theme
 
 reload_session() {
     log "Reloading the running session"
-    command -v hyprctl >/dev/null && pgrep -x Hyprland >/dev/null \
-        && run hyprctl reload >/dev/null
+    if command -v hyprctl >/dev/null && pgrep -x Hyprland >/dev/null; then
+        # A session still on hyprland.conf needs a full reset to pick up
+        # hyprland.lua. Its autostart already ran, so the marker tells the
+        # Lua config not to start every daemon a second time.
+        if [[ -f "$HOME/.config/hypr/hyprland.lua" ]] \
+            && [[ "$(hyprctl eval 'return 1' 2>/dev/null)" == *"only supported with the lua"* ]]; then
+            [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && ! ((DRY_RUN)) \
+                && : >"${XDG_RUNTIME_DIR:-/tmp}/hypr-lua-started-$HYPRLAND_INSTANCE_SIGNATURE"
+            run hyprctl reload full-reset >/dev/null
+        else
+            run hyprctl reload >/dev/null
+        fi
+    fi
     if pgrep -x quickshell >/dev/null; then
         run pkill -x quickshell
         run setsid -f "$HOME/.local/bin/shell-autostart" >/dev/null 2>&1

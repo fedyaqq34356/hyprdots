@@ -9,28 +9,26 @@ notify() {
 }
 
 enable() {
-    hyprctl --batch "\
-        keyword decoration:dim_inactive true;\
-        keyword decoration:dim_strength 0.62;\
-        keyword decoration:dim_around 0.35;\
-        keyword decoration:inactive_opacity 0.82;\
-        keyword decoration:blur:passes 2;\
-        keyword general:border_size 1;\
-        keyword animation borderangle,0" >/dev/null
+    hyprdo keyword decoration:dim_inactive true >/dev/null
+    hyprdo keyword decoration:dim_strength 0.62 >/dev/null
+    hyprdo keyword decoration:dim_around 0.35 >/dev/null
+    hyprdo keyword decoration:inactive_opacity 0.82 >/dev/null
+    hyprdo keyword decoration:blur:passes 2 >/dev/null
+    hyprdo keyword general:border_size 1 >/dev/null
+    hyprdo keyword animation borderangle,0 >/dev/null
 
     : > "$STATE"
     notify "Focus mode" "Active window only. Press again to turn off."
 }
 
 disable() {
-    hyprctl --batch "\
-        keyword decoration:dim_inactive true;\
-        keyword decoration:dim_strength 0.08;\
-        keyword decoration:dim_around 0.4;\
-        keyword decoration:inactive_opacity 0.94;\
-        keyword decoration:blur:passes 3;\
-        keyword general:border_size 2;\
-        keyword animation borderangle,1,60,linear,loop" >/dev/null
+    hyprdo keyword decoration:dim_inactive true >/dev/null
+    hyprdo keyword decoration:dim_strength 0.08 >/dev/null
+    hyprdo keyword decoration:dim_around 0.4 >/dev/null
+    hyprdo keyword decoration:inactive_opacity 0.94 >/dev/null
+    hyprdo keyword decoration:blur:passes 3 >/dev/null
+    hyprdo keyword general:border_size 2 >/dev/null
+    hyprdo keyword animation borderangle,1,60,linear,loop >/dev/null
 
     rm -f "$STATE"
     notify "Focus mode" "Off"
