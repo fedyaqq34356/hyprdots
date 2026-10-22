@@ -1328,29 +1328,35 @@ are a symlink and `hyprctl reload`: no logout, and nothing removed from the norm
 by being sourced last.
 
 Measured with PSS rather than RSS, because summing RSS counts every shared library once per
-process: a free session is **236 MB with a terminal open**, against roughly 1005 MB in the normal
-mode. Quickshell is the largest single line of the difference, but not the whole of it.
+process, and with scripts counted under their own names rather than hidden behind `bash`: the
+session is **259 MB on the defaults**, measured with a browser in a video call holding audio
+streams open, against roughly 1005 MB in the normal mode and 302 MB for the same mode before X11
+went on demand. Hyprland itself is 147 MB of that, and the NVIDIA driver is a fixed share of it.
 
-That 236 MB is the mode with `XWAYLAND_IDLE=yes` and no X11 client on screen, which is what the
-screenshot above shows. On the defaults, where Xwayland is left alone, the same session is 302 MB.
-
-The mode used to sit at 532 MB, and four processes held nearly all of what came off:
+The mode used to sit at 532 MB, and these processes held nearly all of what came off:
 
 | | normal mode | black mode | |
 | --- | --- | --- | --- |
 | terminal | kitty, 210 MB | **foot**, 8 MB | a Python runtime and an OpenGL renderer against C and `wl_shm` |
 | files | Thunar, 60 MB | **nnn**, 1 MB | and `tumbler` leaves with it — the thumbnailer read every file in a directory |
 | automount | udiskie, 36 MB | **serezha-automount**, 3 MB | `udevadm` and `udisksctl` instead of PyGObject and GTK |
-| X11 | Xwayland, 66 MB | Xwayland, 66 MB | `XWAYLAND_IDLE` can drop it, but defaults to `no` — see below |
+| X11 | Xwayland, 66 MB | **serezha-xlazy**, 0.1 MB | Xwayland starts on the first X11 client — see below |
+| bar | waybar, 31 MB | **maybar**, 8 MB | a maintained yambar fork drawing through `wl_shm`, no GTK3 |
+| file dialog | portal-gtk, 24 MB | **on demand**, 0 MB | D-Bus brings the backend back on the next dialog |
 
 Thunar leaves for colour as much as for weight: the swapped GTK theme never reaches its sidebar or
 its path bar, so it stays grey in a black session. `mimeapps.list` is swapped alongside the themes,
 so `xdg-open` follows and a double-clicked folder opens `nnn` rather than bringing Thunar back.
 
-Xwayland stays because killing it is a one-way trade on Hyprland 0.56.1: the compositor does not
-bring it back — not lazily on the first X11 client, not on `hyprctl reload` — and the client simply
-hangs on `:0`. `XWAYLAND_IDLE=yes` is there for a day when X11 is not needed, and it only fires when
-no window reports `xwayland: 1`.
+Killing Xwayland is a one-way trade on Hyprland 0.56: the compositor does not bring it back — not
+on the first X11 client, not on `hyprctl reload`, not on `xwayland:enabled true`. So the mode takes
+X11 away from Hyprland for the rest of the session instead. A small C program,
+`serezha-xlazy`, holds the sockets of a free display and sleeps in `poll()`; the first X11 client
+wakes it, it `exec`s into `xwayland-satellite` with those sockets, and Xwayland is up a tenth of a
+second later. Steam and Wine keep working. On every entry, exit and `serezha-mode reap`, a
+satellite with no clients left folds back into the 0.1 MB watcher, so Xwayland only lives while an
+X11 window does — in the normal mode too, once the black one has been entered. With X11 windows
+already open on the first entry, Xwayland is left alone.
 
 Battery is a separate axis and does not come out of the display. `serezha-power` runs from
 `/usr/local/bin` under one passwordless sudo rule for that single path: governor and EPP, the HDA

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -u
+
+SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/hypr/${HYPRLAND_INSTANCE_SIGNATURE:-}/.socket2.sock"
+[[ -S "$SOCK" ]] || exit 1
+
+declare -a WS
+title=""
+
+load_ws() {
+    local active ids i
+    active=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id')
+    ids=" $(hyprctl workspaces -j 2>/dev/null | jq -r '.[].id' | tr '\n' ' ') "
+    for i in 1 2 3 4 5 6 7 8 9; do
+        if [[ "$i" == "$active" ]]; then WS[i]=a
+        elif [[ "$ids" == *" $i "* ]]; then WS[i]=o
+        else WS[i]=""
+        fi
+    done
+}
+
+emit() {
+    local i
+    for i in 1 2 3 4 5 6 7 8 9; do
+        printf 'w%d|string|%s\n' "$i" "${WS[i]}"
+    done
+    printf 'title|string|%s\n\n' "$title"
+}
+
+title=$(hyprctl activewindow -j 2>/dev/null | jq -r '.title // ""')
+load_ws
+emit
+
+if command -v socat >/dev/null 2>&1; then
+    exec 3< <(exec socat -u "UNIX-CONNECT:$SOCK" -)
+else
+    exec 3< <(exec nc -U "$SOCK")
+fi
+reader=$!
+trap 'kill "$reader" 2>/dev/null' EXIT
+trap 'exit 0' TERM INT PIPE
+
+while IFS= read -r -u 3 line; do
+    case "$line" in
+        "activewindow>>"*)
+            line="${line#activewindow>>}"
+            [[ "$line" == *,* ]] && title="${line#*,}" || title=""
+            title="${title//$'\n'/ }"
+            emit
+            ;;
+        workspace\>\>*|createworkspace\>\>*|destroyworkspace\>\>*|\
+        focusedmon\>\>*|moveworkspace\>\>*|renameworkspace\>\>*)
+            load_ws
+            emit
+            ;;
+    esac
+done

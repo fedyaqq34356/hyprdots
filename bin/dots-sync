@@ -59,6 +59,7 @@ MANIFEST = [
     (".local/bin/serezha-power", "bin/serezha-power"),
     (".local/bin/serezha-automount", "bin/serezha-automount"),
     (".local/bin/serezha-shot", "bin/serezha-shot"),
+    (".local/bin/serezha-bar-hypr", "bin/serezha-bar-hypr"),
     (".local/share/applications/serezha-files.desktop",
      "config/serezha/applications/serezha-files.desktop"),
 ]
@@ -112,7 +113,7 @@ SKIP_EXACT = {
 # Comments are removed from these; everything else is copied byte for byte.
 # .jsonc — это json, в который waybar разрешает писать // комментарии, и по
 # части комментариев он ведёт себя как C, а не как конфиг с решётками.
-CLIKE = {".qml", ".js", ".jsonc", ".css", ".rasi", ".qss"}
+CLIKE = {".qml", ".js", ".jsonc", ".css", ".rasi", ".qss", ".c"}
 HASHLIKE = {".conf", ".sh", ".py", ".toml", ".ini", ".yaml", ".yml", ".inc",
             ".profile", ".local"}
 

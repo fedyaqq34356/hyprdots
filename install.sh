@@ -86,12 +86,12 @@ PACMAN_PKGS=(
     brightnessctl playerctl pipewire pipewire-pulse wireplumber upower bluez bluez-utils
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
     git pciutils mesa vulkan-icd-loader
-    waybar fuzzel mako networkmanager foot nnn udisks2
+    waybar fuzzel mako networkmanager foot nnn udisks2 xwayland-satellite socat
     qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     zsh zsh-autosuggestions zsh-syntax-highlighting
 )
-AUR_PKGS=(quickshell matugen-bin wlogout wf-recorder wl-clip-persist)
+AUR_PKGS=(quickshell matugen-bin wlogout wf-recorder wl-clip-persist maybar-git)
 
 confirm() {
     ((ASSUME_YES)) && return 0
