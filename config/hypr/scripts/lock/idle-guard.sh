@@ -56,7 +56,7 @@ case "$ACTION" in
         pidof hyprlock >/dev/null || "$CONF/scripts/lock.sh"
         ;;
     dpms-off)
-        hyprctl dispatch dpms off
+        hyprdo dispatch dpms off
         ;;
     *)
         echo "usage: idle-guard.sh [lock|dpms-off]" >&2

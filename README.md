@@ -775,8 +775,10 @@ configuration to `~/.config/dotfiles-backup-<timestamp>` before writing anything
 
 | Path | What is there |
 | --- | --- |
-| `config/hypr/hyprland.conf` | entry point; sources everything in `config/hypr/config/` |
-| `config/hypr/config/` | one file per topic: `env`, `monitors`, `startup`, `binds`, `rules`, `animations`, `shape`, modes |
+| `config/hypr/hyprland.lua` | entry point on Hyprland 0.55+; loads `config/hypr/cfg/` — window motion runs on real springs |
+| `config/hypr/cfg/` | the Lua config: `animations`, `binds`, `rules`, `look`, `startup`, `env`, the black mode |
+| `config/hypr/hyprland.conf` | hyprlang entry point, used on Hyprland older than 0.55; the installer picks one |
+| `config/hypr/config/` | hyprlang files, one per topic; the Lua config reads `env`, `monitors`, `colors`, `shape` and the mode link from here too |
 | `config/hypr/scripts/audio/` | volume, the microphone level lock, WirePlumber start |
 | `config/hypr/scripts/capture/` | screenshots, screen recording, image upscaling |
 | `config/hypr/scripts/clipboard/` | history store, guard, wipe, island preview |
@@ -1999,8 +2001,10 @@ cd hyprdots
 
 | Путь | Что там |
 | --- | --- |
-| `config/hypr/hyprland.conf` | точка входа, подключает всё из `config/hypr/config/` |
-| `config/hypr/config/` | по файлу на тему: `env`, `monitors`, `startup`, `binds`, `rules`, `animations`, `shape`, режимы |
+| `config/hypr/hyprland.lua` | точка входа на Hyprland 0.55+; грузит `config/hypr/cfg/` — окна двигаются на настоящих пружинах |
+| `config/hypr/cfg/` | Lua-конфиг: `animations`, `binds`, `rules`, `look`, `startup`, `env`, чёрный режим |
+| `config/hypr/hyprland.conf` | точка входа hyprlang для Hyprland старше 0.55; установщик выбирает сам |
+| `config/hypr/config/` | файлы hyprlang по теме на файл; Lua-конфиг тоже читает отсюда `env`, `monitors`, `colors`, `shape` и ссылку режима |
 | `config/hypr/scripts/audio/` | громкость, удержание уровня микрофона, запуск WirePlumber |
 | `config/hypr/scripts/capture/` | скриншоты, запись экрана, апскейл картинок |
 | `config/hypr/scripts/clipboard/` | история, сторож, очистка, превью на острове |

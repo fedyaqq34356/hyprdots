@@ -170,7 +170,7 @@ Scope {
                         tint: Colors.accentAlt
                         onActivated: {
                             root.close();
-                            Hyprland.dispatch("global quickshell:guide");
+                            Quickshell.execDetached(["hyprdo", "dispatch", "global", "quickshell:guide"]);
                         }
                     }
 
