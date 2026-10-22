@@ -1,5 +1,5 @@
 #!/bin/sh
-types=$(wl-paste --list-types 2>/dev/null)
+types=$(timeout 2 wl-paste --list-types 2>/dev/null)
 [ -n "$types" ] || exit 0
 
 if printf '%s\n' "$types" | grep -qi 'x-kde-passwordManagerHint'; then
@@ -14,7 +14,7 @@ img=$(printf '%s\n' "$types" | grep -m1 '^image/')
 if [ -n "$img" ]; then
     ext=${img#image/}
     tmp="$dir/.incoming"
-    wl-paste --type "$img" > "$tmp" 2>/dev/null
+    timeout 3 wl-paste --type "$img" > "$tmp" 2>/dev/null || { rm -f "$tmp"; exit 0; }
     [ -s "$tmp" ] || exit 0
     sig=$(sha1sum < "$tmp" | cut -c1-12)
     out="$dir/$sig.$ext"
@@ -29,7 +29,7 @@ if [ -n "$img" ]; then
 fi
 
 if printf '%s\n' "$types" | grep -q '^text/uri-list'; then
-    list=$(wl-paste --type text/uri-list 2>/dev/null | tr -d '\r' | grep -v '^#')
+    list=$(timeout 2 wl-paste --type text/uri-list 2>/dev/null | tr -d '\r' | grep -v '^#')
     n=$(printf '%s\n' "$list" | grep -c .)
     first=$(printf '%s\n' "$list" | head -n1)
     first=$(basename "$(printf '%s' "$first" | sed 's|^file://||')")
@@ -38,7 +38,7 @@ if printf '%s\n' "$types" | grep -q '^text/uri-list'; then
     exit 0
 fi
 
-data=$(wl-paste --no-newline --type text 2>/dev/null | head -c 8000)
+data=$(timeout 2 wl-paste --no-newline --type text 2>/dev/null | head -c 8000)
 [ -n "$data" ] || exit 0
 sig=$(printf '%s' "$data" | sha1sum | cut -c1-12)
 
