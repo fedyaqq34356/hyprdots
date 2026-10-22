@@ -22,7 +22,11 @@ log() { printf '%s\t%s\n' "$(date '+%F %T')" "$*" >> "$LOG"; }
 
 if [[ "${1:-}" == "--entry" ]]; then
     types="${2:-}"
-    data=$(wl-paste --no-newline 2>/dev/null)
+    case ",$types," in
+        *,text/plain*|*,UTF8_STRING,*|*,STRING,*|*,TEXT,*)
+            data=$(timeout 2 wl-paste --no-newline --type text 2>/dev/null | head -c 65536) ;;
+        *) data="" ;;
+    esac
     len=${#data}
 
     mark="$HOME/.local/state/clipboard-guard.last"
@@ -45,7 +49,7 @@ if [[ "${1:-}" == "--entry" ]]; then
             "Looks like a secret — clearing in ${SECRET_TTL}s" 2>/dev/null
         (
             sleep "$SECRET_TTL"
-            current=$(wl-paste --no-newline 2>/dev/null)
+            current=$(timeout 2 wl-paste --no-newline --type text 2>/dev/null)
             if [[ "$current" == "$data" ]]; then
                 wl-copy --clear
                 log "cleared on a timer"
