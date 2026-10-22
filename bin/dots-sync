@@ -61,6 +61,7 @@ MANIFEST = [
     (".local/bin/serezha-automount", "bin/serezha-automount"),
     (".local/bin/serezha-shot", "bin/serezha-shot"),
     (".local/bin/serezha-bar-hypr", "bin/serezha-bar-hypr"),
+    (".local/bin/hyprdo", "bin/hyprdo"),
     (".local/share/applications/serezha-files.desktop",
      "config/serezha/applications/serezha-files.desktop"),
 ]
@@ -117,6 +118,7 @@ SKIP_EXACT = {
 CLIKE = {".qml", ".js", ".jsonc", ".css", ".rasi", ".qss", ".c"}
 HASHLIKE = {".conf", ".sh", ".py", ".toml", ".ini", ".yaml", ".yml", ".inc",
             ".profile", ".local"}
+LUALIKE = {".lua"}
 
 
 def strip_clike(text: str) -> str:
@@ -231,6 +233,12 @@ def strip_hash(text: str) -> str:
     return "\n".join(lines)
 
 
+def strip_lua(text: str) -> str:
+    """Drop whole-line -- comments, the same way strip_hash does for #."""
+    return "\n".join(" " if line.lstrip().startswith("--") else line
+                     for line in text.split("\n"))
+
+
 def tidy(text: str, original: str) -> str:
     """Drop the lines a comment used to occupy, tidy what is left.
 
@@ -300,6 +308,8 @@ def clean(path: Path) -> bytes | None:
 
     if path.suffix in CLIKE:
         stripped = strip_clike(text)
+    elif path.suffix in LUALIKE:
+        stripped = strip_lua(text)
     elif path.suffix in HASHLIKE or not path.suffix:
         stripped = strip_hash(text)
     else:

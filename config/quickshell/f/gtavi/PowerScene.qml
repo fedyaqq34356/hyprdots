@@ -25,7 +25,7 @@ FocusScope {
         { key: "S", label: "SLEEP", sub: "TO RAM · WAKES INSTANTLY",
           run: ["loginctl", "suspend"], farewell: false },
         { key: "E", label: "LOG OUT", sub: "END THE HYPRLAND SESSION",
-          run: ["hyprctl", "dispatch", "exit"], farewell: true },
+          run: ["hyprdo", "dispatch", "exit"], farewell: true },
         { key: "R", label: "RESTART", sub: "EVERY PROGRAM WILL CLOSE",
           run: ["loginctl", "reboot"], farewell: true },
         { key: "P", label: "SHUT DOWN", sub: "EVERY PROGRAM WILL CLOSE",

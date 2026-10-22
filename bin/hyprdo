@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+set -u
+
+is_lua() {
+    local out
+    out=$(hyprctl eval 'return 1' 2>/dev/null)
+    [[ "$out" == ok || "$out" == 1 ]]
+}
+
+q() {
+    local s=${1//\\/\\\\}
+    s=${s//\"/\\\"}
+    printf '"%s"' "$s"
+}
+
+lua_value() {
+    case "$1" in
+        true|false) printf '%s' "$1" ;;
+        *)
+            if [[ "$1" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+                printf '%s' "$1"
+            else
+                q "$1"
+            fi
+            ;;
+    esac
+}
+
+lua_dispatch() {
+    local d=$1
+    shift
+    case "$d" in
+        exit) echo 'hl.dsp.exit()' ;;
+        dpms)
+            local action
+            case "${1:-toggle}" in
+                on) action=enable ;;
+                off) action=disable ;;
+                *) action=toggle ;;
+            esac
+            if [[ -n "${2:-}" ]]; then
+                echo "hl.dsp.dpms({ action = \"$action\", monitor = $(q "$2") })"
+            else
+                echo "hl.dsp.dpms({ action = \"$action\" })"
+            fi
+            ;;
+        global) echo "hl.dsp.global($(q "$*"))" ;;
+        focuswindow) echo "hl.dsp.focus({ window = $(q "$*") })" ;;
+        workspace) echo "hl.dsp.focus({ workspace = $(lua_value "$*") })" ;;
+        *)
+            echo "hyprdo: no Lua translation for dispatcher '$d'" >&2
+            return 1
+            ;;
+    esac
+}
+
+lua_keyword() {
+    local key=$1 value=${2:-}
+    case "$key" in
+        monitor)
+            local IFS=,
+            local -a f
+            read -ra f <<<"$value"
+            if [[ "${f[1]:-}" == disable ]]; then
+                echo "hl.monitor({ output = $(q "${f[0]}"), disabled = true })"
+            else
+                echo "hl.monitor({ output = $(q "${f[0]}"), mode = $(q "${f[1]:-preferred}"), position = $(q "${f[2]:-auto}"), scale = $(lua_value "${f[3]:-1}") })"
+            fi
+            ;;
+        env)
+            echo "hl.env($(q "${value%%,*}"), $(q "${value#*,}"))"
+            ;;
+        animation)
+            local IFS=,
+            local -a f
+            read -ra f <<<"${value// /}"
+            if [[ "${f[1]:-0}" == 0 ]]; then
+                echo "hl.animation({ leaf = $(q "${f[0]}"), enabled = false, speed = 1, bezier = \"linear\" })"
+            else
+                local style=""
+                [[ -n "${f[4]:-}" ]] && style=", style = $(q "${f[4]}")"
+                echo "hl.animation({ leaf = $(q "${f[0]}"), enabled = true, speed = ${f[2]}, bezier = $(q "${f[3]}")$style })"
+            fi
+            ;;
+        *)
+            local -a parts
+            IFS=: read -ra parts <<<"$key"
+            local open="" close="" i
+            for ((i = 0; i < ${#parts[@]} - 1; i++)); do
+                open+="${parts[i]} = { "
+                close+=" }"
+            done
+            echo "hl.config({ ${open}${parts[-1]} = $(lua_value "$value")${close} })"
+            ;;
+    esac
+}
+
+cmd=${1:-}
+shift || true
+
+if ! is_lua; then
+    case "$cmd" in
+        dispatch|keyword) exec hyprctl "$cmd" "$@" ;;
+        *) echo "usage: hyprdo dispatch|keyword ..." >&2; exit 2 ;;
+    esac
+fi
+
+case "$cmd" in
+    dispatch) code="hl.dispatch($(lua_dispatch "$@"))" || exit 1 ;;
+    keyword)  code=$(lua_keyword "$@") || exit 1 ;;
+    *) echo "usage: hyprdo dispatch|keyword ..." >&2; exit 2 ;;
+esac
+
+out=$(hyprctl eval "$code" 2>&1)
+[[ "$out" == ok || -z "$out" ]] || { echo "hyprdo: $out" >&2; exit 1; }

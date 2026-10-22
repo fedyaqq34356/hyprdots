@@ -16,47 +16,47 @@ bar:
               spacing: 0
               items:
                 - map:
-                    on-click: hyprctl dispatch workspace 1
+                    on-click: hyprdo dispatch workspace 1
                     conditions:
                       w1 == "a": {string: {text: " 1 ", foreground: ffffffff}}
                       w1 == "o": {string: {text: " 1 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 2
+                    on-click: hyprdo dispatch workspace 2
                     conditions:
                       w2 == "a": {string: {text: " 2 ", foreground: ffffffff}}
                       w2 == "o": {string: {text: " 2 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 3
+                    on-click: hyprdo dispatch workspace 3
                     conditions:
                       w3 == "a": {string: {text: " 3 ", foreground: ffffffff}}
                       w3 == "o": {string: {text: " 3 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 4
+                    on-click: hyprdo dispatch workspace 4
                     conditions:
                       w4 == "a": {string: {text: " 4 ", foreground: ffffffff}}
                       w4 == "o": {string: {text: " 4 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 5
+                    on-click: hyprdo dispatch workspace 5
                     conditions:
                       w5 == "a": {string: {text: " 5 ", foreground: ffffffff}}
                       w5 == "o": {string: {text: " 5 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 6
+                    on-click: hyprdo dispatch workspace 6
                     conditions:
                       w6 == "a": {string: {text: " 6 ", foreground: ffffffff}}
                       w6 == "o": {string: {text: " 6 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 7
+                    on-click: hyprdo dispatch workspace 7
                     conditions:
                       w7 == "a": {string: {text: " 7 ", foreground: ffffffff}}
                       w7 == "o": {string: {text: " 7 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 8
+                    on-click: hyprdo dispatch workspace 8
                     conditions:
                       w8 == "a": {string: {text: " 8 ", foreground: ffffffff}}
                       w8 == "o": {string: {text: " 8 ", foreground: 4a4a4aff}}
                 - map:
-                    on-click: hyprctl dispatch workspace 9
+                    on-click: hyprdo dispatch workspace 9
                     conditions:
                       w9 == "a": {string: {text: " 9 ", foreground: ffffffff}}
                       w9 == "o": {string: {text: " 9 ", foreground: 4a4a4aff}}

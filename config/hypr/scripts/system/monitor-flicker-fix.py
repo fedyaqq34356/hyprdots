@@ -33,11 +33,13 @@ PANEL = os.environ.get("FLICKER_PANEL", "eDP-1")
 DEBOUNCE = 1.5   # события подключения приходят пачкой
 DARK = 1.0       # сколько держать панель выключенной
 
+HYPRDO = os.path.expanduser("~/.local/bin/hyprdo")
 EVENTS = ("monitoradded", "monitoraddedv2", "monitorremoved", "monitorremovedv2")
 
 def hyprctl(*args):
+    exe = HYPRDO if args and args[0] in ("dispatch", "keyword") else "hyprctl"
     return subprocess.run(
-        ["hyprctl", *args], capture_output=True, text=True, timeout=5
+        [exe, *args], capture_output=True, text=True, timeout=5
     ).stdout
 
 def panel_present():
