@@ -43,6 +43,7 @@ MANIFEST = [
     (".config/qt5ct", "config/qt5ct"),
     (".config/qt6ct", "config/qt6ct"),
     (".config/pipewire", "config/pipewire"),
+    ("Projects/f-sddm", "extras/sddm"),
     (".config/cliphist", "config/cliphist"),
     (".local/bin/shell-autostart", "bin/shell-autostart"),
     (".local/bin/shell-watchdog", "bin/shell-watchdog"),
