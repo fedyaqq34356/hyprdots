@@ -1,0 +1,111 @@
+bar:
+  height: @HEIGHT@
+  location: @LOCATION@
+  layer: top
+  background: 000000ff
+  foreground: b0b0b0ff
+  font: JetBrainsMono Nerd Font:pixelsize=12
+  spacing: 8
+  margin: 4
+
+  left:
+    - script:
+        path: ~/.local/bin/serezha-bar-hypr
+        content:
+          - list:
+              spacing: 0
+              items:
+                - map:
+                    on-click: hyprctl dispatch workspace 1
+                    conditions:
+                      w1 == "a": {string: {text: " 1 ", foreground: ffffffff}}
+                      w1 == "o": {string: {text: " 1 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 2
+                    conditions:
+                      w2 == "a": {string: {text: " 2 ", foreground: ffffffff}}
+                      w2 == "o": {string: {text: " 2 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 3
+                    conditions:
+                      w3 == "a": {string: {text: " 3 ", foreground: ffffffff}}
+                      w3 == "o": {string: {text: " 3 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 4
+                    conditions:
+                      w4 == "a": {string: {text: " 4 ", foreground: ffffffff}}
+                      w4 == "o": {string: {text: " 4 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 5
+                    conditions:
+                      w5 == "a": {string: {text: " 5 ", foreground: ffffffff}}
+                      w5 == "o": {string: {text: " 5 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 6
+                    conditions:
+                      w6 == "a": {string: {text: " 6 ", foreground: ffffffff}}
+                      w6 == "o": {string: {text: " 6 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 7
+                    conditions:
+                      w7 == "a": {string: {text: " 7 ", foreground: ffffffff}}
+                      w7 == "o": {string: {text: " 7 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 8
+                    conditions:
+                      w8 == "a": {string: {text: " 8 ", foreground: ffffffff}}
+                      w8 == "o": {string: {text: " 8 ", foreground: 4a4a4aff}}
+                - map:
+                    on-click: hyprctl dispatch workspace 9
+                    conditions:
+                      w9 == "a": {string: {text: " 9 ", foreground: ffffffff}}
+                      w9 == "o": {string: {text: " 9 ", foreground: 4a4a4aff}}
+          - string: {text: "  {title}", foreground: ffffffff, max: 90}
+
+  right:
+    - pipewire:
+        content:
+          map:
+            conditions:
+              type == "sink" && muted:
+                string: {text: "vol --", on-click: wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle}
+              type == "sink" && ~muted:
+                string:
+                  text: "vol {linear_volume}"
+                  on-click:
+                    left: wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+                    right: ~/.local/bin/serezha-menu audio
+
+    - network:
+        poll-interval: 60000
+        content:
+          map:
+            conditions:
+              name == "lo": {empty: {}}
+              type == "wlan" && state == "up" && ssid != "":
+                string: {text: "{ssid}", max: 18, on-click: ~/.local/bin/serezha-menu net}
+              type == "ether" && state == "up" && carrier:
+                string: {text: "eth", on-click: ~/.local/bin/serezha-menu net}
+
+    - battery:
+        name: @BATTERY@
+        poll-interval: 60000
+        content:
+          map:
+            conditions:
+              state == "charging":
+                string: {text: "bat {capacity}+"}
+              state == "full" || state == "not charging":
+                string: {text: "bat {capacity}="}
+              capacity <= 10:
+                string: {text: "bat {capacity}", foreground: ff5555ff}
+              capacity <= 20:
+                string: {text: "bat {capacity}", foreground: ffffffff}
+            default:
+              string: {text: "bat {capacity}"}
+
+    - clock:
+        time-format: "%H:%M"
+        date-format: "%a %d.%m"
+        content:
+          string: {text: "{date}  {time} ", foreground: ffffffff}

@@ -106,5 +106,6 @@ main_menu() {
 
 case "${1-}" in
     audio) audio_menu ;;
+    net)   term nmtui ;;
     *)     main_menu ;;
 esac
