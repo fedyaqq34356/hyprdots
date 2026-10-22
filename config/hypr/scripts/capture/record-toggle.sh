@@ -51,7 +51,7 @@ done
 mkdir -p "$OUTDIR"
 FILE="$OUTDIR/recording-$(date +%Y-%m-%d_%H-%M-%S).mp4"
 
-ARGS=(-f "$FILE" -c libx264 -p preset=veryfast -p crf=22 --pixel-format yuv420p)
+ARGS=(-f "$FILE" -r 60 -c libx264 -p preset=ultrafast -p crf=22 --pixel-format yuv420p)
 
 MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
 MONITOR="${MONITOR:-eDP-1}"
@@ -73,7 +73,7 @@ case "$AUDIO" in
        [ -n "$SOURCE" ] && ARGS+=(--audio="$SOURCE") || AUDIO=0 ;;
 esac
 
-wf-recorder "${ARGS[@]}" >/dev/null 2>&1 &
+nice -n 15 wf-recorder "${ARGS[@]}" >/dev/null 2>&1 &
 sleep 0.6
 
 if ! pgrep -x wf-recorder >/dev/null; then
