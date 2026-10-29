@@ -116,6 +116,10 @@ hl.config({
     xwayland = {
         enabled = true,
     },
+
+    render = {
+        direct_scanout = 2,
+    },
 })
 
 hl.device({

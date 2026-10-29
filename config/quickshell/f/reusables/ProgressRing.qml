@@ -16,6 +16,7 @@ Item {
     onValueChanged: shown = Math.max(0, Math.min(1, value))
 
     Behavior on shown {
+        enabled: ring.visible
         NumberAnimation {
             duration: ring.animationDuration
             easing.type: Easing.OutCubic
@@ -27,6 +28,10 @@ Item {
     property real paintedAt: -1
 
     function maybePaint() {
+        if (!ring.visible) {
+            ring.paintedAt = -1;
+            return;
+        }
         const span = Math.PI * Math.max(width, height);
         if (ring.paintedAt >= 0
             && Math.abs(ring.shown - ring.paintedAt) * span < 0.5)
@@ -35,7 +40,11 @@ Item {
         canvas.requestPaint();
     }
 
-    onColorChanged: canvas.requestPaint()
+    onColorChanged: {
+        ring.paintedAt = -1;
+        ring.maybePaint();
+    }
+    onVisibleChanged: ring.maybePaint()
 
     Canvas {
         id: canvas
