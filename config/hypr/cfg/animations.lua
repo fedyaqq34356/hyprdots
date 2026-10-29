@@ -36,7 +36,7 @@ anim("windowsOut",  5.6, "closeSoft", "popin 93%")
 anim("windowsMove", 4.7, "isle")
 
 anim("border", 9, "glide")
-anim("borderangle", 60, "linear", "loop")
+anim("borderangle", 60, "linear")
 
 anim("fadeIn",     4,   "md3_decel")
 anim("fadeOut",    5.0, "closeSoft")

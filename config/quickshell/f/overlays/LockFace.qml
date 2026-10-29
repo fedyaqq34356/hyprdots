@@ -13,7 +13,8 @@ Item {
 
     property real ms: Date.now()
     FrameAnimation {
-        running: face.live && face.visible
+        running: face.live && face.visible && !Idle.screenOff
+        onRunningChanged: if (running) face.ms = Date.now()
         onTriggered: face.ms = Date.now()
     }
     readonly property real ph: (face.ms % 48000) / 48000 * Math.PI * 2

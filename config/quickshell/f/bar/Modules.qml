@@ -410,6 +410,7 @@ Item {
                             required property int index
 
                             readonly property real level: {
+                                if (!spectrum.holding) return 0;
                                 const v = Cava.smooth[index];
                                 if (v === undefined) return 0;
                                 return Math.min(1, v * 1.7);

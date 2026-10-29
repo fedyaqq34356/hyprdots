@@ -10,8 +10,28 @@ TAB=$'\t'
 
 notify() { bash "$NOTIFY" "$@" >/dev/null 2>&1; }
 
+FIFO="${XDG_RUNTIME_DIR:-/tmp}/recording.fifo"
+ENCODER_PID="${XDG_RUNTIME_DIR:-/tmp}/recording.encoder"
+FFMPEG=/usr/bin/ffmpeg
+GPU_FILTER="libplacebo=format=nv12:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=pc:dithering=-1:disable_linear=1:peak_detect=0"
+
+encoder_alive() {
+    local pid
+    pid=$(cat "$ENCODER_PID" 2>/dev/null) || return 1
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+encoder_wait() {
+    for _ in $(seq 1 50); do
+        encoder_alive || break
+        sleep 0.2
+    done
+    rm -f "$FIFO" "$ENCODER_PID"
+}
+
 if [ -f "$STATE" ] && ! pgrep -x wf-recorder >/dev/null; then
     rm -f "$STATE"
+    encoder_wait
     case "${1:-}" in
         screen|region) : ;;
         *) notify "Recording" "Stopped unexpectedly" -t 3000 -a record -r 9993
@@ -27,6 +47,7 @@ if pgrep -x wf-recorder >/dev/null; then
         pgrep -x wf-recorder >/dev/null || break
         sleep 0.2
     done
+    encoder_wait
     if [ -n "${FILE:-}" ] && [ -s "$FILE" ]; then
         printf '%s' "$FILE" | wl-copy
         SIZE=$(du -h "$FILE" | cut -f1)
@@ -51,7 +72,9 @@ done
 mkdir -p "$OUTDIR"
 FILE="$OUTDIR/recording-$(date +%Y-%m-%d_%H-%M-%S).mp4"
 
-ARGS=(-f "$FILE" -r 60 -c libx264 -p preset=ultrafast -p crf=22 --pixel-format yuv420p)
+ARGS=(-r 60)
+CPU_ARGS=(-f "$FILE" -c libx264 -p preset=ultrafast -p crf=22 --pixel-format yuv420p)
+GPU_ARGS=(-f "$FIFO" -c rawvideo --pixel-format bgr0 -m nut -C aac)
 
 MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
 MONITOR="${MONITOR:-eDP-1}"
@@ -73,8 +96,33 @@ case "$AUDIO" in
        [ -n "$SOURCE" ] && ARGS+=(--audio="$SOURCE") || AUDIO=0 ;;
 esac
 
-nice -n 15 wf-recorder "${ARGS[@]}" >/dev/null 2>&1 &
-sleep 0.6
+start_gpu() {
+    "$FFMPEG" -hide_banner -encoders 2>/dev/null | grep h264_vulkan >/dev/null || return 1
+    rm -f "$FIFO"
+    mkfifo "$FIFO" || return 1
+    nice -n 15 "$FFMPEG" -nostdin -v error -y \
+        -init_hw_device vulkan=vk -filter_hw_device vk \
+        -thread_queue_size 64 -f nut -i "$FIFO" \
+        -vf "crop=trunc(iw/2)*2:trunc(ih/2)*2:0:0,$GPU_FILTER" \
+        -c:v h264_vulkan -qp 13 -c:a copy "$FILE" >/dev/null 2>&1 &
+    echo $! > "$ENCODER_PID"
+    nice -n 15 wf-recorder "${ARGS[@]}" "${GPU_ARGS[@]}" >/dev/null 2>&1 &
+    sleep 0.6
+    if encoder_alive && pgrep -x wf-recorder >/dev/null; then
+        return 0
+    fi
+    pkill -x wf-recorder
+    sleep 0.2
+    pkill -KILL -x wf-recorder
+    kill "$(cat "$ENCODER_PID" 2>/dev/null)" 2>/dev/null
+    rm -f "$FIFO" "$ENCODER_PID" "$FILE"
+    return 1
+}
+
+if ! start_gpu; then
+    nice -n 15 wf-recorder "${ARGS[@]}" "${CPU_ARGS[@]}" >/dev/null 2>&1 &
+    sleep 0.6
+fi
 
 if ! pgrep -x wf-recorder >/dev/null; then
     notify "Recording" "Could not start wf-recorder" -u critical -t 4000 -a record
