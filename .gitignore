@@ -31,3 +31,4 @@ config/rofi/powermenu/
 config/rofi/scripts/
 config/rofi/images/
 *-WIP.md
+config/hypr/config/gpu.conf

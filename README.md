@@ -1536,7 +1536,7 @@ palette from `~/.cache/matugen/colors.json` at runtime.
 
 Arch or Artix Linux with an AUR helper (the installer builds `yay` if none is present).
 
-**Repositories:** hyprland · hyprlock · hyprpaper · hyprpolkitagent · xdg-desktop-portal-hyprland ·
+**Repositories:** hyprland · hyprlock · awww · hyprpolkitagent · xdg-desktop-portal-hyprland ·
 kitty · rofi-wayland · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
 bat · ripgrep · lazygit · thunar · brightnessctl · playerctl · pipewire · wireplumber · cliphist ·
 wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt5ct · qt6ct · kvantum ·
@@ -2739,7 +2739,7 @@ IDEAS.md         список того, что можно сделать дал�
 
 Arch или Artix Linux, помощник AUR (если его нет, установщик соберёт `yay`).
 
-**Репозитории:** hyprland · hyprlock · hyprpaper · hyprpolkitagent · xdg-desktop-portal-hyprland ·
+**Репозитории:** hyprland · hyprlock · awww · hyprpolkitagent · xdg-desktop-portal-hyprland ·
 kitty · rofi-wayland · cava · fastfetch · yazi · starship · zoxide · fzf · eza ·
 bat · ripgrep · lazygit · thunar · brightnessctl · playerctl · pipewire · wireplumber · cliphist ·
 wl-clipboard · grim · slurp · satty · hyprpicker · ffmpeg · imagemagick · qt5ct · qt6ct · kvantum ·

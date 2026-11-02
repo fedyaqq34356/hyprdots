@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+description="Compressed swap in RAM"
+
+depend() {
+    need localmount
+    after bootmisc
+}
+
+start() {
+    ebegin "Starting zram swap"
+    modprobe zram 2>/dev/null
+    size=$(awk -v f="${ZRAM_FRACTION:-50}" '/^MemTotal/ { printf "%dK", $2 * f / 100 }' /proc/meminfo)
+    dev=$(zramctl --find --size "$size" --algorithm "${ZRAM_ALGO:-zstd}") || { eend 1; return 1; }
+    mkswap -q "$dev" >/dev/null && swapon -p "${ZRAM_PRIORITY:-100}" "$dev"
+    rc=$?
+    [ $rc -eq 0 ] && echo "$dev" > /run/zram-swap
+    eend $rc
+}
+
+stop() {
+    ebegin "Stopping zram swap"
+    dev=$(cat /run/zram-swap 2>/dev/null)
+    [ -n "$dev" ] && swapoff "$dev" 2>/dev/null && zramctl --reset "$dev"
+    rm -f /run/zram-swap
+    eend 0
+}

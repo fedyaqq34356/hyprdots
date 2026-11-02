@@ -1,0 +1,30 @@
+#!/sbin/openrc-run
+
+description="Canon Printer Daemon for CUPS"
+
+depend() {
+    need cupsd
+}
+
+start() {
+    ebegin "Starting Canon CAPT daemon"
+    start-stop-daemon --start --quiet --oknodo --exec /usr/sbin/ccpd
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping Canon CAPT daemon"
+    start-stop-daemon --stop --quiet --oknodo --exec /usr/sbin/ccpd
+    eend $?
+}
+
+status() {
+    local pids
+    pids="$(pidof ccpd)"
+    if [ -n "$pids" ]; then
+        echo "ccpd: $pids"
+        return 0
+    fi
+    echo "ccpd is not running"
+    return 3
+}
