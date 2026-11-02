@@ -1,5 +1,6 @@
 import QtQuick
 import "root:/design"
+import "root:/services"
 
 Item {
     id: root
@@ -90,6 +91,7 @@ Item {
         id: scroll
         running: root.overflows && root.visible && root.running
         loops: Animation.Infinite
+        paused: running && Stage.gaming
         onStopped: root.offset = 0
 
         PauseAnimation { duration: root.hold }

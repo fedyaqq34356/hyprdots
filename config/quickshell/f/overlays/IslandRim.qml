@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes as Vec
 import "root:/design"
+import "root:/services"
 
 Item {
     id: rim
@@ -141,6 +142,7 @@ Item {
                 NumberAnimation on runner {
                     running: rim.busy && draw.active
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     from: 0
                     to: rim.perim
                     duration: 1700
@@ -203,6 +205,7 @@ Item {
                 NumberAnimation on spin {
                     running: glowBox.visible
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     from: 360
                     to: 0
                     duration: rim.shimmerMs

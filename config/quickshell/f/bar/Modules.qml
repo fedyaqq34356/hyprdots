@@ -637,7 +637,10 @@ Item {
             anchors.verticalCenter: parent ? parent.verticalCenter : undefined
 
             Tip {
-                text: Network.connected
+                text: Network.wired
+                    ? (Network.wiredName !== "" ? Network.wiredName : I18n.t("isle.net.cable"))
+                      + I18n.t("bar.clickNet")
+                    : Network.connected
                     ? Network.ssid + I18n.t("net.signalDot") + Network.strength + "%"
                       + I18n.t("bar.clickNet")
                     : I18n.t("bar.noConnection")
@@ -645,8 +648,8 @@ Item {
 
             Text {
                 text: Network.glyph
-                color: Network.connected ? Colors.fgDim : Colors.bad
-                opacity: Network.connected ? 0.75 : 1.0
+                color: Network.online ? Colors.fgDim : Colors.bad
+                opacity: Network.online ? 0.75 : 1.0
                 font.family: kit.mono
                 font.pixelSize: kit.glyphSize
                 anchors.verticalCenter: parent.verticalCenter
@@ -737,6 +740,7 @@ Item {
                 SequentialAnimation on opacity {
                     running: Vpn.up && Vpn.checking
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     NumberAnimation { to: 0.55; duration: 700; easing.type: Easing.OutCubic }
                     NumberAnimation { to: 0.05; duration: 700; easing.type: Easing.InCubic }
                 }

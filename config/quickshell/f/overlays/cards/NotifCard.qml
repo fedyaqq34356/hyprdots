@@ -149,6 +149,7 @@ Item {
         SequentialAnimation on p {
             running: card.critical && card.visible
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             NumberAnimation { to: 0.85; duration: 900; easing.type: Easing.InOutSine }
             NumberAnimation { to: 0.25; duration: 1100; easing.type: Easing.InOutSine }
         }

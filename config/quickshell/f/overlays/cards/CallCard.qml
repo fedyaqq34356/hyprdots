@@ -50,6 +50,7 @@ Item {
                 SequentialAnimation {
                     running: cc.visible
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     PauseAnimation { duration: ring.index * 600 }
                     ParallelAnimation {
                         NumberAnimation { target: ring; property: "scale"; from: 1; to: 1.7; duration: 1800; easing.type: Easing.OutCubic }
@@ -67,6 +68,7 @@ Item {
             SequentialAnimation on scale {
                 running: cc.visible
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 NumberAnimation { from: 1; to: 1.06; duration: 600; easing.type: Easing.InOutSine }
                 NumberAnimation { from: 1.06; to: 1; duration: 600; easing.type: Easing.InOutSine }
             }
@@ -177,6 +179,7 @@ Item {
             SequentialAnimation on rotation {
                 running: cc.visible
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 PauseAnimation { duration: 900 }
                 NumberAnimation { to: -14; duration: 80; easing.type: Easing.OutQuad }
                 NumberAnimation { to: 12; duration: 110; easing.type: Easing.InOutQuad }

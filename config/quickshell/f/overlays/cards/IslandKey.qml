@@ -13,6 +13,8 @@ Item {
     property string glyph: ""
     property int size: 22
     property color ink: Colors.fg
+    property bool playPause: false
+    property bool playing: false
     signal activated()
 
     width: key.size + 18
@@ -32,8 +34,19 @@ Item {
         Behavior on scale { Spring {} }
     }
 
+    PlayGlyph {
+        anchors.centerIn: parent
+        visible: key.playPause
+        playing: key.playing
+        size: Math.round(key.size * 0.78)
+        ink: key.ink
+        scale: keyTap.pressed ? 0.8 : 1
+        Behavior on scale { Spring {} }
+    }
+
     Text {
         anchors.centerIn: parent
+        visible: !key.playPause
         text: key.glyph
         color: key.ink
         font.family: Fonts.glyph

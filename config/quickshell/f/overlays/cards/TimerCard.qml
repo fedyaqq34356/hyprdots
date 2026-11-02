@@ -64,7 +64,8 @@ Item {
         spacing: 10
 
         RoundKey {
-            glyph: tc.d || (tc.t && tc.t.running) ? "󰏤" : "󰐊"
+            playPause: true
+            playing: !!(tc.d || (tc.t && tc.t.running))
             tint: tc.tint
             onActivated: if (tc.t) Timers.toggle(tc.t.id)
         }

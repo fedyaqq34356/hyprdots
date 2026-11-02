@@ -78,6 +78,7 @@ Rectangle {
         SequentialAnimation on opacity {
             running: field.focused
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             NumberAnimation { to: 0.15; duration: 480; easing.type: Easing.InOutQuad }
             NumberAnimation { to: 1; duration: 480; easing.type: Easing.InOutQuad }
         }

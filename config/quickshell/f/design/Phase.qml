@@ -2,6 +2,7 @@ pragma Singleton
 
 import Quickshell
 import QtQuick
+import "root:/services"
 
 Singleton {
     id: root
@@ -12,7 +13,7 @@ Singleton {
 
     property int holders: 0
 
-    readonly property bool live: root.holders > 0
+    readonly property bool live: root.holders > 0 && !Stage.gaming
 
     FrameAnimation {
         running: root.live
@@ -21,7 +22,7 @@ Singleton {
 
     property real ts: 0
     property int slowHolders: 0
-    readonly property bool slowLive: root.slowHolders > 0
+    readonly property bool slowLive: root.slowHolders > 0 && !Stage.gaming
 
     Timer {
         interval: 33

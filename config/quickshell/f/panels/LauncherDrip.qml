@@ -19,12 +19,16 @@ Item {
 
     readonly property int off: 0
 
-    readonly property bool typed: drip.l.calcMode || drip.l.runMode
+    readonly property bool typed: drip.l.calcMode || drip.l.convMode || drip.l.noteish || drip.l.runMode
                                   || IslandBus.query.trim() !== ""
-    readonly property var best: !drip.l.calcMode && !drip.l.runMode && drip.typed
+    readonly property var best: !drip.l.calcMode && !drip.l.convMode && !drip.l.noteish
+                               && !drip.l.runMode && drip.typed
                                ? (drip.l.results[0] || null) : null
-    readonly property string kind: drip.l.runMode ? "run" : drip.l.calcMode ? "calc"
-                                 : drip.best ? "app" : ""
+    readonly property string kind: drip.l.runMode ? "run" : drip.l.noteMode ? "note"
+                                 : drip.l.unnoteMode ? "unnote" : drip.l.convMode ? "conv"
+                                 : drip.l.calcMode ? "calc" : drip.best ? "app" : ""
+    property var conv: null
+    Binding on conv { value: drip.l.convData; when: drip.l.convData !== null; restoreMode: Binding.RestoreNone }
 
     readonly property bool want: drip.open && drip.kind !== "" && !drip.leaving
 
@@ -71,7 +75,8 @@ Item {
 
     readonly property real g: Math.max(0, life.value)
     readonly property real cardW: 440
-    readonly property real cardH: drip.kind === "app" ? 96 : 84
+    readonly property real cardH: drip.kind === "app" || drip.kind === "conv"
+                                  || drip.kind === "note" || drip.kind === "unnote" ? 96 : 84
     property real shownH: drip.cardH
     Behavior on shownH { NumberAnimation { duration: 560; easing.type: Easing.InOutCubic } }
 
@@ -240,7 +245,10 @@ Item {
         property var face: null
         property string faceKind: ""
         readonly property string wantKey: drip.kind === "app" && drip.best
-            ? "app:" + (drip.best.id || drip.best.name) : drip.kind
+            ? "app:" + (drip.best.id || drip.best.name)
+            : drip.kind === "conv" && drip.conv ? "conv:" + drip.conv.from + ">" + drip.conv.to
+            : drip.kind === "unnote" ? "unnote:" + (drip.l.noteHit ? drip.l.noteHit.id : 0)
+            : drip.kind
 
         onWantKeyChanged: {
             if (drip.kind === "")
@@ -265,7 +273,7 @@ Item {
                 script: {
                     card.face = drip.best;
                     card.faceKind = drip.kind;
-                    if (drip.kind === "app")
+                    if (drip.kind === "app" || drip.kind === "conv")
                         glossRun.restart();
                 }
             }
@@ -459,6 +467,327 @@ Item {
                 color: Qt.lighter(drip.glow, 1.2)
                 font.family: Fonts.glyph
                 font.pixelSize: 24
+            }
+
+            Item {
+                id: convFace
+                anchors.fill: parent
+                visible: card.faceKind === "conv" && drip.conv !== null
+
+                readonly property var d: drip.conv
+                readonly property bool money: convFace.d !== null && convFace.d.kind === "currency"
+
+                property real flow: 0
+                SequentialAnimation on flow {
+                    running: convFace.visible && convFace.money
+                    loops: Animation.Infinite
+                    onStopped: convFace.flow = 0
+                    PauseAnimation { duration: 1400 }
+                    NumberAnimation { to: 1; duration: 1100; easing.type: Easing.InOutCubic }
+                    PauseAnimation { duration: 2000 }
+                    NumberAnimation { to: 0; duration: 1100; easing.type: Easing.InOutCubic }
+                    PauseAnimation { duration: 600 }
+                }
+
+                Item {
+                    id: orb
+                    x: 18
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 60
+                    height: 60
+
+                    RectangularShadow {
+                        anchors.centerIn: parent
+                        width: 46
+                        height: 46
+                        radius: 23
+                        blur: 24
+                        color: Colors.alpha(drip.glow, 0.5 + 0.15 * Math.sin(card.t * 3) + 0.3 * card.kick)
+                    }
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 50
+                        height: 50
+                        radius: 25
+                        scale: face.iconIn
+                        color: Colors.alpha(drip.glow, 0.16)
+                        border.width: 1
+                        border.color: Colors.alpha(Qt.lighter(drip.glow, 1.4), 0.35)
+                    }
+
+                    Repeater {
+                        model: convFace.money ? 2 : 0
+
+                        Text {
+                            id: sym
+                            required property int index
+                            readonly property real w: sym.index === 0 ? 1 - convFace.flow : convFace.flow
+                            anchors.centerIn: parent
+                            anchors.verticalCenterOffset: (sym.index === 0 ? -1 : 1) * (1 - sym.w) * 9
+                                                          + Math.sin(card.t * 2) * 1.5
+                            text: convFace.d ? (sym.index === 0 ? convFace.d.fromSym : convFace.d.toSym) : ""
+                            color: "white"
+                            font.family: Fonts.display
+                            font.pixelSize: text.length > 1 ? 17 : 24
+                            font.weight: Font.DemiBold
+                            opacity: sym.w
+                            scale: 0.8 + 0.2 * sym.w
+                            layer.enabled: sym.w < 0.98
+                            layer.effect: MultiEffect {
+                                blurEnabled: true
+                                blur: 1 - sym.w
+                                blurMax: 16
+                            }
+                        }
+                    }
+
+                    Text {
+                        visible: !convFace.money
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: Math.sin(card.t * 2) * 1.5
+                        text: convFace.d ? convFace.d.glyph : ""
+                        color: "white"
+                        font.family: Fonts.glyph
+                        font.pixelSize: 24
+                        scale: face.iconIn
+                    }
+                }
+
+                Column {
+                    anchors.left: orb.right
+                    anchors.leftMargin: 14
+                    anchors.right: copyPill.left
+                    anchors.rightMargin: 14
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 1
+
+                    Text {
+                        width: parent.width
+                        text: convFace.d ? convFace.d.value + " " + convFace.d.from : ""
+                        color: Qt.rgba(1, 1, 1, 0.5)
+                        font.family: Fonts.display
+                        font.pixelSize: 13
+                        elide: Text.ElideRight
+                    }
+
+                    Row {
+                        spacing: 7
+
+                        RollText {
+                            id: convRoll
+                            text: convFace.d ? convFace.d.result : ""
+                            color: "white"
+                            family: Fonts.display
+                            pixelSize: 30
+                            weight: Font.DemiBold
+                            rollDuration: 360
+                            overshoot: 0
+                        }
+                        Text {
+                            anchors.bottom: convRoll.bottom
+                            anchors.bottomMargin: 9
+                            text: convFace.d ? convFace.d.to : ""
+                            color: Qt.lighter(drip.glow, 1.35)
+                            font.family: Fonts.display
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        visible: text !== ""
+                        text: convFace.d ? convFace.d.note : ""
+                        color: Qt.rgba(1, 1, 1, 0.36)
+                        font.family: Fonts.display
+                        font.pixelSize: 11
+                        elide: Text.ElideRight
+                    }
+                }
+
+                Rectangle {
+                    id: copyPill
+                    anchors.right: parent.right
+                    anchors.rightMargin: 20
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 23
+                    width: copyRow.implicitWidth + 20
+                    radius: 11.5
+                    color: Colors.alpha(drip.glow, 0.18)
+                    border.width: 1
+                    border.color: Colors.alpha(drip.glow, 0.32)
+
+                    Row {
+                        id: copyRow
+                        anchors.centerIn: parent
+                        spacing: 7
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "󰆏"
+                            color: Qt.lighter(drip.glow, 1.3)
+                            font.family: Fonts.glyph
+                            font.pixelSize: 12
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Copy"
+                            color: Qt.lighter(drip.glow, 1.3)
+                            font.family: Fonts.display
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                        }
+                    }
+                }
+            }
+
+            Item {
+                id: noteFace
+                anchors.fill: parent
+                visible: card.faceKind === "note" || card.faceKind === "unnote"
+
+                readonly property bool cross: card.faceKind === "unnote"
+                readonly property var hit: drip.l.noteHit
+                readonly property string body: noteFace.cross
+                    ? (noteFace.hit ? noteFace.hit.text : I18n.t("notes.none"))
+                    : (drip.l.noteText !== "" ? drip.l.noteText : I18n.t("notes.hint"))
+                readonly property bool live: noteFace.cross ? noteFace.hit !== null : drip.l.noteText !== ""
+
+                property real strike: 0
+                onVisibleChanged: noteFace.strike = 0
+                Connections {
+                    target: faceIn
+                    function onStarted() {
+                        noteFace.strike = 0;
+                        if (noteFace.cross && noteFace.hit)
+                            strikeRun.restart();
+                    }
+                }
+                SequentialAnimation {
+                    id: strikeRun
+                    PauseAnimation { duration: 260 }
+                    NumberAnimation { target: noteFace; property: "strike"; to: 1; duration: 620; easing.type: Easing.InOutCubic }
+                }
+
+                Item {
+                    id: noteOrb
+                    x: 18
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 60
+                    height: 60
+
+                    RectangularShadow {
+                        anchors.centerIn: parent
+                        width: 46
+                        height: 46
+                        radius: 23
+                        blur: 24
+                        color: Colors.alpha(drip.glow, 0.5 + 0.15 * Math.sin(card.t * 3) + 0.3 * card.kick)
+                    }
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 50
+                        height: 50
+                        radius: 25
+                        scale: face.iconIn
+                        color: Colors.alpha(drip.glow, 0.16)
+                        border.width: 1
+                        border.color: Colors.alpha(Qt.lighter(drip.glow, 1.4), 0.35)
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: Math.sin(card.t * 2) * 1.5
+                        text: noteFace.cross ? "󰄬" : "󰎚"
+                        color: "white"
+                        font.family: Fonts.glyph
+                        font.pixelSize: 24
+                        scale: face.iconIn
+                    }
+                }
+
+                Column {
+                    anchors.left: noteOrb.right
+                    anchors.leftMargin: 14
+                    anchors.right: notePill.visible ? notePill.left : parent.right
+                    anchors.rightMargin: notePill.visible ? 14 : 24
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 3
+
+                    Text {
+                        width: parent.width
+                        text: (noteFace.cross ? I18n.t("notes.cross") : I18n.t("notes.new"))
+                              + (Notes.count > 0 ? "  ·  " + Notes.count : "")
+                        color: Qt.rgba(1, 1, 1, 0.45)
+                        font.family: Fonts.display
+                        font.pixelSize: 12
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: noteLine.height
+
+                        Text {
+                            id: noteLine
+                            width: parent.width
+                            text: noteFace.body
+                            color: noteFace.live ? Qt.rgba(1, 1, 1, 1 - 0.45 * noteFace.strike)
+                                                 : Qt.rgba(1, 1, 1, 0.4)
+                            font.family: Fonts.display
+                            font.pixelSize: 18
+                            font.weight: Font.DemiBold
+                            wrapMode: Text.Wrap
+                            maximumLineCount: 2
+                            elide: Text.ElideRight
+                        }
+
+                        Rectangle {
+                            x: -2
+                            y: noteLine.font.pixelSize * 0.66
+                            width: (Math.min(noteLine.contentWidth, noteLine.width) + 4) * noteFace.strike
+                            height: 2
+                            radius: 1
+                            color: Qt.lighter(drip.glow, 1.5)
+                            visible: noteFace.strike > 0
+                        }
+                    }
+                }
+
+                Rectangle {
+                    id: notePill
+                    visible: noteFace.live
+                    anchors.right: parent.right
+                    anchors.rightMargin: 20
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: 23
+                    width: notePillRow.implicitWidth + 20
+                    radius: 11.5
+                    color: Colors.alpha(drip.glow, 0.18)
+                    border.width: 1
+                    border.color: Colors.alpha(drip.glow, 0.32)
+
+                    Row {
+                        id: notePillRow
+                        anchors.centerIn: parent
+                        spacing: 7
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "󰌑"
+                            color: Qt.lighter(drip.glow, 1.3)
+                            font.family: Fonts.glyph
+                            font.pixelSize: 12
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: noteFace.cross ? I18n.t("notes.done") : I18n.t("notes.save")
+                            color: Qt.lighter(drip.glow, 1.3)
+                            font.family: Fonts.display
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                        }
+                    }
+                }
             }
 
             Column {

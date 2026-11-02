@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import "root:/design"
+import "root:/services"
 
 Item {
     id: tile
@@ -41,6 +42,7 @@ Item {
             SequentialAnimation {
                 running: true
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 PauseAnimation { duration: wave.index * 520 }
                 ParallelAnimation {
                     NumberAnimation {
@@ -154,6 +156,7 @@ Item {
             SequentialAnimation on y {
                 running: tile.drift
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 NumberAnimation { to: -1.6; duration: 1400; easing.type: Easing.InOutSine }
                 NumberAnimation { to: 0.6;  duration: 1400; easing.type: Easing.InOutSine }
             }

@@ -271,6 +271,7 @@ Item {
                     SequentialAnimation on opacity {
                         running: node.working
                         loops: Animation.Infinite
+                        paused: running && Stage.gaming
                         NumberAnimation { from: 0.15; to: 0.9; duration: 620 }
                         NumberAnimation { from: 0.9; to: 0.15; duration: 620 }
                     }

@@ -16,6 +16,7 @@ singleton Idle Idle.qml
 singleton IslandConfig IslandConfig.qml
 singleton Keyboard Keyboard.qml
 singleton Media Media.qml
+singleton Lyrics Lyrics.qml
 singleton MicLevel MicLevel.qml
 singleton Network Network.qml
 singleton NotifHistory NotifHistory.qml
@@ -40,3 +41,5 @@ singleton Privacy Privacy.qml
 singleton IslandBus IslandBus.qml
 singleton DotsUpdate DotsUpdate.qml
 singleton Reminders Reminders.qml
+singleton Notes Notes.qml
+singleton Aula Aula.qml

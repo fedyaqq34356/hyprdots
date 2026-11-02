@@ -40,6 +40,7 @@ Item {
         SequentialAnimation {
             running: prc.queue > 0
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             ParallelAnimation {
                 NumberAnimation {
                     target: sheet; property: "y"

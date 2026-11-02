@@ -18,13 +18,22 @@ Singleton {
 
     property string linkRate: ""
 
+    property bool wired: false
+    property string wiredName: ""
+    property real wiredSince: 0
+    readonly property bool online: root.connected || root.wired
+
+    onWiredChanged: root.wiredSince = Date.now()
+
     property bool primedLink: false
     property bool primedRadio: false
+    property bool primedWire: false
+    readonly property bool primed: root.primedLink && root.primedWire
 
-    onConnectedChanged: {
-        if (!root.primedLink)
+    onOnlineChanged: {
+        if (!root.primed)
             return;
-        if (root.connected) Sfx.netConnect();
+        if (root.online) Sfx.netConnect();
         else Sfx.netDisconnect();
     }
 
@@ -36,6 +45,14 @@ Singleton {
     }
 
     property string iface: ""
+    property string wifiIface: ""
+
+    onIfaceChanged: {
+        root.lastRx = -1;
+        root.lastTx = -1;
+        root.rxRate = 0;
+        root.txRate = 0;
+    }
     property bool sampling: false
     property int holders: 0
 
@@ -53,6 +70,7 @@ Singleton {
     }
 
     readonly property string glyph: {
+        if (wired) return "󰈀";
         if (!radio) return "󰤮";
         if (!connected) return "󰤯";
         if (strength >= 75) return "󰤨";
@@ -139,17 +157,25 @@ Singleton {
 
     Process {
         id: ifaceProc
-        command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device", "status"]
+        command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status"]
         stdout: StdioCollector {
             onStreamFinished: {
+                let wifi = "";
+                let eth = null;
                 for (const line of text.trim().split("\n")) {
                     const f = root.fields(line);
-                    if (f.length >= 3 && f[1] === "wifi" && f[2] === "connected") {
-                        root.iface = f[0];
-                        return;
-                    }
+                    if (f.length < 3 || !f[2].startsWith("connected"))
+                        continue;
+                    if (f[1] === "wifi" && wifi === "")
+                        wifi = f[0];
+                    else if (f[1] === "ethernet" && eth === null)
+                        eth = { dev: f[0], name: f.length > 3 ? f[3] : "" };
                 }
-                root.iface = "";
+                root.wifiIface = wifi;
+                root.iface = eth ? eth.dev : wifi;
+                root.wiredName = eth ? eth.name : "";
+                root.wired = eth !== null;
+                root.primedWire = true;
             }
         }
     }
@@ -246,8 +272,10 @@ Singleton {
     }
 
     function disconnect() {
-        if (root.ssid === "") return;
-        root.run(["nmcli", "connection", "down", "id", root.ssid]);
+        if (root.wifiIface !== "")
+            root.run(["nmcli", "device", "disconnect", root.wifiIface]);
+        else if (root.ssid !== "")
+            root.run(["nmcli", "connection", "down", "id", root.ssid]);
     }
 
     function toggleRadio() {

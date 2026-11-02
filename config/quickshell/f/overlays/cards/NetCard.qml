@@ -24,7 +24,7 @@ Item {
             width: 34; height: 34
             radius: 17
             blur: 22
-            color: Colors.alpha(card.tint, Network.connected ? 0.45 : 0)
+            color: Colors.alpha(card.tint, Network.online ? 0.45 : 0)
         }
 
         IslandWifi {
@@ -32,6 +32,8 @@ Item {
             width: 46
             height: 38
             on: Network.connected
+            wired: Network.wired
+            morphIn: Date.now() - Network.wiredSince < 4000
             strength: Network.strength / 100
             tint: card.tint
         }
@@ -46,12 +48,13 @@ Item {
         spacing: 2
 
         StatusLine {
-            text: Network.connected
+            text: Network.wired ? I18n.t("isle.net.wired")
+                  : Network.connected
                   ? (Network.linkRate !== "" ? Network.linkRate
                                              : Network.strength + "%")
                   : I18n.t("isle.net.searching")
-            tint: Network.connected ? card.tint : Colors.alpha(Colors.fg, 0.5)
-            ok: Network.connected
+            tint: Network.online ? card.tint : Colors.alpha(Colors.fg, 0.5)
+            ok: Network.online
         }
 
         Text {

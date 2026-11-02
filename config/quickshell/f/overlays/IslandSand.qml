@@ -69,6 +69,7 @@ Item {
             SequentialAnimation {
                 running: grain.visible
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 PauseAnimation { duration: grain.index * 270 }
                 ScriptAction { script: grain.drift = Math.random() * 0.3 }
                 NumberAnimation {

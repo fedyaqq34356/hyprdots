@@ -253,25 +253,28 @@ Scope {
     }
 
     property string lastSsid: ""
-    property bool primedNet: false
 
     Connections {
         target: Network
         function onSsidChanged() { src.netMoved(); }
         function onConnectedChanged() { src.netMoved(); }
+        function onWiredChanged() { src.netMoved(); }
+        function onWiredNameChanged() { src.netMoved(); }
     }
 
     function netMoved() {
-        const now = Network.connected ? Network.ssid : "";
+        const now = Network.wired ? "\u0001" + Network.wiredName
+                  : Network.connected ? Network.ssid : "";
         if (now === src.lastSsid)
             return;
         const was = src.lastSsid;
         src.lastSsid = now;
-        if (!src.primedNet) {
-            src.primedNet = true;
+        if (!Network.primed)
             return;
-        }
-        if (now !== "")
+        if (Network.wired)
+            src.hub.flash("net", Network.glyph, Network.wiredName !== ""
+                          ? Network.wiredName : I18n.t("isle.net.cable"), -1);
+        else if (now !== "")
             src.hub.flash("net", Network.glyph, now, -1);
         else if (was !== "")
             src.hub.flash("net", "󰤮", I18n.t("isle.net.gone"), -1);

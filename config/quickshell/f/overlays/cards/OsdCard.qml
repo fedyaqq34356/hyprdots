@@ -43,10 +43,10 @@ Item {
             running: water.visible
             onTriggered: {
                 const want = Math.min(6, Math.abs(front.velocity) / 100);
-                const k = want > water.slosh ? Math.min(1, frameTime * 5) : Math.min(1, frameTime * 1.6);
+                const k = want > water.slosh ? 1 - Math.exp(-frameTime * 5) : 1 - Math.exp(-frameTime * 1.6);
                 water.slosh += (want - water.slosh) * k;
                 const heard = water.mic ? Math.min(1, MicLevel.level * 1.6) : 0;
-                water.voice += (heard - water.voice) * Math.min(1, frameTime * (heard > water.voice ? 9 : 3));
+                water.voice += (heard - water.voice) * (1 - Math.exp(-frameTime * (heard > water.voice ? 9 : 3)));
             }
         }
 
@@ -54,6 +54,7 @@ Item {
         NumberAnimation on phase {
             running: water.visible
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             from: 0; to: Math.PI * 2
             duration: 3000
         }

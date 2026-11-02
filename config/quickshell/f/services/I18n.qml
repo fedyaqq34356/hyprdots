@@ -54,7 +54,7 @@ Singleton {
     }
 
     readonly property string dir:
-        Quickshell.env("HOME") + "/.config/quickshell/f/lang/"
+        Quickshell.shellPath("lang/")
 
     function absorb(code, text) {
         try {

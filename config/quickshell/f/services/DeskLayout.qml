@@ -147,6 +147,18 @@ Singleton {
                     "ticker", "dots", "count", "badge"],
             size: 1.0
         },
+        "lyrics": {
+            title: I18n.t("desk.lyrics"),
+            glyph: "󰎆",
+            faces: ["line"],
+            size: 1.0
+        },
+        "notes": {
+            title: I18n.t("desk.notes"),
+            glyph: "󰎚",
+            faces: ["list"],
+            size: 1.0
+        },
         "updates": {
             title: I18n.t("desk.updates"),
             glyph: "󰏗",
@@ -248,7 +260,9 @@ Singleton {
                     x: it.x,
                     y: it.y,
                     size: it.size,
-                    screen: it.screen || ""
+                    screen: it.screen || "",
+                    w: it.w || 0,
+                    h: it.h || 0
                 });
             }
             root.items = list;

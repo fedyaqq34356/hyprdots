@@ -150,16 +150,44 @@ Scope {
             Keys.onRightPressed: Media.seekTo(Media.progress + 0.02)
 
             ClippingRectangle {
+                id: backdrop
                 anchors.fill: parent
                 radius: card.radius
                 color: "transparent"
-                visible: Media.art !== ""
+                visible: backdrop.shown !== "" || backdrop.prev !== ""
                 opacity: Prefs.apple ? 0.6 : 0.34
 
+                property string shown: ""
+                property string prev: ""
+                property real swap: 1
+
+                readonly property string want: Media.art
+                onWantChanged: backdrop.take()
+                Component.onCompleted: backdrop.shown = backdrop.want
+
+                function take() {
+                    if (backdrop.want === backdrop.shown)
+                        return;
+                    backdrop.prev = backdrop.shown;
+                    backdrop.shown = backdrop.want;
+                    backdrop.swap = 0;
+                    artSwap.stop();
+                    if (backdrop.shown === "" || nextImg.status === Image.Ready)
+                        artSwap.restart();
+                }
+
+                NumberAnimation {
+                    id: artSwap
+                    target: backdrop; property: "swap"
+                    to: 1; duration: 1300
+                    easing.type: Easing.InOutCubic
+                    onFinished: backdrop.prev = ""
+                }
+
                 Image {
-                    id: backdrop
+                    id: prevImg
                     anchors.fill: parent
-                    source: Media.art
+                    source: backdrop.prev
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     sourceSize.width: 480
@@ -168,7 +196,33 @@ Scope {
 
                 MultiEffect {
                     anchors.fill: parent
-                    source: backdrop
+                    source: prevImg
+                    visible: backdrop.prev !== "" && backdrop.swap < 0.999
+                    opacity: 1 - backdrop.swap * backdrop.swap
+                    blurEnabled: true
+                    blur: 1.0
+                    blurMax: 64
+                    saturation: Prefs.apple ? 0.9 : 0.35
+                }
+
+                Image {
+                    id: nextImg
+                    anchors.fill: parent
+                    source: backdrop.shown
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    sourceSize.width: 480
+                    visible: false
+                    onStatusChanged: if (status === Image.Ready && backdrop.swap < 1 && !artSwap.running)
+                                         artSwap.restart()
+                }
+
+                MultiEffect {
+                    anchors.fill: parent
+                    source: nextImg
+                    visible: backdrop.shown !== ""
+                    opacity: backdrop.swap
+                    scale: 1.06 - 0.06 * backdrop.swap
                     blurEnabled: true
                     blur: 1.0
                     blurMax: 64

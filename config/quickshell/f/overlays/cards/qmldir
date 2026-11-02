@@ -21,3 +21,4 @@ WeatherCard WeatherCard.qml
 NotifKey NotifKey.qml
 CallCard CallCard.qml
 RemindCard RemindCard.qml
+PlayGlyph PlayGlyph.qml

@@ -41,7 +41,8 @@ Item {
     Text {
         x: 17
         anchors.verticalCenter: parent.verticalCenter
-        text: bar.mode === "run" ? "󰞷" : bar.mode === "calc" ? "󰃬"
+        text: bar.mode === "run" ? "󰞷" : bar.mode === "calc" ? "󰃬" : bar.mode === "conv" ? "󰓡"
+            : bar.mode === "note" ? "󰎚" : bar.mode === "unnote" ? "󰄬"
             : bar.mode === "wall" ? "󰸉" : bar.mode === "clip" ? "󰅌" : bar.mode === "notif" ? "󰂚" : "󰍉"
         color: Qt.rgba(1, 1, 1, 0.5)
         font.family: Fonts.glyph
@@ -138,6 +139,7 @@ Item {
         SequentialAnimation on blink {
             running: bar.active && !bar.typing
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             onStopped: caret.blink = 1
             NumberAnimation { to: 0.2; duration: 600; easing.type: Easing.InOutSine }
             NumberAnimation { to: 1; duration: 600; easing.type: Easing.InOutSine }
@@ -147,6 +149,8 @@ Item {
     readonly property string sideText: {
         if (bar.mode === "calc")
             return IslandBus.calc !== "" ? "= " + IslandBus.calc : "";
+        if (bar.mode === "conv")
+            return IslandBus.calc !== "" ? "≈ " + IslandBus.calc : "";
         if (bar.mode === "run")
             return "Run";
         return IslandBus.hint;

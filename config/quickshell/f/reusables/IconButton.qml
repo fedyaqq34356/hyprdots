@@ -127,6 +127,7 @@ Rectangle {
         RotationAnimation on rotation {
             running: button.spinning
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             from: 0; to: 360; duration: 1100
         }
     }

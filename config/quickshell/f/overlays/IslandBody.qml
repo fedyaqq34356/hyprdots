@@ -82,8 +82,10 @@ Item {
         case "peri":   return Peripherals.model !== "" ? Peripherals.model
                                                        : I18n.t("isle.src.peri");
         case "power":  return Power.percent + "%";
-        case "net":    return Network.connected ? Network.ssid
-                                                : I18n.t("isle.net.gone");
+        case "net":    return Network.wired ? (Network.wiredName !== "" ? Network.wiredName
+                                                                        : I18n.t("isle.net.cable"))
+                              : Network.connected ? Network.ssid
+                                                  : I18n.t("isle.net.gone");
         case "vpn":    return Vpn.up ? Vpn.iface : I18n.t("isle.vpn.off");
         case "print":  return I18n.t("isle.src.print");
         }
