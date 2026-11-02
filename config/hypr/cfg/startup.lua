@@ -5,7 +5,6 @@ local once = {
     S .. "/system/monitor-flicker-fix.py",
 
     "gnome-keyring-daemon --start --components=secrets",
-    "brightnessctl -c backlight set 70% 2>/dev/null",
     "hyprpolkitagent",
     "udiskie --no-tray --automount --notify",
     "pipewire",
@@ -33,6 +32,10 @@ local once = {
     "hyprctl setcursor Matugen-Cursor 24",
     v.home .. "/.local/bin/pulse-autoconnect",
 }
+
+if v.backlight or v.battery then
+    table.insert(once, 2, "brightnessctl -c backlight set 70%")
+end
 
 local sig = os.getenv("HYPRLAND_INSTANCE_SIGNATURE")
 local runtime = os.getenv("XDG_RUNTIME_DIR") or "/tmp"

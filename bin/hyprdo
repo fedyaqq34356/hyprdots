@@ -65,7 +65,14 @@ lua_keyword() {
             if [[ "${f[1]:-}" == disable ]]; then
                 echo "hl.monitor({ output = $(q "${f[0]}"), disabled = true })"
             else
-                echo "hl.monitor({ output = $(q "${f[0]}"), mode = $(q "${f[1]:-preferred}"), position = $(q "${f[2]:-auto}"), scale = $(lua_value "${f[3]:-1}") })"
+                local extra="" i
+                for ((i = 4; i + 1 < ${#f[@]}; i += 2)); do
+                    case "${f[i]// /}" in
+                        transform|vrr|bitdepth) extra+=", ${f[i]// /} = $(lua_value "${f[i+1]// /}")" ;;
+                        mirror) extra+=", mirror = $(q "${f[i+1]// /}")" ;;
+                    esac
+                done
+                echo "hl.monitor({ output = $(q "${f[0]}"), mode = $(q "${f[1]:-preferred}"), position = $(q "${f[2]:-auto}"), scale = $(lua_value "${f[3]:-1}")$extra })"
             fi
             ;;
         env)

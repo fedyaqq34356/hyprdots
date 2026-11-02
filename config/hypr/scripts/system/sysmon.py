@@ -49,7 +49,12 @@ def cpu_temperature() -> tuple[float, str] | None:
                 continue
             name = name_file.read_text().strip()
             if name in ("coretemp", "k10temp", "zenpower"):
-                candidates.extend(sorted(chip.glob("temp*_input")))
+                inputs = sorted(chip.glob("temp*_input"))
+                preferred = [p for p in inputs
+                             if (chip / p.name.replace("_input", "_label")).exists()
+                             and (chip / p.name.replace("_input", "_label")).read_text().strip()
+                             in ("Tctl", "Tdie", "Package id 0")]
+                candidates.extend(preferred + [p for p in inputs if p not in preferred])
 
     if not candidates:
         candidates = sorted(Path("/sys/class/thermal").glob("thermal_zone*/temp"))
@@ -65,9 +70,57 @@ def cpu_temperature() -> tuple[float, str] | None:
             return max(0.0, min(1.0, fraction)), f"{celsius:.0f}°"
     return None
 
+BLANK = {"gpu": None, "gpu_label": "", "vram": None, "vram_label": "",
+         "gputemp": None, "gputemp_label": ""}
+
+def read_int(path: Path) -> int | None:
+    try:
+        return int(path.read_text().strip())
+    except (OSError, ValueError):
+        return None
+
+def amdgpu_device() -> Path | None:
+    best = None
+    for card in sorted(Path("/sys/class/drm").glob("card[0-9]*")):
+        dev = card / "device"
+        if not (dev / "gpu_busy_percent").exists():
+            continue
+        total = read_int(dev / "mem_info_vram_total") or 0
+        if best is None or total > best[0]:
+            best = (total, dev)
+    return best[1] if best else None
+
+def amdgpu(dev: Path) -> dict:
+    out = dict(BLANK)
+    util = read_int(dev / "gpu_busy_percent")
+    if util is not None:
+        out["gpu"] = util / 100
+        out["gpu_label"] = f"{util}%"
+    used = read_int(dev / "mem_info_vram_used")
+    total = read_int(dev / "mem_info_vram_total")
+    if used is not None and total:
+        out["vram"] = used / total
+        out["vram_label"] = f"{used / 1024 ** 3:.1f}G"
+    for hw in sorted((dev / "hwmon").glob("hwmon*")):
+        temps = {}
+        for f in hw.glob("temp*_input"):
+            label = (hw / f.name.replace("_input", "_label"))
+            name = label.read_text().strip() if label.exists() else f.name
+            temps[name] = read_int(f)
+        milli = temps.get("junction") or temps.get("edge") or next(
+            (t for t in temps.values() if t), None)
+        if milli:
+            temp = milli / 1000
+            out["gputemp"] = max(0.0, min(1.0, (temp - 30) / 70))
+            out["gputemp_label"] = f"{temp:.0f}°"
+            break
+    return out
+
 def gpu() -> dict:
-    blank = {"gpu": None, "gpu_label": "", "vram": None, "vram_label": "",
-             "gputemp": None, "gputemp_label": ""}
+    blank = dict(BLANK)
+    dev = amdgpu_device()
+    if dev is not None:
+        return amdgpu(dev)
     if not shutil.which("nvidia-smi"):
         return blank
 
