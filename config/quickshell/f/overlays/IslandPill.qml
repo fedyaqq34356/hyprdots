@@ -246,7 +246,7 @@ Item {
                 running: fill.visible
                 onTriggered: {
                     const want = Math.min(4.5, Math.abs(front.velocity) / 110);
-                    const k = want > fill.slosh ? Math.min(1, frameTime * 5) : Math.min(1, frameTime * 1.6);
+                    const k = want > fill.slosh ? 1 - Math.exp(-frameTime * 5) : 1 - Math.exp(-frameTime * 1.6);
                     fill.slosh += (want - fill.slosh) * k;
                 }
             }
@@ -255,6 +255,7 @@ Item {
             NumberAnimation on phase {
                 running: fill.visible
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 from: 0; to: Math.PI * 2
                 duration: 2800
             }

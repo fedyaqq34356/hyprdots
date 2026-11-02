@@ -300,7 +300,7 @@ PanelWindow {
                                                      : Colors.accent);
         case "bt":     return win.hub.btOn ? Colors.good : Colors.fgDim;
         case "vpn":    return Vpn.up ? Colors.good : Colors.fgDim;
-        case "net":    return Network.connected ? Colors.accentAlt
+        case "net":    return Network.online ? Colors.accentAlt
                                                 : Colors.fgDim;
         case "print":  return Colors.accentAlt;
         case "focus":  return Dnd.active ? Qt.rgba(0.37, 0.36, 0.90, 1)
@@ -553,6 +553,7 @@ PanelWindow {
     SequentialAnimation {
         running: win.throbbing && win.visible
         loops: Animation.Infinite
+        paused: running && Stage.gaming
         alwaysRunToEnd: true
         onStopped: win.throb = 0
 
@@ -784,6 +785,7 @@ PanelWindow {
     SequentialAnimation {
         running: win.asleep && win.visible
         loops: Animation.Infinite
+        paused: running && Stage.gaming
         onStopped: win.breath = 0
         NumberAnimation {
             target: win; property: "breath"
@@ -868,7 +870,8 @@ PanelWindow {
                 suck.ex = r.x + suck.ew / 2;
                 suck.ey = r.y + suck.eh / 2;
                 const dt = Math.max(0.001, frameTime);
-                suck.speed = suck.speed * 0.6 + 0.4 * Math.abs(suck.t - suck.lastT) / dt;
+                const a = 1 - Math.exp(-dt / 0.033);
+                suck.speed += (Math.abs(suck.t - suck.lastT) / dt - suck.speed) * a;
                 suck.lastT = suck.t;
                 suckGoo.applySync();
             }
@@ -1019,13 +1022,13 @@ PanelWindow {
             NumberAnimation {
                 target: comet; property: "lift"
                 from: 0; to: 1; duration: Motion.isleCometLiftMs
-                easing.type: Easing.OutBack; easing.overshoot: 1.4
+                easing.type: Easing.OutCubic
             }
             NumberAnimation {
                 target: comet; property: "t"
                 from: 0; to: 1
                 duration: Motion.isleCometMs - Motion.isleCometLiftMs - 20
-                easing.type: Easing.InBack; easing.overshoot: 0.8
+                easing.type: Easing.InQuad
             }
             ScriptAction { script: comet.e = null }
         }
@@ -1040,7 +1043,8 @@ PanelWindow {
                 comet.ex = r.x + comet.ew / 2;
                 comet.ey = r.y + comet.eh / 2;
                 const dt = Math.max(0.001, frameTime);
-                comet.speed = comet.speed * 0.6 + 0.4 * Math.abs(comet.t - comet.lastT) / dt;
+                const a = 1 - Math.exp(-dt / 0.033);
+                comet.speed += (Math.abs(comet.t - comet.lastT) / dt - comet.speed) * a;
                 comet.lastT = comet.t;
                 cometGoo.requestSync();
             }
@@ -1049,12 +1053,18 @@ PanelWindow {
         readonly property real u: comet.t
         readonly property real kx: Motion.mix(comet.sx, comet.ex, 0.55)
         readonly property real ky: comet.sy + 46
-        readonly property real cx:
-            (1 - comet.u) * (1 - comet.u) * comet.sx + 2 * (1 - comet.u) * comet.u * comet.kx
-            + comet.u * comet.u * comet.ex
-        readonly property real cy:
-            (1 - comet.u) * (1 - comet.u) * comet.sy + 2 * (1 - comet.u) * comet.u * comet.ky
-            + comet.u * comet.u * comet.ey
+        function px(u) {
+            return (1 - u) * (1 - u) * comet.sx + 2 * (1 - u) * u * comet.kx + u * u * comet.ex;
+        }
+        function py(u) {
+            return (1 - u) * (1 - u) * comet.sy + 2 * (1 - u) * u * comet.ky + u * u * comet.ey;
+        }
+        readonly property real cx: comet.px(comet.u)
+        readonly property real cy: comet.py(comet.u)
+
+        readonly property real span: 0.2
+        readonly property real thin: Math.max(0, Math.min(1, 1 - (comet.u - 0.5) / 0.4))
+        readonly property int beads: 8
         readonly property real shrink: Math.pow(Math.max(0, Math.min(1, comet.u)), 1.3)
         readonly property real dw: Math.max(4, Motion.mix(comet.sw, comet.eh * 0.9, comet.shrink) * comet.lift)
         readonly property real dh: Math.max(4, Motion.mix(comet.sh, comet.eh * 0.82, Math.pow(Math.max(0, comet.u), 0.8)) * comet.lift)
@@ -1074,6 +1084,27 @@ PanelWindow {
                 y: comet.ey - comet.eh / 2
                 width: comet.ew
                 height: comet.eh
+            }
+
+            Repeater {
+                model: comet.beads
+
+                Item {
+                    id: bead
+                    required property int index
+                    readonly property real f: (bead.index + 1) / (comet.beads + 1)
+                    readonly property real at: Math.max(0, comet.u - comet.span * bead.f)
+                    readonly property real cut: Math.max(0, Math.min(1,
+                        comet.thin * 1.8 - bead.f * 0.8))
+                    readonly property real d: Math.min(comet.dh * 0.8, 30)
+                                              * (1 - bead.f * 0.72) * bead.cut * comet.lift
+                    property bool isBlob: true
+                    visible: bead.d > 1.5
+                    x: comet.px(bead.at) - bead.d / 2 - cometField.x
+                    y: comet.py(bead.at) - bead.d / 2
+                    width: bead.d
+                    height: bead.d
+                }
             }
 
             Item {
@@ -1748,6 +1779,7 @@ PanelWindow {
                     SequentialAnimation on p {
                         running: tidePulse.on
                         loops: Animation.Infinite
+                        paused: running && Stage.gaming
                         NumberAnimation { to: 1; duration: 520; easing.type: Easing.OutCubic }
                         NumberAnimation { to: 0.12; duration: 900; easing.type: Easing.InOutSine }
                     }
@@ -1770,6 +1802,7 @@ PanelWindow {
                     NumberAnimation on phase {
                         running: liquid.visible
                         loops: Animation.Infinite
+                        paused: running && Stage.gaming
                         from: 0
                         to: Math.PI * 2
                         duration: 900
@@ -1981,6 +2014,7 @@ PanelWindow {
                     SequentialAnimation on breath {
                         running: Keyboard.caps && win.visible
                         loops: Animation.Infinite
+                        paused: running && Stage.gaming
                         NumberAnimation { to: 1; duration: 1600; easing.type: Easing.InOutSine }
                         NumberAnimation { to: 0.3; duration: 1600; easing.type: Easing.InOutSine }
                     }

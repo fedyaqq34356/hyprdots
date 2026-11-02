@@ -1,5 +1,6 @@
 import QtQuick
 import "root:/design"
+import "root:/services"
 
 Item {
     id: dial
@@ -74,6 +75,7 @@ Item {
         SequentialAnimation on scale {
             running: dial.ringing
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             NumberAnimation { to: 1.10; duration: 620; easing.type: Easing.OutQuad }
             NumberAnimation { to: 0.96; duration: 620; easing.type: Easing.InQuad }
         }

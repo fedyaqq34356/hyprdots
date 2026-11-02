@@ -115,6 +115,7 @@ Item {
         NumberAnimation on spin {
             running: slot.busy && slot.live
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             from: 0
             to: 360
             duration: 1500
@@ -164,6 +165,7 @@ Item {
         SequentialAnimation on opacity {
             running: slot.busy && slot.live
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             onStopped: mark.opacity = 1
             NumberAnimation { to: 0.45; duration: 750; easing.type: Easing.InOutSine }
             NumberAnimation { to: 1.0;  duration: 750; easing.type: Easing.InOutSine }
@@ -180,6 +182,7 @@ Item {
         SequentialAnimation on scale {
             running: slot.kind === "launch" && slot.result === "" && slot.live
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             onStopped: pulse.scale = 1
             NumberAnimation { to: 0.86; duration: 700; easing.type: Easing.InOutSine }
             NumberAnimation { to: 1.0;  duration: 700; easing.type: Easing.InOutSine }
@@ -221,6 +224,7 @@ Item {
         SequentialAnimation on opacity {
             running: slot.kind === "print" && slot.live
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             NumberAnimation { to: 1;   duration: 220 }
             PauseAnimation  { duration: 320 }
             NumberAnimation { to: 0;   duration: 260 }

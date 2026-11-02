@@ -13,3 +13,5 @@ DeskDisk DeskDisk.qml
 DeskNet DeskNet.qml
 DeskNotifs DeskNotifs.qml
 DeskUpdates DeskUpdates.qml
+DeskLyrics DeskLyrics.qml
+DeskNotes DeskNotes.qml

@@ -13,6 +13,8 @@ Item {
     property string glyph: ""
     property color tint: Colors.accent
     property int size: 40
+    property bool playPause: false
+    property bool playing: false
     signal activated()
 
     width: rk.size
@@ -27,8 +29,17 @@ Item {
         Behavior on color { ColorAnimation { duration: Motion.fast } }
         Behavior on scale { Spring {} }
 
+        PlayGlyph {
+            anchors.centerIn: parent
+            visible: rk.playPause
+            playing: rk.playing
+            size: Math.round(rk.size * 0.36)
+            ink: Qt.lighter(rk.tint, 1.15)
+        }
+
         Text {
             anchors.centerIn: parent
+            visible: !rk.playPause
             text: rk.glyph
             color: Qt.lighter(rk.tint, 1.15)
             font.family: Fonts.glyph

@@ -53,7 +53,7 @@ Scope {
             root.winSel = Math.max(0, Math.min(root.wins.length - 1, root.winSel + step));
             return;
         }
-        if (root.calcMode || root.runMode || root.drip)
+        if (root.calcMode || root.convMode || root.noteish || root.runMode || root.drip)
             return;
         const n = root.drip ? Math.min(root.results.length, 10) : root.results.length;
         root.sel = Math.max(0, Math.min(n - 1, root.sel + step));
@@ -80,10 +80,12 @@ Scope {
         return true;
     }
 
-    readonly property string mode: root.runMode ? "run" : root.calcMode ? "calc" : "app"
+    readonly property string mode: root.runMode ? "run" : root.noteMode ? "note"
+                                 : root.unnoteMode ? "unnote" : root.convMode ? "conv"
+                                 : root.calcMode ? "calc" : "app"
 
     readonly property string isleHint: {
-        if (root.calcMode || root.runMode)
+        if (root.calcMode || root.convMode || root.noteish || root.runMode)
             return "";
         if (search.text.trim() !== "" && root.results.length === 0)
             return "No matches";
@@ -111,7 +113,7 @@ Scope {
 
     onResultsChanged: {
         const n = root.results.length;
-        if (root.shown && root.drip && !root.calcMode && !root.runMode
+        if (root.shown && root.drip && !root.calcMode && !root.convMode && !root.noteish && !root.runMode
             && search.text.trim() !== "" && n === 0 && root.lastHits !== 0)
             IslandBus.nomatch();
         root.lastHits = n;
@@ -122,7 +124,7 @@ Scope {
     Binding { target: IslandBus; property: "query"; value: search.text; when: (root.shown || drops.holding) && root.drip }
     Binding { target: IslandBus; property: "cursor"; value: search.cursorPosition; when: (root.shown || drops.holding) && root.drip }
     Binding { target: IslandBus; property: "mode"; value: root.mode; when: (root.shown || drops.holding) && root.drip }
-    Binding { target: IslandBus; property: "calc"; value: root.calcResult; when: (root.shown || drops.holding) && root.drip }
+    Binding { target: IslandBus; property: "calc"; value: root.convMode ? root.convData.result + " " + root.convData.to : root.calcResult; when: (root.shown || drops.holding) && root.drip }
     Binding { target: IslandBus; property: "hint"; value: root.isleHint; when: (root.shown || drops.holding) && root.drip }
     Binding { target: IslandBus; property: "hintGlyph"; value: root.isleHintGlyph; when: (root.shown || drops.holding) && root.drip }
     Binding { target: IslandBus; property: "hue"; value: drops.hue; when: (root.shown || drops.holding) && root.drip }
@@ -134,7 +136,7 @@ Scope {
 
     readonly property var wins: {
         const e = root.highlighted;
-        if (!e || root.calcMode || root.runMode)
+        if (!e || root.calcMode || root.convMode || root.noteish || root.runMode)
             return [];
         const out = [];
         const list = Hyprland.toplevels ? Hyprland.toplevels.values : [];
@@ -198,7 +200,7 @@ Scope {
         const q = search.text.trim();
         if (q.startsWith("="))
             return true;
-        if (q.length < 3)
+        if (q.length < 3 || root.convLike)
             return false;
         if (!/^[\d(.]/.test(q))
             return false;
@@ -212,6 +214,86 @@ Scope {
 
     property string calcResult: ""
 
+    readonly property string convScript: home + "/.config/hypr/scripts/tools/convert.py"
+    readonly property bool convLike: /^\s*[-+]?\d[\d\s.,]*\s*[A-Za-zА-Яа-яЁёЇїІіЄєҐґ°$€£₴¥"]/.test(search.text)
+    property var convData: null
+    readonly property bool convMode: root.convLike && root.convData !== null && !root.noteish
+
+    readonly property bool noteMode: /^\+(\s|$|[^\d\s.,])/.test(search.text)
+    readonly property bool unnoteMode: /^-\s*([^\d\s.,]|$)/.test(search.text)
+    readonly property bool noteish: root.noteMode || root.unnoteMode
+    readonly property string noteText: root.noteish ? search.text.slice(1).trim() : ""
+    readonly property var noteHit: {
+        Notes.items;
+        return root.unnoteMode ? Notes.find(root.noteText) : null;
+    }
+
+    function noteAccept() {
+        if (root.noteMode) {
+            if (root.noteText === "")
+                return;
+            Notes.add(root.noteText);
+        } else {
+            if (!root.noteHit)
+                return;
+            Notes.finish(root.noteHit.id);
+        }
+        Sfx.tapAlt();
+        if (root.drip && root.shown)
+            drops.fly(0, null);
+        root.close();
+    }
+
+    onConvLikeChanged: if (!root.convLike) root.convData = null
+
+    Timer {
+        id: convDebounce
+        interval: 120
+        onTriggered: root.convRun()
+    }
+
+    Process {
+        id: convProc
+        property string asked: ""
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (convProc.asked !== search.text)
+                    return;
+                try {
+                    root.convData = text.trim() !== "" ? JSON.parse(text) : null;
+                } catch (e) {
+                    root.convData = null;
+                }
+            }
+        }
+    }
+
+    function convRun() {
+        if (!root.convLike)
+            return;
+        convProc.running = false;
+        convProc.asked = search.text;
+        convProc.command = [root.convScript, search.text];
+        convProc.running = true;
+    }
+
+    Process { id: convCommit }
+
+    function convAccept() {
+        const d = root.convData;
+        if (!d)
+            return;
+        convCommit.running = false;
+        convCommit.command = [
+            "sh", "-c",
+            'printf %s "$1" | wl-copy; notify-send -a "$2" "$3" "$4" 2>/dev/null',
+            "conv", d.raw, I18n.t("launcher.conv"),
+            d.value + " " + d.from + " = " + d.result + " " + d.to, I18n.t("clip.copied")
+        ];
+        convCommit.running = true;
+        root.close();
+    }
+
     readonly property bool runMode: search.text.startsWith(">")
     readonly property string runCmd: search.text.slice(1).trim()
 
@@ -221,6 +303,14 @@ Scope {
         Quickshell.execDetached(["sh", "-c", root.runCmd]);
         Sfx.tapAlt();
         root.close();
+    }
+
+    Connections {
+        target: search
+        function onTextChanged() {
+            if (root.convLike)
+                convDebounce.restart();
+        }
     }
 
     onCalcExprChanged: {
@@ -303,6 +393,10 @@ Scope {
     function accept() {
         if (root.runMode)
             root.runAccept();
+        else if (root.noteish)
+            root.noteAccept();
+        else if (root.convMode)
+            root.convAccept();
         else if (root.calcMode)
             root.calcAccept();
         else
@@ -345,7 +439,7 @@ Scope {
     }
 
     readonly property var favourites: {
-        if (root.calcMode || root.runMode)
+        if (root.calcMode || root.convMode || root.noteish || root.runMode)
             return [];
         const all = DesktopEntries.applications.values.filter(e => !e.noDisplay);
         return all.slice()
@@ -574,7 +668,7 @@ Scope {
                         spacing: 12
 
                         Text {
-                            text: root.runMode ? "󰞷" : root.calcMode ? "󰃬" : "󰍉"
+                            text: root.runMode ? "󰞷" : root.noteMode ? "󰎚" : root.unnoteMode ? "󰄬" : root.convMode ? "󰓡" : root.calcMode ? "󰃬" : "󰍉"
                             color: Colors.accent
                             font.family: Fonts.mono
                             font.pixelSize: 17
@@ -605,18 +699,20 @@ Scope {
                             antialiasing: true
                             color: Qt.rgba(Colors.accent.r, Colors.accent.g,
                                            Colors.accent.b,
-                                           root.calcMode || root.runMode ? 0.20 : 0.08)
+                                           root.calcMode || root.convMode || root.noteish || root.runMode ? 0.20 : 0.08)
                             Behavior on color { ColorAnimation { duration: Motion.fast } }
 
                             Text {
                                 id: modeLabel
                                 anchors.centerIn: parent
                                 text: root.runMode ? I18n.t("launcher.keyRun")
+                                    : root.noteish ? I18n.t("launcher.keyNote")
+                                    : root.convMode ? I18n.t("launcher.keyConv")
                                     : root.calcMode ? I18n.t("launcher.keyCalc")
                                     : I18n.t("act.open")
-                                color: root.calcMode || root.runMode
+                                color: root.calcMode || root.convMode || root.noteish || root.runMode
                                     ? Colors.accent : Colors.fgDim
-                                opacity: root.calcMode || root.runMode ? 1 : 0.7
+                                opacity: root.calcMode || root.convMode || root.noteish || root.runMode ? 1 : 0.7
                                 font.family: Fonts.mono
                                 font.pixelSize: 9
                                 font.letterSpacing: 1
@@ -892,14 +988,81 @@ Scope {
                     }
                 }
 
+                Text {
+                    width: parent.width
+                    visible: root.noteish
+                    topPadding: 8
+                    text: root.noteMode
+                        ? (root.noteText !== "" ? "↵  " + I18n.t("notes.save") : I18n.t("notes.new"))
+                        : root.noteHit ? "↵  " + I18n.t("notes.cross") + ": " + root.noteHit.text
+                        : I18n.t("notes.none")
+                    color: Colors.fgDim
+                    font.family: Fonts.mono
+                    font.pixelSize: 12
+                    elide: Text.ElideRight
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 116
+                    visible: root.convMode
+                    radius: Shape.field
+                    color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.10)
+                    border.width: 1
+                    border.color: Qt.rgba(Colors.accent.r, Colors.accent.g, Colors.accent.b, 0.38)
+
+                    Sheen {
+                        anchors.fill: parent
+                        radius: Shape.field
+                        border: false
+                        grainOpacity: 0.025
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - 44
+                        spacing: 6
+
+                        Text {
+                            width: parent.width
+                            text: root.convData ? root.convData.value + " " + root.convData.from : ""
+                            color: Colors.fgDim
+                            opacity: 0.7
+                            font.family: Fonts.mono
+                            font.pixelSize: 13
+                            horizontalAlignment: Text.AlignRight
+                        }
+                        Text {
+                            width: parent.width
+                            text: root.convData ? root.convData.result + " " + root.convData.to : ""
+                            color: Colors.accent
+                            font.family: Fonts.mono
+                            font.pixelSize: 34
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideLeft
+                            horizontalAlignment: Text.AlignRight
+                        }
+                        Text {
+                            width: parent.width
+                            visible: text !== ""
+                            text: root.convData ? root.convData.note : ""
+                            color: Colors.fgDim
+                            opacity: 0.5
+                            font.family: Fonts.mono
+                            font.pixelSize: 10
+                            horizontalAlignment: Text.AlignRight
+                        }
+                    }
+                }
+
                 ListView {
                     id: list
                     width: parent.width
                     height: parent.height - 60 - (quick.visible ? quick.height + 14 : 0)
                             - (foot.visible ? foot.height + 14 : 0)
                     clip: true
-                    visible: !root.calcMode && !root.runMode
-                    model: root.calcMode || root.runMode ? [] : root.results
+                    visible: !root.calcMode && !root.convMode && !root.noteish && !root.runMode
+                    model: root.calcMode || root.convMode || root.noteish || root.runMode ? [] : root.results
                     spacing: 3
                     currentIndex: root.sel
                     onCurrentIndexChanged: if (currentIndex >= 0 && root.sel !== currentIndex) root.sel = currentIndex
@@ -1084,7 +1247,7 @@ Scope {
                     id: foot
                     width: parent.width
                     height: 16
-                    visible: !root.calcMode && !root.runMode
+                    visible: !root.calcMode && !root.convMode && !root.noteish && !root.runMode
 
                     Text {
                         anchors.left: parent.left

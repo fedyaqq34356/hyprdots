@@ -56,6 +56,7 @@ Item {
 
                 SequentialAnimation on y {
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     PauseAnimation { duration: bit.seed * bit.fall }
                     NumberAnimation {
                         from: -16
@@ -67,6 +68,7 @@ Item {
 
                 SequentialAnimation on x {
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     PauseAnimation { duration: bit.seed * bit.fall }
                     NumberAnimation {
                         from: bit.startX

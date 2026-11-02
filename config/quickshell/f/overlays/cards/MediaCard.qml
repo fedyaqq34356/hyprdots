@@ -728,27 +728,10 @@ Item {
 
                 IslandKey {
                     anchors.centerIn: parent
-                    glyph: "󰏤"
+                    playPause: true
+                    playing: mc.m.playing
                     size: mc.big ? 36 : 30
                     enabled: mc.m.canToggle
-                    opacity: mc.m.playing ? 1 : 0
-                    scale: mc.m.playing ? 1 : 0.4
-                    visible: opacity > 0.01
-                    Behavior on opacity { NumberAnimation { duration: Motion.fast } }
-                    Behavior on scale { Spring {} }
-                    onActivated: if (!mc.d) Media.toggle()
-                }
-
-                IslandKey {
-                    anchors.centerIn: parent
-                    glyph: "󰐊"
-                    size: mc.big ? 36 : 30
-                    enabled: mc.m.canToggle
-                    opacity: mc.m.playing ? 0 : 1
-                    scale: mc.m.playing ? 0.4 : 1
-                    visible: opacity > 0.01
-                    Behavior on opacity { NumberAnimation { duration: Motion.fast } }
-                    Behavior on scale { Spring {} }
                     onActivated: if (!mc.d) Media.toggle()
                 }
             }

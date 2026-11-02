@@ -31,6 +31,7 @@ Item {
             SequentialAnimation on angle {
                 running: true
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 NumberAnimation { to: 16;  duration: 140; easing.type: Easing.InOutSine }
                 NumberAnimation { to: -16; duration: 280; easing.type: Easing.InOutSine }
                 NumberAnimation { to: 10;  duration: 220; easing.type: Easing.InOutSine }

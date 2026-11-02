@@ -72,12 +72,14 @@ ShellRoot {
     LazyLoader { id: calendarL; loading: true; Calendar {} }
     LazyLoader { id: sysRingsL; SysRings {} }
     LazyLoader { id: batteryL; BatteryPanel {} }
+    LazyLoader { id: displaysL; Displays {} }
     LazyLoader { id: timerL; TimerPanel {} }
     LazyLoader { id: settingsL; Settings {} }
     LazyLoader { id: guideL; Guide {} }
     LazyLoader { id: eqL; Eq {} }
     LazyLoader { id: barBuilderL; BarBuilder {} }
     LazyLoader { id: islandL; IslandPanel {} }
+    LazyLoader { id: aulaL; AulaPanel {} }
 
     readonly property var launcher: launcherL.item
     readonly property var clipboard: clipboardL.item
@@ -98,6 +100,7 @@ ShellRoot {
     readonly property var eq: eqL.item
     readonly property var barBuilder: barBuilderL.item
     readonly property var islandPanel: islandL.item
+    readonly property var aulaPanel: aulaL.item
 
     Lock {
         id: lock
@@ -121,6 +124,28 @@ ShellRoot {
                  + " age=" + (Weather.fetchedAt > 0
                      ? Math.round((Date.now() - Weather.fetchedAt) / 1000) + "s"
                      : "never");
+        }
+    }
+
+    IpcHandler {
+        target: "aula"
+
+        function toggle(): void { panelDo(aulaL, p => p.toggle()); }
+        function open(): void { panelDo(aulaL, p => p.shown = true); }
+        function close(): void { if (aulaL.item) aulaL.item.close(); }
+        function mode(key: string): void { Aula.setMode(key); }
+        function color(hex: string): void { Aula.setColor(hex); }
+        function brightness(level: int): void { Aula.setBrightness(level); }
+        function light(): void { Aula.setOn(!Aula.on); }
+        function battery(level: int): void { Aula.hwBattery = level; }
+        function preset(name: string): void {
+            const i = (Aula.presets || []).findIndex(p => p.name === name);
+            if (i >= 0)
+                Aula.loadPreset(i);
+        }
+        function state(): string {
+            return "connection=" + Aula.connection + " ready=" + Aula.ready
+                 + " mode=" + Aula.mode + " on=" + Aula.on + " error=" + Aula.error;
         }
     }
 
@@ -238,10 +263,18 @@ ShellRoot {
         value: lock.locked || Idle.screenOff
     }
 
+    readonly property int notesOpen: Notes.count
+
     GlobalShortcut {
         appid: "quickshell"
         name: "launcher"
         onPressed: panelDo(launcherL, p => p.toggle())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "aula"
+        onPressed: panelDo(aulaL, p => p.toggle())
     }
 
     GlobalShortcut {
@@ -360,7 +393,13 @@ ShellRoot {
     GlobalShortcut {
         appid: "quickshell"
         name: "battery"
-        onPressed: panelDo(batteryL, p => p.toggle())
+        onPressed: if (Power.present) panelDo(batteryL, p => p.toggle())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "displays"
+        onPressed: panelDo(displaysL, p => p.toggle())
     }
 
     GlobalShortcut {

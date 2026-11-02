@@ -203,6 +203,7 @@ Rectangle {
         SequentialAnimation on opacity {
             running: card.critical
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             NumberAnimation { to: 0.45; duration: 1100; easing.type: Easing.InOutSine }
             NumberAnimation { to: 1.0;  duration: 1100; easing.type: Easing.InOutSine }
         }

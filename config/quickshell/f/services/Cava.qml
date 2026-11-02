@@ -27,7 +27,7 @@ Singleton {
     function hold()    { root.watchers++; }
     function release() { root.watchers = Math.max(0, root.watchers - 1); }
 
-    property bool active: Media.has && Media.playing && root.watchers > 0
+    property bool active: Media.has && Media.playing && root.watchers > 0 && !Stage.gaming
 
     readonly property string config:
         Quickshell.env("HOME") + "/.config/cava/config-bar"

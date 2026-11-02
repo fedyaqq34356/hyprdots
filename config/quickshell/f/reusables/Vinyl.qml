@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Widgets
 import "root:/design"
+import "root:/services"
 
 Item {
     id: disc
@@ -27,6 +28,7 @@ Item {
         RotationAnimator on rotation {
             running: disc.spinning
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             from: 0
             to: 360
             duration: disc.period

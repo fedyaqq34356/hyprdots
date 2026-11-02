@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Widgets
 import "root:/design"
+import "root:/services"
 
 Item {
     id: bat
@@ -27,6 +28,7 @@ Item {
         from: 0; to: Math.PI * 2
         duration: bat.charging ? 1100 : 3400
         loops: Animation.Infinite
+        paused: running && Stage.gaming
         running: bat.visible
     }
 
@@ -95,6 +97,7 @@ Item {
 
                 SequentialAnimation on y {
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     PauseAnimation { duration: bub.index * 230 }
                     NumberAnimation {
                         from: well.height; to: -4
@@ -122,6 +125,7 @@ Item {
             SequentialAnimation on x {
                 running: bat.charging
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 NumberAnimation {
                     from: -glint.width; to: well.width + glint.width
                     duration: 1300; easing.type: Easing.InOutCubic
@@ -145,6 +149,7 @@ Item {
         SequentialAnimation on scale {
             running: bat.charging
             loops: Animation.Infinite
+            paused: running && Stage.gaming
             NumberAnimation { to: 1.18; duration: 520; easing.type: Easing.OutQuad }
             NumberAnimation { to: 1.0;  duration: 680; easing.type: Easing.InOutSine }
         }
@@ -153,6 +158,7 @@ Item {
     SequentialAnimation on opacity {
         running: bat.low
         loops: Animation.Infinite
+        paused: running && Stage.gaming
         alwaysRunToEnd: true
         NumberAnimation { to: 0.55; duration: 620; easing.type: Easing.InOutSine }
         NumberAnimation { to: 1.0;  duration: 620; easing.type: Easing.InOutSine }

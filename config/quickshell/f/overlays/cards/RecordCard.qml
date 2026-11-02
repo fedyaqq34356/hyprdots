@@ -33,6 +33,7 @@ Item {
                 SequentialAnimation {
                     running: true
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     PauseAnimation { duration: halo.index * 700 }
                     ParallelAnimation {
                         NumberAnimation { target: halo; property: "scale"; from: 1; to: 2.4; duration: 1400; easing.type: Easing.OutCubic }
@@ -63,6 +64,7 @@ Item {
             SequentialAnimation on scale {
                 running: true
                 loops: Animation.Infinite
+                paused: running && Stage.gaming
                 NumberAnimation { to: 0.82; duration: 700; easing.type: Easing.InOutSine }
                 NumberAnimation { to: 1.0;  duration: 700; easing.type: Easing.InOutSine }
             }

@@ -562,7 +562,7 @@ Scope {
         case "power": return Power.plugged ? "hi" : "lo";
         case "peri": return "lo";
         case "vpn":  return Vpn.up ? "hi" : "lo";
-        case "net":  return Network.connected ? "hi" : "lo";
+        case "net":  return Network.online ? "hi" : "lo";
         case "alarm": return "lo";
         }
         return "mid";

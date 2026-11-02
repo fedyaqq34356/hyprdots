@@ -27,3 +27,5 @@ ClipDrip ClipDrip.qml
 BatteryPanel BatteryPanel.qml
 NotifDeck NotifDeck.qml
 PowerSheet PowerSheet.qml
+Displays Displays.qml
+AulaPanel AulaPanel.qml

@@ -1,5 +1,6 @@
 import QtQuick
 import "root:/design"
+import "root:/services"
 
 Item {
     id: shape
@@ -45,7 +46,7 @@ Item {
     property real lastPaint: 0
 
     FrameAnimation {
-        running: shape.running && shape.visible
+        running: shape.running && shape.visible && !Stage.gaming
         onTriggered: {
             shape.t += frameTime;
             if (shape.t - shape.lastPaint < 0.033)

@@ -1,0 +1,1405 @@
+#!/usr/bin/env python3
+"""aulactl — подсветка AULA F75 (Greywood V3) через /dev/hidraw.
+
+Только стандартная библиотека. Пакеты не выдуманы: каждый взят из
+разобранных сообществом проектов и сверен между ними (см. `aulactl selftest`):
+
+  провод 258a:010c, интерфейс 1, feature report 6, 520 байт
+    0x84 чтение конфига (128)      Vantesh/aulaf75ctl, lukatasev, br0k3nb
+    0x04 запись конфига (128)      те же трое, read-modify-write
+    0x86 чтение матрицы (384)      Vantesh
+    0x06 запись матрицы (384)      Vantesh (Studio: matrix -> config)
+    0x82 модель                    Vantesh
+    0x08 живой кадр (378)          OpenRGB, kveld9, lukatasev, Vantesh
+  донгл 3554:fa09, report 0x13, 20 байт, чанки по 14 + сумма
+    0x44/0x04 конфиг, 0x42/0x02 цвета, 0x49/0x09 палитры,
+    0x07 связь, 0x4A заряд, 0x88 живой кадр          lukatasev
+
+Report 5 не отправляется никогда: на этом семействе МК это почтовый ящик
+загрузчика прошивки. Прошивка и любые иные области памяти не трогаются.
+
+Запись конфига и матрицы сохраняется в клавиатуре (как и её собственные
+Fn-сочетания). Перед первой записью снимается резервная копия в
+~/.local/state/aulactl/. Живой кадр ничего не сохраняет.
+"""
+
+import argparse
+import errno
+import fcntl
+import glob
+import json
+import os
+import select
+import sys
+import time
+
+VERSION = "1.0"
+
+WIRED = (0x258A, 0x010C)
+DONGLE = (0x3554, 0xFA09)
+
+REPORT_LEN = 520
+CFG_LEN = 128
+MATRIX_LEN = 384          # R[126] G[126] B[126] + 6 байт хвоста
+LEDS = 126
+LIVE_LEN = LEDS * 3       # 378
+GAP = 0.05                # пауза между командами по проводу (Vantesh)
+MODEL_F75 = bytes([3, 0, 0, 0, 0, 0xCD])
+
+OFF_CUSTOM = 0x09
+OFF_EFFECT = 0x0A
+OFF_INDICATOR = 0x12
+OFF_SLEEP = 0x18
+OFF_SLOTS = 0x3A
+SIG = bytes([0x5A, 0xA5])  # байты 126/127
+
+D_RID = 0x13
+D_CHUNK = 14
+D_ONLINE = 0x07
+D_STATUS = 0x4A
+D_EVENT = 0x0A
+D_REALTIME = 0x88
+D_BLOCKS = {             # имя: (чтение, запись, sub)
+    "config": (0x44, 0x04, 0),
+    "colors": (0x42, 0x02, 0),
+    "palette": (0x49, 0x09, 0),
+}
+D_RT_MAX = 200
+
+EFFECTS = {
+    0:  ("off",           False, False, True),
+    1:  ("static",        False, True,  True),
+    2:  ("breathe",       True,  True,  True),
+    3:  ("rainbow",       True,  False, True),
+    4:  ("flash_away",    True,  True,  True),
+    5:  ("raindrops",     True,  True,  True),
+    6:  ("rainbow_wheel", True,  True,  True),
+    7:  ("ripples",       True,  True,  True),
+    8:  ("stars",         True,  True,  True),
+    9:  ("shadow",        True,  True,  False),
+    10: ("snake",         True,  True,  True),
+    11: ("neon",          True,  True,  True),
+    12: ("reactive",      True,  True,  True),
+    13: ("sine_wave",     True,  True,  True),
+    14: ("scanner",       True,  True,  False),
+    15: ("windmill",      True,  False, True),
+    16: ("waterfall",     True,  False, True),
+    17: ("blossom",       True,  False, True),
+    18: ("storm",         True,  True,  False),
+    21: ("custom",        False, False, True),
+}
+ALIASES = {
+    "fixed": 1, "fixed_on": 1, "solid": 1, "respire": 2, "breathing": 2,
+    "flash": 4, "rain": 5, "wheel": 6, "ripple": 7, "stars_twinkle": 8,
+    "twinkle": 8, "shadow_fade": 9, "retro_snake": 10, "neon_stream": 11,
+    "reaction": 12, "sine": 13, "wave": 13, "blossoming": 17,
+    "self_defined": 21, "per_key": 21, "perkey": 21,
+}
+PALETTE = ["red", "green", "blue", "yellow", "magenta", "cyan", "white", "random"]
+INDICATOR = ["off", "blink", "slow_blink", "on"]
+SLEEP = [(60, 2), (90, 3), (120, 4), (180, 6), (240, 8),
+         (300, 10), (600, 20), (900, 30), (1200, 40)]
+
+def slot_of(eid):
+    if 1 <= eid <= 18:
+        return eid - 1
+    if eid == 21:
+        return 18
+    if eid == 0:
+        return 19
+    return None
+
+LAYOUT = [
+    ("esc", 30, 30, 25, 27, 0), ("f1", 107, 30, 25, 27, 12),
+    ("f2", 144, 30, 25, 27, 18), ("f3", 183, 30, 25, 27, 24),
+    ("f4", 222, 30, 25, 27, 30), ("f5", 269, 30, 25, 27, 36),
+    ("f6", 305, 30, 25, 27, 42), ("f7", 343, 30, 25, 27, 48),
+    ("f8", 388, 30, 25, 27, 54), ("f9", 439, 30, 25, 27, 60),
+    ("f10", 477, 30, 25, 27, 66), ("f11", 516, 30, 25, 27, 72),
+    ("f12", 555, 30, 25, 27, 78),
+    ("grave", 31, 81, 25, 27, 1), ("1", 70, 81, 25, 27, 7),
+    ("2", 108, 81, 25, 27, 13), ("3", 147, 81, 25, 27, 19),
+    ("4", 184, 81, 25, 27, 25), ("5", 223, 81, 25, 27, 31),
+    ("6", 262, 81, 25, 27, 37), ("7", 300, 81, 25, 27, 43),
+    ("8", 338, 81, 25, 27, 49), ("9", 377, 81, 25, 27, 55),
+    ("0", 416, 81, 25, 27, 61), ("minus", 453, 81, 25, 27, 67),
+    ("equal", 491, 81, 25, 27, 73), ("backspace", 531, 81, 60, 27, 79),
+    ("delete", 604, 81, 25, 27, 85),
+    ("tab", 34, 120, 44, 27, 2), ("q", 89, 120, 25, 27, 8),
+    ("w", 127, 120, 25, 27, 14), ("e", 165, 120, 25, 27, 20),
+    ("r", 204, 120, 25, 27, 26), ("t", 242, 120, 25, 27, 32),
+    ("y", 280, 120, 25, 27, 38), ("u", 318, 120, 25, 27, 44),
+    ("i", 356, 120, 25, 27, 50), ("o", 395, 120, 25, 27, 56),
+    ("p", 433, 120, 25, 27, 62), ("lbracket", 471, 120, 25, 27, 68),
+    ("rbracket", 509, 120, 25, 27, 74), ("backslash", 549, 120, 44, 27, 80),
+    ("pgup", 605, 120, 25, 27, 86),
+    ("caps", 33, 158, 52, 27, 3), ("a", 98, 158, 25, 27, 9),
+    ("s", 136, 158, 25, 27, 15), ("d", 174, 158, 25, 27, 21),
+    ("f", 213, 158, 25, 27, 27), ("g", 252, 158, 25, 27, 33),
+    ("h", 290, 158, 25, 27, 39), ("j", 327, 158, 25, 27, 45),
+    ("k", 366, 158, 25, 27, 51), ("l", 405, 158, 25, 27, 57),
+    ("semicolon", 443, 158, 25, 27, 63), ("quote", 481, 158, 25, 27, 69),
+    ("enter", 521, 158, 70, 27, 81), ("pgdn", 604, 158, 25, 27, 87),
+    ("lshift", 33, 195, 72, 27, 4), ("z", 116, 195, 25, 27, 10),
+    ("x", 155, 195, 25, 27, 16), ("c", 193, 195, 25, 27, 22),
+    ("v", 232, 195, 25, 27, 28), ("b", 270, 195, 25, 27, 34),
+    ("n", 309, 195, 25, 27, 40), ("m", 347, 195, 25, 27, 46),
+    ("comma", 384, 195, 25, 27, 52), ("dot", 424, 195, 25, 27, 58),
+    ("slash", 463, 195, 25, 27, 64), ("rshift", 502, 195, 56, 27, 70),
+    ("up", 567, 195, 25, 27, 82), ("end", 605, 195, 25, 27, 88),
+    ("lctrl", 34, 234, 35, 27, 5), ("lwin", 79, 234, 35, 27, 11),
+    ("lalt", 122, 234, 35, 27, 17), ("space", 174, 234, 226, 27, 35),
+    ("fn", 414, 234, 35, 27, 53), ("rctrl", 463, 234, 34, 27, 59),
+    ("left", 529, 234, 25, 27, 77), ("down", 568, 234, 25, 27, 83),
+    ("right", 605, 234, 25, 27, 89),
+]
+LABELS = {
+    "esc": "Esc", "grave": "`", "minus": "-", "equal": "=",
+    "backspace": "⌫", "delete": "Del", "tab": "Tab", "lbracket": "[",
+    "rbracket": "]", "backslash": "\\", "pgup": "PgUp", "caps": "Caps",
+    "semicolon": ";", "quote": "'", "enter": "Enter", "pgdn": "PgDn",
+    "lshift": "Shift", "comma": ",", "dot": ".", "slash": "/",
+    "rshift": "Shift", "up": "↑", "end": "End", "lctrl": "Ctrl",
+    "lwin": "Win", "lalt": "Alt", "space": "", "fn": "Fn", "rctrl": "Ctrl",
+    "left": "←", "down": "↓", "right": "→",
+}
+KNOB = (600, 27, 34, 34)
+KEY_ALIASES = {
+    "escape": "esc", "`": "grave", "~": "grave", "-": "minus", "=": "equal",
+    "bksp": "backspace", "del": "delete", "[": "lbracket", "]": "rbracket",
+    "\\": "backslash", "capslock": "caps", ";": "semicolon", "'": "quote",
+    "return": "enter", "shift": "lshift", ",": "comma", ".": "dot",
+    "/": "slash", "ctrl": "lctrl", "win": "lwin", "super": "lwin",
+    "alt": "lalt", "pageup": "pgup", "pagedown": "pgdn",
+}
+LED_BY_NAME = {k[0]: k[5] for k in LAYOUT}
+
+def resolve_key(name):
+    s = str(name).strip().lower()
+    if s.isdigit() and int(s) < LEDS and s not in LED_BY_NAME:
+        return int(s)
+    s = KEY_ALIASES.get(s, s)
+    if s in LED_BY_NAME:
+        return LED_BY_NAME[s]
+    raise AulaError("usage", f"неизвестная клавиша: {name!r}")
+
+EXIT = {"usage": 1, "not_found": 2, "permission": 3, "protocol": 4,
+        "asleep": 5, "unsupported": 6, "busy": 7, "io": 8}
+
+class AulaError(Exception):
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+def parse_color(s):
+    h = str(s).strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6 or any(c not in "0123456789abcdefABCDEF" for c in h):
+        raise AulaError("usage", f"цвет должен быть #rrggbb, а не {s!r}")
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+def hexc(rgb):
+    return "#%02x%02x%02x" % tuple(rgb)
+
+def hexdump(b):
+    return " ".join("%02x" % x for x in b)
+
+def _read(path, binary=False):
+    try:
+        with open(path, "rb" if binary else "r") as f:
+            return f.read()
+    except OSError:
+        return b"" if binary else ""
+
+def scan():
+    """Все hidraw клавиатуры без открытия устройств — только sysfs."""
+    out = []
+    for node in sorted(glob.glob("/sys/class/hidraw/hidraw*")):
+        ue = _read(node + "/device/uevent")
+        info = dict(l.split("=", 1) for l in ue.splitlines() if "=" in l)
+        hid = info.get("HID_ID", "")
+        try:
+            bus, vid, pid = (int(x, 16) for x in hid.split(":"))
+        except ValueError:
+            continue
+        name = info.get("HID_NAME", "")
+        kind = None
+        if bus == 3 and (vid, pid) == WIRED:
+            kind = "wired"
+        elif bus == 3 and (vid, pid) == DONGLE:
+            kind = "dongle"
+        elif bus == 5 and ("aula" in name.lower() or "f75" in name.lower()):
+            kind = "bt"
+        if not kind:
+            continue
+        iface = None
+        real = os.path.realpath(node + "/device")
+        parent = os.path.basename(os.path.dirname(real))
+        if ":" in parent and "." in parent:
+            try:
+                iface = int(parent.rsplit(".", 1)[1])
+            except ValueError:
+                pass
+        desc = _read(node + "/device/report_descriptor", True)
+        dev = "/dev/" + os.path.basename(node)
+        out.append({
+            "kind": kind, "path": dev, "name": name, "iface": iface,
+            "feature6": b"\x85\x06" in desc,
+            "vendor13": b"\x06\x02\xff" in desc and b"\x85\x13" in desc,
+            "access": os.access(dev, os.R_OK | os.W_OK),
+        })
+    return out
+
+def pick(cands, want):
+    wired = [c for c in cands if c["kind"] == "wired" and c["iface"] == 1
+             and c["feature6"]]
+    dongle = [c for c in cands if c["kind"] == "dongle" and c["vendor13"]]
+    if not dongle:
+        dongle = [c for c in cands if c["kind"] == "dongle" and c["iface"] == 1]
+    order = {"auto": wired + dongle, "wired": wired, "dongle": dongle}[want]
+    return order[0] if order else None
+
+def connection(cands):
+    kinds = {c["kind"] for c in cands}
+    for k in ("wired", "dongle", "bt"):
+        if k in kinds:
+            return k
+    return "none"
+
+class Lock:
+    def __init__(self, wait=3.0):
+        d = os.environ.get("XDG_RUNTIME_DIR") or "/tmp"
+        self.path = os.path.join(d, "aulactl.lock")
+        self.wait = wait
+        self.fd = None
+
+    def __enter__(self):
+        self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
+        end = time.monotonic() + self.wait
+        while True:
+            try:
+                fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except BlockingIOError:
+                if time.monotonic() > end:
+                    os.close(self.fd)
+                    raise AulaError("busy", "клавиатура занята другим вызовом aulactl")
+                time.sleep(0.02)
+
+    def __exit__(self, *a):
+        try:
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+        finally:
+            os.close(self.fd)
+
+def _open(path):
+    try:
+        return os.open(path, os.O_RDWR | os.O_CLOEXEC)
+    except PermissionError:
+        raise AulaError("permission",
+                        f"нет доступа к {path}: поставь udev-правило "
+                        "70-aula-f75.rules и переподключи клавиатуру")
+    except FileNotFoundError:
+        raise AulaError("not_found", "клавиатура отключилась")
+
+def _ioc(nr, size):
+    return (3 << 30) | (size << 16) | (ord("H") << 8) | nr
+
+HIDIOCSFEATURE = _ioc(0x06, REPORT_LEN)
+HIDIOCGFEATURE = _ioc(0x07, REPORT_LEN)
+
+def w_header(cmd, length, b2=0):
+    return bytes([6, cmd, b2, 0, 1, 0, length & 0xFF, length >> 8])
+
+W_READ_CFG = w_header(0x84, CFG_LEN)
+W_READ_MATRIX = w_header(0x86, MATRIX_LEN)
+W_READ_MODEL = w_header(0x82, 6, 1)
+W_LIVE = w_header(0x08, LIVE_LEN)
+
+def w_packet(header, payload=b""):
+    p = bytearray(REPORT_LEN)
+    p[:8] = header
+    p[8:8 + len(payload)] = payload
+    return p
+
+def safe(packet):
+    """Последний рубеж: наружу уходит только report 6 с известной командой."""
+    if packet[0] == 6 and len(packet) == REPORT_LEN:
+        if packet[1] in (0x84, 0x86, 0x82, 0x04, 0x06, 0x08):
+            return
+    if packet[0] == D_RID and len(packet) == 20:
+        if packet[1] in (0x44, 0x42, 0x49, 0x04, 0x02, 0x09,
+                         D_ONLINE, D_STATUS, D_REALTIME):
+            return
+    raise AulaError("protocol", "отказ: пакет вне белого списка")
+
+class Wired:
+    kind = "wired"
+
+    def __init__(self, path):
+        self.path = path
+        self.fd = _open(path)
+        self.last = 0.0
+
+    def close(self):
+        os.close(self.fd)
+
+    def _pace(self):
+        d = GAP - (time.monotonic() - self.last)
+        if d > 0:
+            time.sleep(d)
+        self.last = time.monotonic()
+
+    def set(self, packet):
+        safe(packet)
+        self._pace()
+        buf = bytearray(packet)
+        try:
+            fcntl.ioctl(self.fd, HIDIOCSFEATURE, buf, True)
+        except OSError as e:
+            if e.errno in (errno.ENODEV, errno.ENOENT):
+                raise AulaError("not_found", "клавиатура отключилась")
+            raise AulaError("io", f"запись в {self.path}: {e.strerror}")
+
+    def get(self):
+        self._pace()
+        buf = bytearray(REPORT_LEN)
+        buf[0] = 6
+        try:
+            n = fcntl.ioctl(self.fd, HIDIOCGFEATURE, buf, True)
+        except OSError as e:
+            raise AulaError("io", f"чтение из {self.path}: {e.strerror}")
+        return bytes(buf[:n]) if 0 < n <= REPORT_LEN else bytes(buf)
+
+    def request(self, header, size):
+        self.set(w_packet(header))
+        r = self.get()
+        if len(r) < 8 + size or r[:8] != header:
+            raise AulaError("protocol",
+                            "неожиданный ответ клавиатуры: " + hexdump(r[:8]))
+        return r[8:8 + size]
+
+    def model(self):
+        return self.request(W_READ_MODEL, 6)
+
+    def read_config(self):
+        return self.request(W_READ_CFG, CFG_LEN)
+
+    def read_matrix(self):
+        return self.request(W_READ_MATRIX, MATRIX_LEN)
+
+    def write_config(self, cfg):
+        self.set(w_packet(w_header(0x04, CFG_LEN), cfg))
+
+    def write_matrix(self, m):
+        self.set(w_packet(w_header(0x06, MATRIX_LEN), m))
+
+    def battery(self):
+        return None
+
+    def live(self, frame):
+        payload = bytearray(LIVE_LEN)
+        for i, (r, g, b) in enumerate(frame[:LEDS]):
+            payload[i * 3:i * 3 + 3] = bytes((r, g, b))
+        p = w_packet(W_LIVE, payload)
+        safe(p)
+        buf = bytearray(p)
+        for attempt in range(4):
+            try:
+                fcntl.ioctl(self.fd, HIDIOCSFEATURE, buf, True)
+                return
+            except OSError as e:
+                if e.errno in (errno.ENODEV, errno.ENOENT):
+                    raise AulaError("not_found", "клавиатура отключилась")
+                time.sleep(0.02 * (attempt + 1))
+        raise AulaError("io", "живой кадр не прошёл")
+
+def d_packet(cmd, total, idx, sub_len, data=b""):
+    p = bytearray(20)
+    p[0] = D_RID
+    p[1] = cmd
+    p[2] = total
+    p[3] = idx
+    p[4] = sub_len
+    p[5:5 + len(data[:D_CHUNK])] = data[:D_CHUNK]
+    p[19] = sum(p[:19]) & 0xFF
+    return p
+
+class Dongle:
+    kind = "dongle"
+
+    def __init__(self, path):
+        self.path = path
+        self.fd = _open(path)
+        self.queue = []
+        on = self.read_all(D_ONLINE, tries=2)
+        if not on or on[0] != 1:
+            raise AulaError("asleep", "клавиатура спит — нажми любую клавишу")
+
+    def close(self):
+        os.close(self.fd)
+
+    def send(self, p):
+        safe(p)
+        try:
+            os.write(self.fd, bytes(p))
+        except OSError as e:
+            if e.errno in (errno.ENODEV, errno.ENOENT):
+                raise AulaError("not_found", "донгл отключился")
+            raise AulaError("io", f"запись в {self.path}: {e.strerror}")
+
+    def _frame(self, timeout):
+        r, _, _ = select.select([self.fd], [], [], timeout)
+        if not r:
+            return None
+        b = os.read(self.fd, 64)
+        if len(b) == 19:
+            b = bytes([D_RID]) + b
+        if len(b) != 20 or b[0] != D_RID or (sum(b[:19]) & 0xFF) != b[19]:
+            return None
+        if b[1] == D_EVENT or (b[1] & 0x7F) == (D_REALTIME & 0x7F):
+            return None
+        return b
+
+    def _recv(self, cmd, timeout=1.0):
+        end = time.monotonic() + timeout
+        while True:
+            for i, r in enumerate(self.queue):
+                if (r[1] & 0x7F) == (cmd & 0x7F):
+                    return self.queue.pop(i)
+            left = end - time.monotonic()
+            if left <= 0:
+                return None
+            r = self._frame(min(left, 0.1))
+            if r is not None:
+                self.queue.append(r)
+
+    def read_all(self, cmd, sub=0, tries=3):
+        for _ in range(tries):
+            self.queue = []
+            self.send(d_packet(cmd, 1, 0, sub << 4))
+            parts = {}
+            while True:
+                r = self._recv(cmd)
+                if r is None or (r[1] & 0x80) or (r[2] & 0x80):
+                    break
+                total = r[2] & 0x7F
+                idx = r[3]
+                parts[idx] = r[5:5 + min(r[4] & 0x0F, D_CHUNK)]
+                if idx + 1 >= total:
+                    if len(parts) == total:
+                        return b"".join(parts[k] for k in range(total))
+                    break
+            time.sleep(0.1)
+        raise AulaError("protocol", f"донгл не ответил на 0x{cmd:02x}")
+
+    def write_cmd(self, cmd, data, sub=0, tries=5):
+        total = max(1, -(-len(data) // D_CHUNK))
+        self.queue = []
+        for idx in range(total):
+            chunk = data[idx * D_CHUNK:(idx + 1) * D_CHUNK]
+            p = d_packet(cmd, total, idx, (sub << 4) | len(chunk), chunk)
+            for _ in range(tries):
+                self.send(p)
+                r = self._recv(cmd)
+                if r and not (r[2] & 0x80) and r[3] == idx:
+                    break
+                time.sleep(0.1)
+            else:
+                raise AulaError("protocol", f"донгл не принял 0x{cmd:02x} #{idx}")
+            time.sleep(0.015)   # эфир для нажатий, иначе залипают клавиши
+
+    def _block(self, name):
+        get, _, sub = D_BLOCKS[name]
+        return self.read_all(get, sub)
+
+    def _put(self, name, data):
+        _, put, sub = D_BLOCKS[name]
+        self.write_cmd(put, data, sub)
+
+    def model(self):
+        return MODEL_F75
+
+    def read_config(self):
+        return self._block("config")[:CFG_LEN]
+
+    def read_matrix(self):
+        return self._block("colors")
+
+    def write_config(self, cfg):
+        self._put("config", cfg)
+
+    def write_matrix(self, m):
+        self._put("colors", m)
+
+    def read_palette(self):
+        return self._block("palette")
+
+    def write_palette(self, t):
+        self._put("palette", t)
+
+    def battery(self):
+        try:
+            st = self.read_all(D_STATUS, tries=1)
+            return st[0] if st and st[0] <= 100 else None
+        except AulaError:
+            return None
+
+    def live(self, frame):
+        frame = list(frame[:LEDS])
+        if frame and all(c == frame[0] for c in frame):
+            self._rt(2, bytes(frame[0]))
+            return
+        enc = encode_groups(frame)
+        self._rt(1, enc) if enc else self._rt(2, b"\0\0\0")
+
+    def _rt(self, sub, data):
+        total = max(1, -(-len(data) // D_CHUNK))
+        for idx in range(total):
+            time.sleep(0.010)
+            chunk = data[idx * D_CHUNK:(idx + 1) * D_CHUNK]
+            self.send(d_packet(D_REALTIME, total, idx, (sub << 4) | len(chunk), chunk))
+
+def encode_groups(frame):
+    """Живой кадр донгла: группы «цвет + список led», ≤200 байт (lukatasev)."""
+    for q in (1, 8, 16, 24, 32, 48, 64, 85, 128):
+        groups = {}
+        for led, c in enumerate(frame):
+            qc = tuple(max(0, min(255, round(v / q) * q)) for v in c) if q > 1 else tuple(c)
+            if all(v < 3 for v in qc):
+                continue
+            groups.setdefault(qc, []).append(led)
+        size = sum(4 + len(v) for v in groups.values())
+        if size > D_RT_MAX:
+            continue
+        out = bytearray()
+        for (r, g, b), leds in groups.items():
+            out += bytes((r, g, b, len(leds))) + bytes(leds)
+        return bytes(out)
+    return None
+
+def check_cfg(cfg):
+    if len(cfg) < CFG_LEN or bytes(cfg[126:128]) != SIG:
+        raise AulaError("protocol", "конфиг без подписи 5a a5 — запись запрещена")
+    if cfg[OFF_CUSTOM] > 1:
+        raise AulaError("protocol", "неизвестный режим в конфиге — запись запрещена")
+
+def active_id(cfg):
+    return 21 if cfg[OFF_CUSTOM] == 1 else cfg[OFF_EFFECT]
+
+def decode(cfg):
+    eid = active_id(cfg)
+    meta = EFFECTS.get(eid)
+    s = slot_of(eid)
+    out = {"effect": {"id": eid, "name": meta[0] if meta else f"mode{eid}"},
+           "brightness": None, "speed": None, "palette": None}
+    if s is not None and eid != 0:
+        o = OFF_SLOTS + 2 * s
+        b = cfg[o]
+        out["brightness"] = b if b <= 9 else None
+        if meta and meta[1]:
+            sp = cfg[o + 1] >> 4
+            out["speed"] = sp if sp <= 4 else None
+        if meta and meta[2]:
+            p = cfg[o + 1] & 0x0F
+            out["palette"] = {"index": p, "name": PALETTE[p]} if p <= 7 else None
+    ind = cfg[OFF_INDICATOR]
+    out["indicator"] = INDICATOR[ind] if ind < 4 else None
+    hw = cfg[OFF_SLEEP]
+    out["sleep"] = next((s for s, h in SLEEP if h == hw), None)
+    out["stored_effect"] = cfg[OFF_EFFECT]
+    return out
+
+def template_cfg():
+    """Конфиг для --dry-run без клавиатуры: правдоподобный, с подписью."""
+    c = bytearray(CFG_LEN)
+    c[OFF_EFFECT] = 1
+    for s in range(20):
+        c[OFF_SLOTS + 2 * s] = 9
+        c[OFF_SLOTS + 2 * s + 1] = 0x20
+    c[126:128] = SIG
+    return c
+
+def matrix_get(m, n=LEDS):
+    return [(m[i], m[n + i], m[2 * n + i]) for i in range(n)]
+
+def matrix_set(m, colors, n=LEDS):
+    m = bytearray(m)
+    for i, (r, g, b) in enumerate(colors[:n]):
+        m[i], m[n + i], m[2 * n + i] = r, g, b
+    return m
+
+def dominant(colors):
+    leds = {k[5] for k in LAYOUT}
+    count = {}
+    for i, c in enumerate(colors):
+        if i in leds:
+            count[c] = count.get(c, 0) + 1
+    return hexc(max(count, key=count.get)) if count else None
+
+def state_dir():
+    d = os.path.join(os.environ.get("XDG_STATE_HOME")
+                     or os.path.expanduser("~/.local/state"), "aulactl")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+def backup(dev, cfg, matrix, tag):
+    d = state_dir()
+    data = {"transport": dev.kind, "time": int(time.time()),
+            "config": bytes(cfg).hex(), "matrix": bytes(matrix).hex()}
+    first = os.path.join(d, f"original-{dev.kind}.json")
+    if not os.path.exists(first):
+        with open(first, "w") as f:
+            json.dump(data, f)
+    with open(os.path.join(d, f"last-{dev.kind}.json"), "w") as f:
+        json.dump(data, f)
+    return first
+
+def remember_on(eid):
+    with open(os.path.join(state_dir(), "last-effect"), "w") as f:
+        f.write(str(eid))
+
+def recall_on():
+    try:
+        v = int(_read(os.path.join(state_dir(), "last-effect")).strip())
+        return v if v in EFFECTS and v != 0 else 1
+    except ValueError:
+        return 1
+
+class Session:
+    def __init__(self, args):
+        self.args = args
+        self.dry = args.dry_run
+        self.dev = None
+        self.log = []
+        if self.dry:
+            self.kind = "dry-run"
+            src = getattr(args, "from_file", None)
+            if src:
+                with open(src) as f:
+                    snap = json.load(f)
+                self.cfg = bytearray.fromhex(snap["config"])
+                self.matrix = bytearray.fromhex(snap["matrix"])
+            else:
+                self.cfg = template_cfg()
+                self.matrix = bytearray(MATRIX_LEN)
+            return
+        cands = scan()
+        c = pick(cands, args.transport)
+        if not c:
+            bt = [x for x in cands if x["kind"] == "bt"]
+            if bt:
+                raise AulaError("unsupported",
+                                "клавиатура на Bluetooth — подсветкой по BT управлять нельзя, "
+                                "подключи проводом или донглом")
+            raise AulaError("not_found", "AULA F75 не найдена — подключи проводом (USB-C) или донглом")
+        self.dev = (Wired if c["kind"] == "wired" else Dongle)(c["path"])
+        self.kind = self.dev.kind
+        if self.kind == "wired":
+            model = self.dev.model()
+            if bytes(model) != MODEL_F75 and not args.force:
+                raise AulaError("unsupported",
+                                "ответ модели не F75 (" + hexdump(model) + ") — запись не отправлена")
+        self.cfg = bytearray(self.dev.read_config())
+        self.matrix = bytearray(self.dev.read_matrix())
+
+    def n(self):
+        return LEDS if self.kind != "dongle" else len(self.matrix) // 3
+
+    def close(self):
+        if self.dev:
+            self.dev.close()
+
+    def commit(self, cfg=None, matrix=None, palette=None):
+        """Пишет только изменившееся. Матрица — раньше конфига (как Studio)."""
+        cfg = bytearray(cfg if cfg is not None else self.cfg)
+        check_cfg(cfg)
+        writes = []
+        if matrix is not None and bytes(matrix) != bytes(self.matrix):
+            writes.append(("matrix", matrix))
+        if palette is not None:
+            writes.append(("palette", palette))
+        if bytes(cfg) != bytes(self.cfg) or writes:
+            writes.append(("config", cfg))
+        if not writes:
+            self.log.append("без изменений — ничего не отправлено")
+            return False
+        if self.dry or self.dev is None:
+            for name, data in writes:
+                self.log.append(self.describe(name, data))
+            return True
+        backup(self.dev, self.cfg, self.matrix, "pre")
+        for name, data in writes:
+            getattr(self.dev, "write_" + name)(bytes(data))
+        back = self.dev.read_config()
+        if bytes(back[:126]) != bytes(cfg[:126]):
+            raise AulaError("protocol", "клавиатура вернула не то, что записано (конфиг)")
+        if any(n == "matrix" for n, _ in writes):
+            bm = self.dev.read_matrix()
+            if bytes(bm[:LEDS * 3]) != bytes(matrix[:LEDS * 3]):
+                raise AulaError("protocol", "клавиатура вернула не то, что записано (матрица)")
+        self.cfg = bytearray(back)
+        if matrix is not None:
+            self.matrix = bytearray(matrix)
+        return True
+
+    def describe(self, name, data):
+        if self.kind == "dongle" or (self.dry and self.args.transport == "dongle"):
+            get, put, sub = D_BLOCKS[name if name != "matrix" else "colors"]
+            total = max(1, -(-len(data) // D_CHUNK))
+            lines = [f"[донгл] {name}: {total} пакетов по 20 байт"]
+            for i in range(total):
+                ch = bytes(data[i * D_CHUNK:(i + 1) * D_CHUNK])
+                lines.append("  " + hexdump(d_packet(put, total, i, (sub << 4) | len(ch), ch)))
+            return "\n".join(lines)
+        if name == "palette":
+            raise AulaError("unsupported", "палитры по проводу не разобраны")
+        p = w_packet(w_header(0x04 if name == "config" else 0x06,
+                              CFG_LEN if name == "config" else MATRIX_LEN), data)
+        safe(p)
+        old = self.cfg if name == "config" else self.matrix
+        diff = [f"{i}:{old[i]:02x}→{data[i]:02x}" for i in range(min(len(old), len(data)))
+                if old[i] != data[i]]
+        body = len(data) + 8
+        more = f" … ещё {len(diff) - 12}" if len(diff) > 12 else ""
+        return (f"[провод] {name}: report 6, {REPORT_LEN} байт\n"
+                f"  {hexdump(p[:body])}\n"
+                f"  изменено ({len(diff)}): {', '.join(diff[:12]) if diff else '—'}{more}")
+
+def effect_id(ident, force=False):
+    s = str(ident).strip().lower().replace("-", "_").replace(" ", "_")
+    if s.isdigit():
+        eid = int(s)
+    else:
+        eid = ALIASES.get(s)
+        if eid is None:
+            eid = next((k for k, v in EFFECTS.items() if v[0] == s), None)
+    if eid not in EFFECTS:
+        raise AulaError("usage", f"неизвестный эффект {ident!r} — см. aulactl effects")
+    if not EFFECTS[eid][3] and not force:
+        raise AulaError("unsupported", f"{EFFECTS[eid][0]} на F75 не рисуется (нужен --force)")
+    return eid
+
+def palette_index(v):
+    s = str(v).strip().lower()
+    if s.isdigit() and int(s) <= 7:
+        return int(s)
+    if s in PALETTE:
+        return PALETTE.index(s)
+    if s in ("multi", "rainbow"):
+        return 7
+    raise AulaError("usage", f"палитра: 0-7 или {', '.join(PALETTE)}")
+
+def rng(name, v, lo, hi):
+    if v is None:
+        return None
+    if not lo <= v <= hi:
+        raise AulaError("usage", f"{name}: {lo}-{hi}")
+    return v
+
+def apply_params(cfg, eid, brightness=None, speed=None, palette=None):
+    s = slot_of(eid)
+    meta = EFFECTS[eid]
+    o = OFF_SLOTS + 2 * s
+    if brightness is not None and eid != 0:
+        cfg[o] = brightness
+    if speed is not None:
+        if not meta[1]:
+            raise AulaError("unsupported", f"у {meta[0]} нет скорости")
+        cfg[o + 1] = (speed << 4) | (cfg[o + 1] & 0x0F)
+    if palette is not None:
+        if not meta[2]:
+            raise AulaError("unsupported", f"у {meta[0]} нет палитры")
+        cfg[o + 1] = (cfg[o + 1] & 0xF0) | palette
+
+def select_effect(cfg, eid):
+    if eid == 21:
+        cfg[OFF_CUSTOM] = 1
+        cfg[OFF_EFFECT] = 21
+    else:
+        cfg[OFF_CUSTOM] = 0
+        cfg[OFF_EFFECT] = eid
+
+def scaled(rgb, level):
+    """Яркость 0-9 для своих цветов: по свету, а не по коду (гамма 2.2)."""
+    if level is None or level >= 9:
+        return tuple(rgb)
+    k = (level / 9.0) ** 2.2
+    return tuple(int(round(c * k)) for c in rgb)
+
+def status_payload(sess, cands, with_matrix=False):
+    out = {"ok": True, "found": True, "transport": sess.kind,
+           "connection": connection(cands) if cands is not None else sess.kind,
+           "path": sess.dev.path if sess.dev else None, "access": True}
+    out.update(decode(sess.cfg))
+    colors = matrix_get(sess.matrix, sess.n())
+    out["color"] = dominant(colors)
+    out["battery"] = sess.dev.battery() if sess.dev else None
+    out["backup"] = os.path.join(state_dir(), f"original-{sess.kind}.json")
+    if with_matrix:
+        out["keys"] = {k[0]: hexc(colors[k[5]]) for k in LAYOUT if k[5] < len(colors)}
+    return out
+
+def cmd_status(args):
+    if args.quick:
+        cands = scan()
+        c = pick(cands, "auto")
+        return {"ok": True, "found": bool(cands), "connection": connection(cands),
+                "path": c["path"] if c else None,
+                "access": bool(c and c["access"]),
+                "controllable": bool(c)}
+    cands = None if args.dry_run else scan()
+    if cands is not None and not cands:
+        return {"ok": True, "found": False, "connection": "none"}
+    if cands is not None:
+        c = pick(cands, args.transport)
+        if c and not c["access"]:
+            return {"ok": True, "found": True, "connection": connection(cands),
+                    "path": c["path"], "access": False, "controllable": True,
+                    "error": "permission"}
+        if not c:
+            return {"ok": True, "found": True, "connection": connection(cands),
+                    "access": False, "controllable": False}
+    with Lock():
+        sess = Session(args)
+        try:
+            out = status_payload(sess, cands, args.keys)
+            out["controllable"] = True
+            return out
+        finally:
+            sess.close()
+
+def run_write(args, fn):
+    with Lock():
+        sess = Session(args)
+        try:
+            check_cfg(sess.cfg)
+            changed = fn(sess)
+            out = {"ok": True, "changed": bool(changed), "transport": sess.kind}
+            if sess.dry:
+                out["dry_run"] = sess.log
+            else:
+                out.update(decode(sess.cfg))
+                out["color"] = dominant(matrix_get(sess.matrix, sess.n()))
+            return out
+        finally:
+            sess.close()
+
+def cmd_mode(args):
+    eid = effect_id(args.effect, args.force)
+    b = rng("яркость", args.brightness, 0, 9)
+    sp = rng("скорость", args.speed, 0, 4)
+    pal = palette_index(args.palette) if args.palette is not None else None
+
+    def go(sess):
+        cfg = bytearray(sess.cfg)
+        select_effect(cfg, eid)
+        if eid != 0:
+            remember_on(eid) if not sess.dry else None
+            apply_params(cfg, eid, b, sp, pal)
+        return sess.commit(cfg)
+    return run_write(args, go)
+
+def cmd_param(args, what):
+    def go(sess):
+        cfg = bytearray(sess.cfg)
+        eid = active_id(cfg)
+        if eid == 0:
+            raise AulaError("unsupported", "подсветка выключена — сначала aulactl on")
+        if what == "brightness":
+            apply_params(cfg, eid, brightness=rng("яркость", args.value, 0, 9))
+        elif what == "speed":
+            apply_params(cfg, eid, speed=rng("скорость", args.value, 0, 4))
+        else:
+            apply_params(cfg, eid, palette=palette_index(args.value))
+        return sess.commit(cfg)
+    return run_write(args, go)
+
+def cmd_off(args):
+    def go(sess):
+        cfg = bytearray(sess.cfg)
+        cur = active_id(cfg)
+        if cur != 0 and not sess.dry:
+            remember_on(cur)
+        select_effect(cfg, 0)
+        return sess.commit(cfg)
+    return run_write(args, go)
+
+def cmd_on(args):
+    def go(sess):
+        cfg = bytearray(sess.cfg)
+        if active_id(cfg) != 0:
+            return sess.commit(cfg)
+        select_effect(cfg, recall_on())
+        return sess.commit(cfg)
+    return run_write(args, go)
+
+def build_colors(base, keys, brightness, n):
+    colors = [scaled(base, brightness)] * n
+    for name, col in keys.items():
+        led = resolve_key(name)
+        if led < n:
+            colors[led] = scaled(parse_color(col), brightness)
+    return colors
+
+def write_custom(sess, colors, brightness):
+    m = matrix_set(sess.matrix, colors, sess.n())
+    cfg = bytearray(sess.cfg)
+    select_effect(cfg, 21)
+    apply_params(cfg, 21, brightness=9)
+    return sess.commit(cfg, m)
+
+def cmd_color(args):
+    rgb = parse_color(args.color)
+    b = rng("яркость", args.brightness, 0, 9)
+
+    def go(sess):
+        return write_custom(sess, build_colors(rgb, {}, b, sess.n()), b)
+    return run_write(args, go)
+
+def cmd_keys(args):
+    src = sys.stdin.read() if args.file == "-" else open(args.file).read()
+    try:
+        spec = json.loads(src)
+    except ValueError as e:
+        raise AulaError("usage", f"JSON: {e}")
+    base = parse_color(spec.get("base", "#000000"))
+    keys = spec.get("keys", {})
+    b = rng("яркость", spec.get("brightness", args.brightness), 0, 9)
+
+    def go(sess):
+        return write_custom(sess, build_colors(base, keys, b, sess.n()), b)
+    return run_write(args, go)
+
+def cmd_palette_color(args):
+    eid = effect_id(args.effect)
+    j = palette_index(args.index)
+    rgb = parse_color(args.color)
+    if j > 6:
+        raise AulaError("usage", "менять можно цвета 0-6")
+
+    def go(sess):
+        if sess.kind == "wired" or (sess.dry and args.transport != "dongle"):
+            raise AulaError("unsupported",
+                            "свои цвета для родных эффектов есть только через донгл; "
+                            "по проводу — 7 цветов палитры или живой режим")
+        tab = bytearray(sess.dev.read_palette()) if sess.dev else bytearray(21 * 20)
+        o = (slot_of(eid) + 1) * 21 + j * 3
+        tab[o:o + 3] = bytes(rgb)
+        return sess.commit(None, None, tab)
+    return run_write(args, go)
+
+def cmd_indicator(args):
+    if args.mode not in INDICATOR:
+        raise AulaError("usage", "индикатор: " + ", ".join(INDICATOR))
+
+    def go(sess):
+        cfg = bytearray(sess.cfg)
+        cfg[OFF_INDICATOR] = INDICATOR.index(args.mode)
+        return sess.commit(cfg)
+    return run_write(args, go)
+
+def cmd_sleep(args):
+    hw = dict(SLEEP).get(args.seconds)
+    if hw is None:
+        raise AulaError("usage", "сон, секунд: " + ", ".join(str(s) for s, _ in SLEEP))
+
+    def go(sess):
+        cfg = bytearray(sess.cfg)
+        cfg[OFF_SLEEP] = hw
+        return sess.commit(cfg)
+    return run_write(args, go)
+
+def cmd_restore(args):
+    with open(args.file) as f:
+        snap = json.load(f)
+    cfg = bytearray.fromhex(snap["config"])
+    m = bytearray.fromhex(snap["matrix"])
+
+    def go(sess):
+        if snap.get("transport") not in (sess.kind, None) and not sess.dry:
+            raise AulaError("usage", "копия снята через другое подключение")
+        return sess.commit(cfg, m)
+    return run_write(args, go)
+
+def cmd_snapshot(args):
+    with Lock():
+        sess = Session(args)
+        try:
+            data = {"transport": sess.kind, "time": int(time.time()),
+                    "config": bytes(sess.cfg).hex(), "matrix": bytes(sess.matrix).hex()}
+            path = args.file or os.path.join(state_dir(), time.strftime("snapshot-%Y%m%d-%H%M%S.json"))
+            with open(path, "w") as f:
+                json.dump(data, f)
+            return {"ok": True, "file": path}
+        finally:
+            sess.close()
+
+def cmd_effects(args):
+    return {"ok": True, "effects": [
+        {"id": k, "name": v[0], "speed": v[1], "palette": v[2], "works": v[3]}
+        for k, v in sorted(EFFECTS.items())], "palette": PALETTE,
+        "indicator": INDICATOR, "sleep": [s for s, _ in SLEEP]}
+
+def cmd_layout(args):
+    return {"ok": True, "width": 640, "height": 270, "knob": list(KNOB),
+            "keys": [{"name": n, "label": LABELS.get(n, n.upper()),
+                      "x": x, "y": y, "w": w, "h": h, "led": led}
+                     for n, x, y, w, h, led in LAYOUT]}
+
+def cmd_devices(args):
+    return {"ok": True, "devices": scan()}
+
+def cmd_live(args):
+    die_with_parent()
+    dev = None
+    frame = None
+    last = 0.0
+    keep = 0.4
+    buf = b""
+    fd = sys.stdin.fileno()
+    os.set_blocking(fd, False)
+
+    def ensure():
+        nonlocal dev
+        if dev is None:
+            c = pick(scan(), args.transport)
+            if not c:
+                return None
+            try:
+                dev = (Wired if c["kind"] == "wired" else Dongle)(c["path"])
+            except AulaError:
+                return None
+            if args.json:
+                emit({"event": "live", "transport": dev.kind})
+        return dev
+
+    def send():
+        nonlocal dev, last
+        if frame is None or args.dry_run:
+            last = time.monotonic()
+            return
+        try:
+            with Lock(wait=0.2):
+                d = ensure()
+                if d:
+                    d.live(frame)
+        except AulaError as e:
+            if args.json:
+                emit({"event": "error", "error": e.code, "message": e.message})
+            if dev:
+                try:
+                    dev.close()
+                except OSError:
+                    pass
+            dev = None
+        last = time.monotonic()
+
+    while True:
+        timeout = keep if frame is not None else None
+        if frame is not None:
+            timeout = max(0.0, keep - (time.monotonic() - last))
+        r, _, _ = select.select([fd], [], [], timeout)
+        if r:
+            chunk = os.read(fd, 65536)
+            if not chunk:
+                break
+            buf += chunk
+            lines = buf.split(b"\n")
+            buf = lines.pop()
+            newest = None
+            for raw in lines:
+                line = raw.decode(errors="ignore").strip()
+                if not line:
+                    continue
+                if line == "stop":
+                    frame = None
+                    newest = None
+                    continue
+                newest = line
+            if newest:
+                try:
+                    if newest.startswith("#"):
+                        frame = [parse_color(newest)] * LEDS
+                    elif newest.startswith("F "):
+                        h = newest[2:].strip()
+                        frame = [tuple(int(h[i + j:i + j + 2], 16) for j in (0, 2, 4))
+                                 for i in range(0, min(len(h), LEDS * 6), 6)]
+                        frame += [(0, 0, 0)] * (LEDS - len(frame))
+                    if args.dry_run and frame:
+                        print("[live] " + hexdump(w_header(0x08, LIVE_LEN))
+                              + " " + hexdump(bytes(frame[0])) + " …", flush=True)
+                    send()
+                except (AulaError, ValueError):
+                    pass
+        elif frame is not None:
+            send()
+    if dev:
+        dev.close()
+    return {"ok": True}
+
+def emit(obj):
+    sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+    sys.stdout.flush()
+
+def die_with_parent():
+    """Уйти вместе с шеллом: сиротой watch жил бы вечно (пишет только на
+    изменения и потому не замечает, что читать его некому)."""
+    try:
+        import ctypes
+        import signal
+        ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, signal.SIGTERM)  # PR_SET_PDEATHSIG
+    except (OSError, AttributeError):
+        pass
+    return os.getppid()
+
+def cmd_watch(args):
+    parent = die_with_parent()
+    prev = None
+    bat_at = 0.0
+    battery = None
+    while True:
+        cands = scan()
+        c = pick(cands, "auto")
+        key = (connection(cands), c["path"] if c else None, bool(c and c["access"]))
+        now = time.monotonic()
+        if key != prev:
+            prev = key
+            bat_at = 0.0
+            ev = {"event": "device", "connection": key[0], "path": key[1],
+                  "access": key[2], "controllable": bool(c), "found": bool(cands)}
+            if c and c["access"]:
+                try:
+                    a = argparse.Namespace(dry_run=False, transport="auto",
+                                           force=False, keys=True, from_file=None)
+                    with Lock():
+                        sess = Session(a)
+                        try:
+                            ev.update(status_payload(sess, cands, True))
+                            battery = ev.get("battery")
+                        finally:
+                            sess.close()
+                    bat_at = now
+                except AulaError as e:
+                    ev.update({"error": e.code, "message": e.message})
+            emit(ev)
+        elif c and c["kind"] == "dongle" and c["access"] and now - bat_at > 120:
+            bat_at = now
+            try:
+                with Lock(wait=0.5):
+                    d = Dongle(c["path"])
+                    try:
+                        b = d.battery()
+                    finally:
+                        d.close()
+                if b != battery:
+                    battery = b
+                    emit({"event": "battery", "battery": b})
+            except AulaError:
+                pass
+        if os.getppid() != parent:
+            return {"ok": True}
+        time.sleep(args.interval)
+
+def cmd_selftest(args):
+    checks = []
+
+    def ok(name, cond):
+        checks.append({"check": name, "ok": bool(cond)})
+
+    ok("чтение конфига = 06 84 00 00 01 00 80 00 (Vantesh, br0k3nb, lukatasev)",
+       W_READ_CFG == bytes([6, 0x84, 0, 0, 1, 0, 0x80, 0]))
+    ok("чтение матрицы = 06 86 00 00 01 00 80 01 (Vantesh)",
+       W_READ_MATRIX == bytes([6, 0x86, 0, 0, 1, 0, 0x80, 1]))
+    ok("модель = 06 82 01 00 01 00 06 00 (Vantesh)",
+       W_READ_MODEL == bytes([6, 0x82, 1, 0, 1, 0, 6, 0]))
+    ok("живой кадр = 06 08 00 00 01 00 7a 01 (OpenRGB, kveld9, lukatasev)",
+       W_LIVE == bytes([6, 8, 0, 0, 1, 0, 0x7A, 1]))
+    ok("запись конфига = 06 04 00 00 01 00 80 00", w_header(0x04, CFG_LEN) == bytes([6, 4, 0, 0, 1, 0, 0x80, 0]))
+    ok("запись матрицы = 06 06 00 00 01 00 80 01", w_header(0x06, MATRIX_LEN) == bytes([6, 6, 0, 0, 1, 0, 0x80, 1]))
+    c = template_cfg()
+    select_effect(c, 1)
+    apply_params(c, 1, brightness=4)
+    p = w_packet(w_header(0x04, CFG_LEN), c)
+    ok("static: report[17]=0 [18]=1 [66]=4 (lukatasev selftest)", p[17] == 0 and p[18] == 1 and p[66] == 4)
+    c = template_cfg()
+    select_effect(c, 21)
+    apply_params(c, 21, brightness=7)
+    ok("self-defined: cfg[9]=1 cfg[10]=21 яркость @0x5e (Vantesh)", c[9] == 1 and c[10] == 21 and c[0x5E] == 7)
+    ok("слоты: fixed_on@58, storm@92 (Vantesh)", OFF_SLOTS + 2 * slot_of(1) == 58 and OFF_SLOTS + 2 * slot_of(18) == 92)
+    c = template_cfg()
+    select_effect(c, 2)
+    c[OFF_SLOTS + 3] = 0x35
+    apply_params(c, 2, speed=1)
+    ok("скорость не трогает палитру", c[OFF_SLOTS + 3] == 0x15)
+    apply_params(c, 2, palette=6)
+    ok("палитра не трогает скорость", c[OFF_SLOTS + 3] == 0x16)
+    m = matrix_set(bytearray(MATRIX_LEN), [(1, 2, 3)] + [(0, 0, 0)] * 125)
+    ok("матрица планарная", m[0] == 1 and m[126] == 2 and m[252] == 3)
+    fr = [(0, 0, 0)] * LEDS
+    fr[0] = (1, 2, 3)
+    fr[10] = (4, 5, 6)
+    payload = bytearray(LIVE_LEN)
+    for i, rgb in enumerate(fr):
+        payload[i * 3:i * 3 + 3] = bytes(rgb)
+    lp = w_packet(W_LIVE, payload)
+    ok("живой кадр: led0 @8, led10 @38", lp[8:11] == b"\x01\x02\x03" and lp[38:41] == b"\x04\x05\x06")
+    dp = d_packet(0x44, 1, 0, 0)
+    ok("донгл: 13 44 01 00 00 … сумма", dp[:5] == bytes([0x13, 0x44, 1, 0, 0]) and dp[19] == (0x13 + 0x44 + 1) & 0xFF)
+    leds = [k[5] for k in LAYOUT]
+    ok("раскладка: 80 клавиш, led уникальны", len(LAYOUT) == 80 and len(set(leds)) == 80)
+    ok("led: esc0 f1=12 del85 pgup86 pgdn87 end88 right89 fn53 space35",
+       LED_BY_NAME["esc"] == 0 and LED_BY_NAME["f1"] == 12 and LED_BY_NAME["delete"] == 85
+       and LED_BY_NAME["pgup"] == 86 and LED_BY_NAME["pgdn"] == 87 and LED_BY_NAME["end"] == 88
+       and LED_BY_NAME["right"] == 89 and LED_BY_NAME["fn"] == 53 and LED_BY_NAME["space"] == 35)
+    bad = bytearray(REPORT_LEN)
+    bad[0] = 5
+    try:
+        safe(bad)
+        ok("report 5 запрещён", False)
+    except AulaError:
+        ok("report 5 запрещён", True)
+    try:
+        check_cfg(bytearray(CFG_LEN))
+        ok("без подписи 5a a5 запись запрещена", False)
+    except AulaError:
+        ok("без подписи 5a a5 запись запрещена", True)
+    allok = all(c["ok"] for c in checks)
+    return {"ok": allok, "checks": checks}
+
+def main():
+    def common(p, top):
+        d = {} if top else {"default": argparse.SUPPRESS}
+        p.add_argument("--json", action="store_true", help="ответ в JSON", **d)
+        p.add_argument("--dry-run", action="store_true",
+                       help="напечатать пакеты, ничего не отправляя (клавиатура не нужна)", **d)
+        p.add_argument("--from", dest="from_file", metavar="SNAPSHOT",
+                       help="для --dry-run: взять конфиг из копии",
+                       **({} if top else {"default": argparse.SUPPRESS}))
+        p.add_argument("--transport", choices=["auto", "wired", "dongle"],
+                       **({"default": "auto"} if top else d))
+        p.add_argument("--force", action="store_true", help="разрешить неработающие эффекты", **d)
+
+    ap = argparse.ArgumentParser(prog="aulactl", description="Подсветка AULA F75")
+    common(ap, True)
+    ap.add_argument("--version", action="version", version=VERSION)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    _add = sub.add_parser
+
+    def add_parser(name, **kw):
+        p = _add(name, **kw)
+        common(p, False)
+        return p
+    sub.add_parser = add_parser
+
+    s = sub.add_parser("status")
+    s.add_argument("--quick", action="store_true", help="только sysfs, без обращения к клавиатуре")
+    s.add_argument("--keys", action="store_true", help="цвета всех клавиш")
+
+    s = sub.add_parser("mode")
+    s.add_argument("effect")
+    s.add_argument("-b", "--brightness", type=int)
+    s.add_argument("-s", "--speed", type=int)
+    s.add_argument("-p", "--palette")
+
+    for name in ("brightness", "speed"):
+        s = sub.add_parser(name)
+        s.add_argument("value", type=int)
+    s = sub.add_parser("palette")
+    s.add_argument("value")
+
+    s = sub.add_parser("color")
+    s.add_argument("color")
+    s.add_argument("-b", "--brightness", type=int)
+
+    s = sub.add_parser("keys")
+    s.add_argument("file", help='JSON {"base":"#000000","keys":{"esc":"#ff0000"},"brightness":9} или -')
+    s.add_argument("-b", "--brightness", type=int)
+
+    s = sub.add_parser("palette-color", help="свой цвет в палитре эффекта (донгл)")
+    s.add_argument("effect")
+    s.add_argument("index")
+    s.add_argument("color")
+
+    sub.add_parser("off")
+    sub.add_parser("on")
+    s = sub.add_parser("indicator")
+    s.add_argument("mode")
+    s = sub.add_parser("sleep")
+    s.add_argument("seconds", type=int)
+    s = sub.add_parser("snapshot")
+    s.add_argument("file", nargs="?")
+    s = sub.add_parser("restore")
+    s.add_argument("file")
+    sub.add_parser("effects")
+    sub.add_parser("layout")
+    sub.add_parser("devices")
+    sub.add_parser("live")
+    s = sub.add_parser("watch")
+    s.add_argument("--interval", type=float, default=2.0)
+    sub.add_parser("selftest")
+
+    args = ap.parse_args()
+    table = {
+        "status": cmd_status, "mode": cmd_mode, "color": cmd_color,
+        "keys": cmd_keys, "off": cmd_off, "on": cmd_on,
+        "brightness": lambda a: cmd_param(a, "brightness"),
+        "speed": lambda a: cmd_param(a, "speed"),
+        "palette": lambda a: cmd_param(a, "palette"),
+        "palette-color": cmd_palette_color, "indicator": cmd_indicator,
+        "sleep": cmd_sleep, "snapshot": cmd_snapshot, "restore": cmd_restore,
+        "effects": cmd_effects, "layout": cmd_layout, "devices": cmd_devices,
+        "live": cmd_live, "watch": cmd_watch, "selftest": cmd_selftest,
+    }
+    try:
+        out = table[args.cmd](args)
+    except AulaError as e:
+        if args.json:
+            emit({"ok": False, "error": e.code, "message": e.message})
+        else:
+            print("aulactl: " + e.message, file=sys.stderr)
+        return EXIT.get(e.code, 1)
+    except KeyboardInterrupt:
+        return 130
+    except BrokenPipeError:
+        return 0
+    if args.cmd in ("live", "watch"):
+        return 0
+    if args.json:
+        emit(out)
+    else:
+        human(args.cmd, out)
+    return 0 if out.get("ok", True) else 1
+
+def human(cmd, out):
+    if "dry_run" in out:
+        for l in out["dry_run"]:
+            print(l)
+        return
+    if cmd == "selftest":
+        for c in out["checks"]:
+            print(("ok   " if c["ok"] else "FAIL ") + c["check"])
+        print("всё сходится" if out["ok"] else "ЕСТЬ РАСХОЖДЕНИЯ")
+        return
+    if cmd == "status" and not out.get("found"):
+        print("клавиатура не найдена")
+        return
+    skip = {"ok", "keys", "devices", "effects", "checks", "palette", "indicator", "sleep"} if cmd == "effects" else {"ok", "keys", "devices", "checks"}
+    for k, v in out.items():
+        if k in skip:
+            continue
+        if isinstance(v, dict):
+            v = v.get("name", v)
+        print(f"{k}: {v}")
+    if cmd == "effects":
+        for e in out["effects"]:
+            flags = ("скорость " if e["speed"] else "") + ("палитра" if e["palette"] else "")
+            print(f"{e['id']:>2}  {e['name']:<14} {flags}{'' if e['works'] else '  (не работает на F75)'}")
+    if cmd == "devices":
+        for d in out["devices"]:
+            print(d)
+
+if __name__ == "__main__":
+    sys.exit(main())

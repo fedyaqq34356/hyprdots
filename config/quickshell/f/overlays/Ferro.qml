@@ -22,7 +22,7 @@ Scope {
     readonly property bool blocked: {
         const mon = Hyprland.focusedMonitor;
         const ws = mon ? mon.activeWorkspace : null;
-        return !!(ws && ws.hasFullscreen);
+        return Stage.gaming || !!(ws && ws.hasFullscreen);
     }
 
     function begin() {

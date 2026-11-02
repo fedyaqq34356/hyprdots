@@ -1,4 +1,5 @@
 import QtQuick
+import "root:/services"
 
 Item {
     id: meter
@@ -25,6 +26,7 @@ Item {
     NumberAnimation on phase {
         running: meter.animating && meter.visible && !meter.flat
         loops: Animation.Infinite
+        paused: running && Stage.gaming
         from: 0
         to: Math.PI * 2
         duration: 1400

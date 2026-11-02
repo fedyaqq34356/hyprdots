@@ -11,6 +11,18 @@ Singleton {
 
     property int freeCount: 0
 
+    property bool gaming: false
+
+    readonly property var gameClass: /^(steam_app_\d+|arma3(_x64)?(\.exe)?|gamescope|hoi4|cities2(\.exe)?|.+\.exe)$/i
+
+    function isGame(raw) {
+        if (!raw || !raw.fullscreen)
+            return false;
+        if (raw.contentType === "game")
+            return true;
+        return root.gameClass.test(raw.class || "") || root.gameClass.test(raw.initialClass || "");
+    }
+
     function free(monitorName) {
         if (!monitorName)
             return true;
@@ -22,7 +34,8 @@ Singleton {
         "openwindow", "closewindow", "movewindow", "movewindowv2",
         "changefloatingmode", "fullscreen", "workspace", "workspacev2",
         "focusedmon", "focusedmonv2", "monitoradded", "monitorremoved",
-        "activespecial", "activespecialv2", "moveworkspace", "moveworkspacev2"
+        "activespecial", "activespecialv2", "moveworkspace", "moveworkspacev2",
+        "activewindow", "activewindowv2", "windowtitle", "windowtitlev2"
     ]
 
     Connections {
@@ -60,6 +73,7 @@ Singleton {
 
         const out = {};
         let free = 0;
+        let game = false;
 
         const monitors = Hyprland.monitors.values;
         for (let i = 0; i < monitors.length; i++) {
@@ -67,6 +81,8 @@ Singleton {
             if (!mon || !mon.name)
                 continue;
 
+            if (root.monitorGaming(mon))
+                game = true;
             const isFree = root.monitorFree(mon);
             out[mon.name] = isFree;
             if (isFree)
@@ -75,6 +91,19 @@ Singleton {
 
         root.freeByMonitor = out;
         root.freeCount = free;
+        root.gaming = game;
+    }
+
+    function monitorGaming(mon) {
+        const ws = mon.activeWorkspace;
+        if (!ws || !ws.hasFullscreen)
+            return false;
+        const wins = ws.toplevels ? ws.toplevels.values : [];
+        for (let i = 0; i < wins.length; i++) {
+            if (root.isGame(wins[i] ? wins[i].lastIpcObject : null))
+                return true;
+        }
+        return false;
     }
 
     function monitorFree(mon) {

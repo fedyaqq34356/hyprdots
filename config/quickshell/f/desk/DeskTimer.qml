@@ -210,6 +210,7 @@ Item {
                 SequentialAnimation on opacity {
                     running: face.ringing
                     loops: Animation.Infinite
+                    paused: running && Stage.gaming
                     NumberAnimation { to: 0.55; duration: 520 }
                     NumberAnimation { to: 1.0;  duration: 520 }
                 }

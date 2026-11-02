@@ -298,6 +298,7 @@ Scope {
                     NumberAnimation on phase {
                         running: secondsArc.visible && secondsArc.clockFeedback
                         loops: Animation.Infinite
+                        paused: running && Stage.gaming
                         from: 0
                         to: Math.PI * 2
                         duration: 1400
@@ -550,6 +551,7 @@ Scope {
                         SequentialAnimation on glow {
                             running: dotsChip.wanted
                             loops: Animation.Infinite
+                            paused: running && Stage.gaming
                             NumberAnimation { from: 0.25; to: 0.75; duration: 2800; easing.type: Easing.InOutSine }
                             NumberAnimation { from: 0.75; to: 0.25; duration: 2800; easing.type: Easing.InOutSine }
                         }
@@ -569,6 +571,7 @@ Scope {
                             SequentialAnimation on x {
                                 running: dotsChip.wanted
                                 loops: Animation.Infinite
+                                paused: running && Stage.gaming
                                 PauseAnimation { duration: 2400 }
                                 NumberAnimation {
                                     from: -chipSheen.width * 1.5; to: dotsChip.full + chipSheen.width
@@ -595,6 +598,7 @@ Scope {
                                 SequentialAnimation on rotation {
                                     running: dotsChip.wanted
                                     loops: Animation.Infinite
+                                    paused: running && Stage.gaming
                                     PauseAnimation { duration: 3200 }
                                     NumberAnimation { from: 0; to: 360; duration: 1400; easing.type: Easing.InOutCubic }
                                     PauseAnimation { duration: 2400 }
