@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+set -u
+
+RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+PIDF="$RUN/mic-denoise.pid"
+PREV="$RUN/mic-denoise.prev"
+NODE=rnnoise_source
+PLUGIN=/usr/lib/ladspa/librnnoise_ladspa.so
+
+alive() {
+    local pid
+    pid=$(cat "$PIDF" 2>/dev/null) || return 1
+    [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+has_node() {
+    pactl list short sources 2>/dev/null | awk '{ print $2 }' | grep -qx "$NODE"
+}
+
+start() {
+    alive && return 0
+    [[ -f "$PLUGIN" ]] || { echo "mic-denoise: install noise-suppression-for-voice" >&2; exit 1; }
+    pactl get-default-source >"$PREV" 2>/dev/null
+    setsid -f sh -c 'echo $$ > "$1"; exec pipewire -c rnnoise.conf' sh "$PIDF" >/dev/null 2>&1
+    for _ in $(seq 1 30); do
+        has_node && break
+        sleep 0.1
+    done
+    has_node || { stop; echo "mic-denoise: filter did not start" >&2; exit 1; }
+    pactl set-default-source "$NODE"
+}
+
+stop() {
+    local pid prev
+    pid=$(cat "$PIDF" 2>/dev/null)
+    [[ -n "$pid" ]] && kill "$pid" 2>/dev/null
+    rm -f "$PIDF"
+    prev=$(cat "$PREV" 2>/dev/null)
+    rm -f "$PREV"
+    [[ -n "$prev" && "$prev" != "$NODE" ]] && pactl set-default-source "$prev" 2>/dev/null
+    return 0
+}
+
+case "${1:-toggle}" in
+    on) start ;;
+    off) stop ;;
+    toggle) if alive; then stop; else start; fi ;;
+    status) if alive; then echo on; else echo off; fi ;;
+    *) echo "usage: mic-denoise on|off|toggle|status" >&2; exit 2 ;;
+esac
