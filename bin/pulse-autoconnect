@@ -1,0 +1,15 @@
+#!/bin/sh
+
+MAC="@PULSE_MAC@"
+
+link_present() {
+    grep -qsi 'playstation.*link' /sys/bus/usb/devices/*/product
+}
+
+while true; do
+    if ! link_present && ! bluetoothctl info "$MAC" | grep -q "Connected: yes"; then
+        bluetoothctl connect "$MAC" >/dev/null 2>&1
+    fi
+
+    sleep 5
+done
