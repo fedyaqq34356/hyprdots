@@ -10,15 +10,24 @@ if mf then
             for part in (spec .. ","):gmatch("%s*(.-)%s*,") do
                 f[#f + 1] = part
             end
-            if f[2] == "disable" then
+            if f[1] == "" then
+            elseif f[2] == "disable" then
                 hl.monitor({ output = f[1], disabled = true })
             else
-                hl.monitor({
+                local m = {
                     output   = f[1],
                     mode     = f[2] ~= "" and f[2] or "preferred",
                     position = f[3] or "auto",
                     scale    = tonumber(f[4]) or f[4] or "auto",
-                })
+                }
+                for i = 5, #f - 1, 2 do
+                    if f[i] == "transform" or f[i] == "vrr" or f[i] == "bitdepth" then
+                        m[f[i]] = tonumber(f[i + 1])
+                    elseif f[i] == "mirror" then
+                        m.mirror = f[i + 1]
+                    end
+                end
+                hl.monitor(m)
             end
         end
     end
@@ -39,6 +48,7 @@ hl.config({
         },
         layout = "dwindle",
         resize_on_border = true,
+        allow_tearing = v.gpu == "amd",
     },
 
     decoration = {
@@ -109,7 +119,7 @@ hl.config({
         disable_hyprland_logo    = true,
         disable_splash_rendering = true,
         mouse_move_enables_dpms  = true,
-        vrr               = 0,
+        vrr               = 0,  -- VRR 2 stuttered on fullscreen (R24s over HDMI)
         focus_on_activate = false,
     },
 

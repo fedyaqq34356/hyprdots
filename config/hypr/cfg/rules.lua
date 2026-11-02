@@ -40,4 +40,6 @@ layer("^(qs-settings|qs-calendar|qs-media|qs-eq|qs-files|qs-guide|qs-notifcenter
 
 win({ class = "^(hyprdots-update)$" }, { float = true, center = true, size = "820 560" })
 
+win({ class = "^(steam_app_\\d+|arma3_x64\\.exe|arma3)$" }, { immediate = true, idle_inhibit = "fullscreen" })
+
 return { win = win, layer = layer }

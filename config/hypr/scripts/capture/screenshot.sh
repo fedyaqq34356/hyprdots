@@ -261,8 +261,55 @@ case "$MODE" in
         PREVIEW=$(printf '%s' "$TEXT" | head -c 160)
         notify "OCR" "$PREVIEW" -t 4000 -a screenshot -r 9993
         ;;
+    qr)
+        have zbarimg || {
+            notify "QR" "Missing: pacman -S zbar" -t 4000 -a screenshot
+            exit 1
+        }
+
+        SLURP_STYLE=(-d -b 000000aa -c "${ACCENT}ff" -s "${ACCENT}33" -w 3)
+
+        GEOM=$(pick_region) || exit 1
+        [ -z "$GEOM" ] && exit 1
+        unfreeze
+
+        SHOT=$(mktemp -t qr-XXXXXX.png)
+        trap 'unfreeze; rm -f "$SHOT"' EXIT
+
+        grim -g "$GEOM" "$SHOT" || exit 1
+
+        CODE=$(zbarimg -q --raw "$SHOT" 2>/dev/null)
+        if [ -z "$CODE" ] && have magick; then
+            magick "$SHOT" -colorspace Gray -resize 300% "$SHOT" 2>/dev/null
+            CODE=$(zbarimg -q --raw "$SHOT" 2>/dev/null)
+        fi
+        CODE=$(printf '%s' "$CODE" | sed -e 's/[[:space:]]*$//')
+
+        if [ -z "$CODE" ]; then
+            notify "QR" "No code found" -t 2500 -a screenshot -r 9993
+            exit 1
+        fi
+
+        printf '%s' "$CODE" | wl-copy
+        PREVIEW=$(printf '%s' "$CODE" | head -c 160)
+
+        if printf '%s' "$CODE" | head -1 | grep -qiE '^(https?://|www\.)'; then
+            URL=$(printf '%s' "$CODE" | head -1)
+            case "$URL" in www.*) URL="https://$URL" ;; esac
+            trap - EXIT
+            rm -f "$SHOT"
+            (
+                ACT=$(bash "$NOTIFY" "QR · link copied" "$PREVIEW" -A "open,Open" -t 8000 -a screenshot -r 9993 2>/dev/null)
+                [ "$ACT" = open ] && xdg-open "$URL" >/dev/null 2>&1
+            ) &
+            disown
+            exit 0
+        fi
+
+        notify "QR · copied" "$PREVIEW" -t 4000 -a screenshot -r 9993
+        ;;
     *)
-        echo "usage: screenshot.sh [region|window|output|all|edit|color|ocr|lens]" >&2
+        echo "usage: screenshot.sh [region|window|output|all|edit|color|ocr|qr|lens]" >&2
         exit 2
         ;;
 esac

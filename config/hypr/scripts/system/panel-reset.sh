@@ -1,7 +1,8 @@
 #!/bin/sh
 
-MON="${1:-eDP-1}"
-MODE="${2:-1920x1080@60,0x1080,1}"
+MON="${1:-$(hyprctl -j monitors all | jq -r '[.[] | select(.name | startswith("eDP"))][0].name // empty')}"
+MODE="${2:-$(hyprctl -j monitors all | jq -r --arg m "$MON" '.[] | select(.name == $m) | "\(.width)x\(.height)@\(.refreshRate),\(.x)x\(.y),\(.scale)"')}"
+[ -n "$MON" ] && [ -n "$MODE" ] || exit 0
 
 restore() {
     hyprdo keyword monitor "$MON,$MODE" >/dev/null 2>&1

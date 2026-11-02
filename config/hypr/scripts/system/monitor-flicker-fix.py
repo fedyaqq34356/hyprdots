@@ -29,7 +29,15 @@ import sys
 import threading
 import time
 
-PANEL = os.environ.get("FLICKER_PANEL", "eDP-1")
+def internal_panel():
+    try:
+        out = subprocess.run(["hyprctl", "monitors", "all", "-j"], capture_output=True, text=True).stdout
+        names = [m.get("name", "") for m in json.loads(out)]
+    except Exception:
+        names = []
+    return next((n for n in names if n.startswith("eDP")), "eDP-1")
+
+PANEL = os.environ.get("FLICKER_PANEL") or internal_panel()
 DEBOUNCE = 1.5   # события подключения приходят пачкой
 DARK = 1.0       # сколько держать панель выключенной
 
@@ -121,7 +129,15 @@ def listen(path):
     finally:
         sock.close()
 
+def has_internal_panel():
+    try:
+        return any("-eDP-" in name for name in os.listdir("/sys/class/drm"))
+    except OSError:
+        return False
+
 def main():
+    if not os.environ.get("FLICKER_PANEL") and not (has_internal_panel() and os.path.isdir("/sys/module/nvidia_drm")):
+        sys.exit(0)
     sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
     runtime = os.environ.get("XDG_RUNTIME_DIR")
     if not sig or not runtime:

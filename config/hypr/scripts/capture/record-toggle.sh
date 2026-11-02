@@ -77,7 +77,7 @@ CPU_ARGS=(-f "$FILE" -c libx264 -p preset=ultrafast -p crf=22 --pixel-format yuv
 GPU_ARGS=(-f "$FIFO" -c rawvideo --pixel-format bgr0 -m nut -C aac)
 
 MONITOR=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
-MONITOR="${MONITOR:-eDP-1}"
+MONITOR="${MONITOR:-$(hyprctl -j monitors | jq -r '.[0].name')}"
 
 if [ "$MODE" = region ]; then
     ACCENT=$(sed -n 's/^\$accent *= *rgb(\([0-9a-fA-F]\{6\}\)).*/\1/p' "$HOME/.config/hypr/config/colors.conf" 2>/dev/null | head -1)
@@ -95,6 +95,33 @@ case "$AUDIO" in
     2) SOURCE=$(pactl get-default-source 2>/dev/null)
        [ -n "$SOURCE" ] && ARGS+=(--audio="$SOURCE") || AUDIO=0 ;;
 esac
+
+vaapi_node() {
+    local n drv
+    for n in /sys/class/drm/renderD*; do
+        drv=$(basename "$(readlink -f "$n/device/driver")" 2>/dev/null)
+        case "$drv" in
+            amdgpu|i915|xe) printf '/dev/dri/%s' "${n##*/}"; return 0 ;;
+        esac
+    done
+    return 1
+}
+
+start_vaapi() {
+    local node codec
+    node=$(vaapi_node) || return 1
+    case "${RECORD_CODEC:-h264}" in
+        hevc|h265) codec=hevc_vaapi ;;
+        av1)       codec=av1_vaapi ;;
+        *)         codec=h264_vaapi ;;
+    esac
+    "$FFMPEG" -hide_banner -encoders 2>/dev/null | grep -q "$codec" || return 1
+    nice -n 15 wf-recorder "${ARGS[@]}" -f "$FILE" -c "$codec" -d "$node" >/dev/null 2>&1 &
+    sleep 0.8
+    pgrep -x wf-recorder >/dev/null && return 0
+    rm -f "$FILE"
+    return 1
+}
 
 start_gpu() {
     "$FFMPEG" -hide_banner -encoders 2>/dev/null | grep h264_vulkan >/dev/null || return 1
@@ -119,7 +146,7 @@ start_gpu() {
     return 1
 }
 
-if ! start_gpu; then
+if ! start_vaapi && ! start_gpu; then
     nice -n 15 wf-recorder "${ARGS[@]}" "${CPU_ARGS[@]}" >/dev/null 2>&1 &
     sleep 0.6
 fi

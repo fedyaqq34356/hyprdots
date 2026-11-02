@@ -15,3 +15,5 @@ whitelist ${HOME}/Files
 
 private-bin bwrap,xdg-dbus-proxy
 ignore restrict-namespaces
+env WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+env WEBKIT_DISABLE_DMABUF_RENDERER=1

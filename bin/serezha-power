@@ -198,8 +198,17 @@ show() {
         "$([[ -d $STATE ]] && echo "$STATE" || echo 'нечего возвращать')"
 }
 
+on_battery_machine() {
+    local b
+    for b in /sys/class/power_supply/BAT*; do
+        [[ -e "$b" ]] && return 0
+    done
+    return 1
+}
+
 case "${1-show}" in
     on)
+        on_battery_machine || exit 0
         cpu_on; aspm_on; audio_on; usb_on; disk_on
         kernel_on; wifi_on; nvidia_on
         ;;

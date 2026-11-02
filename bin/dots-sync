@@ -43,6 +43,8 @@ MANIFEST = [
     (".config/qt5ct", "config/qt5ct"),
     (".config/qt6ct", "config/qt6ct"),
     (".config/pipewire", "config/pipewire"),
+    (".config/wireplumber", "config/wireplumber"),
+    (".local/share/wireplumber/scripts", "home/.local/share/wireplumber/scripts"),
     ("Projects/f-sddm", "extras/sddm"),
     (".config/cliphist", "config/cliphist"),
     (".local/bin/shell-autostart", "bin/shell-autostart"),
@@ -62,6 +64,10 @@ MANIFEST = [
     (".local/bin/serezha-shot", "bin/serezha-shot"),
     (".local/bin/serezha-bar-hypr", "bin/serezha-bar-hypr"),
     (".local/bin/hyprdo", "bin/hyprdo"),
+    (".local/bin/pulse-autoconnect", "bin/pulse-autoconnect"),
+    (".local/bin/mic-denoise", "bin/mic-denoise"),
+    (".local/bin/aulactl", "bin/aulactl"),
+    (".local/bin/dots-migrate", "bin/dots-migrate"),
     (".local/share/applications/serezha-files.desktop",
      "config/serezha/applications/serezha-files.desktop"),
 ]
@@ -77,6 +83,7 @@ SKIP_PATHS = {
     # Симлинк, которым переключается режим. У чужой машины он свой, и
     # опубликованная копия сделала бы вид, что режим прибит гвоздями.
     ".config/hypr/config/mode.conf",
+    ".config/hypr/config/gpu.conf",
 }
 
 KEEP_PATHS = {
@@ -104,6 +111,8 @@ SKIP_PREFIXES = (
 SKIP_SUFFIXES = {".log", ".bak", ".swp", ".pyc", ".png", ".jpg", ".jpeg"}
 SKIP_EXACT = {
     "colors.conf", "lock-colors.conf", "current-wallpaper", "hyprpaper.conf",
+    # Раскладка мониторов этой машины: у читателя свои выходы.
+    "monitors.conf",
     "matugen.rasi", "colors.css", "colors-matugen.css", "gtk.css",
     "idle-inhibit.list", "outbound-ignore.list", "list.rasi", "grid.rasi",
     "dunstrc", "config", "matugen.conf", "mic-level", "lock-choice",
