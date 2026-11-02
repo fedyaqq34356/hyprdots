@@ -103,3 +103,7 @@ output_path = "~/.config/qt5ct/colors/matugen.conf"
 input_path  = "~/.config/matugen/templates/libreoffice-source.json"
 output_path = "~/.config/matugen/out/libreoffice-source.json"
 post_hook   = "python3 $HOME/.config/hypr/scripts/theme/gen-libreoffice-theme.py"
+
+[templates.mangohud]
+input_path  = "~/.config/matugen/templates/mangohud.conf"
+output_path = "~/.config/MangoHud/MangoHud.conf"

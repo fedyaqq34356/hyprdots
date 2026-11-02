@@ -9,6 +9,8 @@ SKIP_PACKAGES=0
 ASSUME_YES=0
 UPDATE=0
 PULLED=0
+GAMES=auto
+PRINTER=auto
 
 BOLD=$'\e[1m'; DIM=$'\e[2m'; RED=$'\e[31m'; GREEN=$'\e[32m'
 YELLOW=$'\e[33m'; BLUE=$'\e[34m'; RESET=$'\e[0m'
@@ -26,6 +28,10 @@ ${BOLD}usage:${RESET} install.sh [options]
   --update        pull the latest revision and refresh an existing install
   --no-packages   skip package installation, only deploy the configuration
   --dry-run       print every action without touching the system
+  --games         install Steam, gamemode and MangoHud (default on desktops)
+  --no-games      skip the gaming packages
+  --printer       set up the Canon LBP6000 (CUPS + CAPT), default when it is plugged in
+  --no-printer    skip the printer
   -y, --yes       do not ask for confirmation
   -h, --help      show this help
 EOF
@@ -37,6 +43,10 @@ while (($#)); do
     --pulled) PULLED=1 ;;
     --no-packages) SKIP_PACKAGES=1 ;;
     --dry-run) DRY_RUN=1 ;;
+    --games) GAMES=1 ;;
+    --no-games) GAMES=0 ;;
+    --printer) PRINTER=1 ;;
+    --no-printer) PRINTER=0 ;;
     -y | --yes) ASSUME_YES=1 ;;
     -h | --help) usage; exit 0 ;;
     *) die "unknown option: $1" ;;
@@ -73,6 +83,8 @@ if ((UPDATE)) && ((!PULLED)) && [[ -d "$SRC_DIR/.git" ]]; then
     ((DRY_RUN)) && args+=(--dry-run)
     ((SKIP_PACKAGES)) && args+=(--no-packages)
     ((ASSUME_YES)) && args+=(-y)
+    [[ "$GAMES" != auto ]] && { ((GAMES)) && args+=(--games) || args+=(--no-games); }
+    [[ "$PRINTER" != auto ]] && { ((PRINTER)) && args+=(--printer) || args+=(--no-printer); }
     exec bash "$SRC_DIR/install.sh" "${args[@]}"
 fi
 
@@ -80,10 +92,11 @@ command -v pacman >/dev/null || die "this installer targets Arch-based systems (
 [[ $EUID -ne 0 ]] || die "run as a normal user, not as root"
 
 PACMAN_PKGS=(
-    hyprland hyprlock hyprpaper hypridle hyprpolkitagent xdg-desktop-portal-hyprland
+    hyprland hyprlock awww hypridle hyprpolkitagent xdg-desktop-portal-hyprland
     kitty rofi-wayland cava fastfetch yazi
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber upower bluez bluez-utils
+    lm_sensors usb_modeswitch linux-firmware udiskie noise-suppression-for-voice
     cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
     git pciutils mesa vulkan-icd-loader
     waybar fuzzel mako networkmanager foot nnn udisks2 xwayland-satellite socat
@@ -91,7 +104,7 @@ PACMAN_PKGS=(
     ttf-jetbrains-mono-nerd noto-fonts noto-fonts-emoji
     zsh zsh-autosuggestions zsh-syntax-highlighting
 )
-AUR_PKGS=(quickshell matugen-bin wlogout wf-recorder wl-clip-persist maybar-git)
+AUR_PKGS=(quickshell matugen wlogout wf-recorder wl-clip-persist maybar-git)
 
 confirm() {
     ((ASSUME_YES)) && return 0
@@ -104,26 +117,96 @@ IS_ARTIX=0
 [[ -f /etc/artix-release ]] && IS_ARTIX=1
 
 GPU_LIST=$(lspci -nn 2>/dev/null | grep -Ei 'vga|3d|display' || true)
+GPU_VENDORS=$(cat /sys/class/drm/card[0-9]*/device/vendor 2>/dev/null || true)
 HAS_NVIDIA=0; HAS_AMD=0; HAS_INTEL=0
-grep -qi 'nvidia' <<<"$GPU_LIST" && HAS_NVIDIA=1
-grep -Eqi 'amd|ati technologies|radeon' <<<"$GPU_LIST" && HAS_AMD=1
-grep -qi 'intel' <<<"$GPU_LIST" && HAS_INTEL=1
+{ grep -qi 'nvidia' <<<"$GPU_LIST" || grep -q 0x10de <<<"$GPU_VENDORS"; } && HAS_NVIDIA=1
+{ grep -Eqi 'amd|ati technologies|radeon' <<<"$GPU_LIST" || grep -q 0x1002 <<<"$GPU_VENDORS"; } && HAS_AMD=1
+{ grep -qi 'intel' <<<"$GPU_LIST" || grep -q 0x8086 <<<"$GPU_VENDORS"; } && HAS_INTEL=1
+
+nvidia_driver() {
+    [[ -d /sys/module/nvidia_drm ]] || pacman -Qq 2>/dev/null | grep -Eq '^nvidia(-[0-9]+xx)?-utils$'
+}
+
+GPU_PROFILE=generic
+if ((HAS_NVIDIA)) && nvidia_driver; then GPU_PROFILE=nvidia
+elif ((HAS_AMD)); then GPU_PROFILE=amd
+elif ((HAS_INTEL)); then GPU_PROFILE=intel
+fi
+
+HAS_BATTERY=0
+compgen -G '/sys/class/power_supply/BAT*' >/dev/null && HAS_BATTERY=1
+
+[[ "$GAMES" == auto ]] && GAMES=$((HAS_BATTERY ? 0 : 1))
+
+printer_plugged() {
+    local d
+    for d in /sys/bus/usb/devices/*; do
+        [[ "$(cat "$d/idVendor" 2>/dev/null)" == 04a9 ]] || continue
+        grep -qi 'LBP' "$d/product" 2>/dev/null && return 0
+    done
+    return 1
+}
+if [[ "$PRINTER" == auto ]]; then
+    PRINTER=0
+    ((UPDATE)) || ! printer_plugged || PRINTER=1
+fi
 
 gpu_packages() {
-    ((HAS_AMD)) && printf '%s\n' vulkan-radeon
+    ((HAS_AMD)) && printf '%s\n' mesa vulkan-radeon libva-mesa-driver libva-utils lact
+    ((HAS_AMD)) && ((IS_ARTIX)) && printf '%s\n' lact-openrc
     ((HAS_INTEL)) && printf '%s\n' vulkan-intel intel-media-driver
-    if ((HAS_NVIDIA)) && pacman -Q nvidia-utils >/dev/null 2>&1; then
+    if ((HAS_NVIDIA)) && nvidia_driver; then
         printf '%s\n' egl-wayland libva-nvidia-driver
     fi
     if ((IS_ARTIX)); then
-        printf '%s\n' elogind-openrc networkmanager-openrc bluez-openrc
+        printf '%s\n' elogind-openrc networkmanager-openrc bluez-openrc cronie cronie-openrc
     fi
 }
 
-check_repos() {
-    ((IS_ARTIX)) || return 0
-    if ! pacman -Sl extra >/dev/null 2>&1; then
-        die "Artix needs the Arch [extra] repository for Hyprland and Quickshell — see the README, section \"Artix: Arch repositories\""
+game_packages() {
+    ((GAMES)) || return 0
+    printf '%s\n' steam gamemode lib32-gamemode mangohud lib32-mangohud lib32-pipewire
+    ((HAS_AMD)) && printf '%s\n' lib32-mesa lib32-vulkan-radeon lib32-libva-mesa-driver
+    ((HAS_INTEL)) && printf '%s\n' lib32-mesa lib32-vulkan-intel
+    return 0
+}
+
+repo_enabled() { pacman-conf --repo-list 2>/dev/null | grep -qx "$1"; }
+
+setup_repos() {
+    ((IS_ARTIX)) || {
+        if ((GAMES)) && ! repo_enabled multilib; then
+            warn "[multilib] is off in /etc/pacman.conf — gaming packages skipped"
+            GAMES=0
+        fi
+        return 0
+    }
+    local conf=/etc/pacman.conf changed=0
+    if ! repo_enabled extra || { ((GAMES)) && ! repo_enabled multilib; }; then
+        log "Enabling the Arch repositories on Artix"
+        run sudo pacman -S --needed --noconfirm artix-archlinux-support
+        run sudo cp -a "$conf" "$conf.hyprdots-$(date +%Y%m%d-%H%M%S)"
+    fi
+    if ((GAMES)) && ! repo_enabled lib32; then
+        if grep -q '^#\[lib32\]' "$conf"; then
+            run sudo sed -i '/^#\[lib32\]$/{s/^#//;n;s/^#//}' "$conf"
+        else
+            printf '\n[lib32]\nInclude = /etc/pacman.d/mirrorlist\n' | run sudo tee -a "$conf" >/dev/null
+        fi
+        changed=1
+    fi
+    if ! repo_enabled extra; then
+        printf '\n[extra]\nInclude = /etc/pacman.d/mirrorlist-arch\n' | run sudo tee -a "$conf" >/dev/null
+        changed=1
+    fi
+    if ((GAMES)) && ! repo_enabled multilib; then
+        printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist-arch\n' | run sudo tee -a "$conf" >/dev/null
+        changed=1
+    fi
+    if ((changed)); then
+        run sudo pacman-key --populate archlinux
+        run sudo pacman -Sy
+        ok "repositories: Artix + [lib32], Arch [extra]$( ((GAMES)) && printf ' + [multilib]')"
     fi
 }
 
@@ -145,15 +228,15 @@ bootstrap_aur_helper() {
 
 install_packages() {
     log "Installing packages from the official repositories"
-    check_repos
+    setup_repos
     local extra=()
-    mapfile -t extra < <(gpu_packages)
+    mapfile -t extra < <(gpu_packages; game_packages)
     if ((UPDATE)); then
         run sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}" "${extra[@]}"
     else
         run sudo pacman -Syu --needed --noconfirm "${PACMAN_PKGS[@]}" "${extra[@]}"
     fi
-    if ((HAS_NVIDIA)) && ! pacman -Q nvidia-utils >/dev/null 2>&1; then
+    if ((HAS_NVIDIA)) && ! nvidia_driver; then
         warn "NVIDIA card found but no driver installed — install it as the README describes, then run install.sh --update"
     fi
     ok "repository packages ready"
@@ -249,29 +332,177 @@ configure_parser() {
 }
 
 configure_gpu() {
-    local env="$HOME/.config/hypr/config/env.conf"
-    [[ -f "$env" && -w "$env" ]] || return 0
-    if ((HAS_NVIDIA)); then
-        ok "GPU: NVIDIA — NVIDIA environment kept"
+    local dir="$HOME/.config/hypr/config"
+    [[ -f "$SRC_DIR/config/hypr/config/gpu-$GPU_PROFILE.conf" ]] || return 0
+    run ln -sfn "gpu-$GPU_PROFILE.conf" "$dir/gpu.conf"
+    case "$GPU_PROFILE" in
+        nvidia) ok "GPU: NVIDIA — NVIDIA environment" ;;
+        amd) ok "GPU: AMD — radeonsi VA-API, VRR on fullscreen, tearing for games" ;;
+        intel) ok "GPU: Intel — VA-API set to iHD" ;;
+        *) ok "GPU: generic" ;;
+    esac
+}
+
+configure_kms() {
+    ((HAS_AMD)) && ! ((HAS_NVIDIA)) || return 0
+    [[ -f /etc/mkinitcpio.conf ]] || return 0
+    local drop=/etc/mkinitcpio.conf.d/10-amdgpu.conf
+    if grep -Eq '^MODULES=\(.*\bamdgpu\b' /etc/mkinitcpio.conf || [[ -f "$drop" ]]; then
+        ok "early KMS: amdgpu already in the initramfs"
         return 0
     fi
-    run sed -i -E '/^env = (__GLX_VENDOR_LIBRARY_NAME|LIBVA_DRIVER_NAME|GBM_BACKEND|NVD_BACKEND|WLR_DRM_DEVICES|__GL_SHADER_DISK_CACHE|__GL_SHADER_DISK_CACHE_PATH),/d' "$env"
-    if ((HAS_AMD)); then
-        run sed -i '1i env = LIBVA_DRIVER_NAME,radeonsi' "$env"
-        ok "GPU: AMD — VA-API set to radeonsi"
-    elif ((HAS_INTEL)); then
-        run sed -i '1i env = LIBVA_DRIVER_NAME,iHD' "$env"
-        ok "GPU: Intel — VA-API set to iHD"
-    else
-        ok "GPU: generic — NVIDIA environment removed"
+    log "Early KMS for amdgpu (Plymouth and SDDM at native resolution)"
+    run sudo mkdir -p /etc/mkinitcpio.conf.d
+    printf 'MODULES+=(amdgpu)\n' | run sudo tee "$drop" >/dev/null
+    run sudo mkinitcpio -P || warn "mkinitcpio -P failed — run it by hand before rebooting"
+    ok "amdgpu added to MODULES ($drop)"
+}
+
+amd_card() {
+    local c
+    for c in /sys/class/drm/card[0-9]*; do
+        [[ "$(cat "$c/device/vendor" 2>/dev/null)" == 0x1002 && -e "$c/device/gpu_busy_percent" ]] || continue
+        printf '%s' "${c##*card}"
+        return 0
+    done
+    return 1
+}
+
+configure_lact() {
+    ((HAS_AMD)) && ! ((HAS_BATTERY)) || return 0
+    command -v lact >/dev/null || ((DRY_RUN)) || return 0
+    local conf=/etc/lact/config.yaml
+    if [[ ! -s "$conf" ]] && amd_card >/dev/null; then
+        log "LACT: quiet fan curve and power cap for the Radeon"
+        run sudo mkdir -p /etc/lact
+        if ! ((DRY_RUN)); then
+            sh "$SRC_DIR/extras/lact/gen-config.sh" | sudo tee "$conf" >/dev/null \
+                || warn "LACT config not written"
+        fi
     fi
+    if ((IS_ARTIX)); then
+        local svc
+        for svc in lactd lact; do
+            [[ -e "/etc/init.d/$svc" ]] || continue
+            run sudo rc-update add "$svc" default >/dev/null 2>&1 || true
+            run sudo rc-service "$svc" restart >/dev/null 2>&1 || true
+            break
+        done
+    elif command -v systemctl >/dev/null; then
+        run sudo systemctl enable --now lactd.service >/dev/null 2>&1 || true
+    fi
+    ok "LACT daemon enabled (tune in the lact GUI, config in $conf)"
+}
+
+configure_gamemode() {
+    ((GAMES)) && ((HAS_AMD)) && ! ((HAS_NVIDIA)) || return 0
+    local dst="$HOME/.config/gamemode.ini" card
+    card=$(amd_card) || card=0
+    [[ -e "$dst" ]] && return 0
+    run mkdir -p "$HOME/.config"
+    ((DRY_RUN)) || sed "s/@CARD@/$card/" "$SRC_DIR/extras/gamemode/gamemode.ini" > "$dst"
+    ok "gamemode: performance governor and GPU level high while a game runs (card$card)"
+}
+
+configure_zram() {
+    ((HAS_BATTERY)) && return 0
+    [[ -e /etc/init.d/zram ]] && { ok "zram swap already set up"; return 0; }
+    ((IS_ARTIX)) || { warn "zram: use zram-generator on systemd"; return 0; }
+    log "zram swap (half of RAM, zstd)"
+    run sudo install -m 755 "$SRC_DIR/extras/zram/zram.openrc" /etc/init.d/zram
+    run sudo install -m 644 "$SRC_DIR/extras/zram/zram.confd" /etc/conf.d/zram
+    run sudo install -m 644 "$SRC_DIR/extras/zram/99-zram.conf" /etc/sysctl.d/99-zram.conf
+    run sudo rc-update add zram boot >/dev/null 2>&1 || true
+    if awk '$3 == "swap" && $1 !~ /^#/' /etc/fstab 2>/dev/null | grep -q .; then
+        warn "a swap entry is still in /etc/fstab — comment it out and delete the swapfile"
+    fi
+    ok "zram enabled from the next boot"
+}
+
+configure_cmdline() {
+    ((HAS_BATTERY)) && return 0
+    local grub=/etc/default/grub want=() p cur
+    [[ -f "$grub" ]] || return 0
+    if grep -q AuthenticAMD /proc/cpuinfo; then
+        if grep -qw cppc /proc/cpuinfo || [[ -d /sys/devices/system/cpu/amd_pstate ]]; then
+            want+=(amd_pstate=active)
+        else
+            warn "CPU has no CPPC — enable it in the BIOS (AMD CBS → NBIO → SMU → CPPC) and rerun install.sh --update"
+        fi
+    fi
+    ((HAS_AMD)) && ! ((HAS_NVIDIA)) && want+=(amdgpu.ppfeaturemask=0xffffffff)
+    cur=$(sed -n 's/^GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"$/\1/p' "$grub")
+    local add=()
+    for p in "${want[@]}"; do
+        [[ " $cur " == *" ${p%%=*}="* ]] || add+=("$p")
+    done
+    ((${#add[@]})) || return 0
+    log "Kernel parameters: ${add[*]}"
+    run sudo sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"$|GRUB_CMDLINE_LINUX_DEFAULT=\"\1 ${add[*]}\"|" "$grub"
+    run sudo grub-mkconfig -o /boot/grub/grub.cfg >/dev/null || warn "grub-mkconfig failed — run it by hand"
+    ok "GRUB updated, reboot to apply"
+}
+
+install_printer() {
+    ((PRINTER)) || return 0
+    log "Setting up the Canon LBP6000 (CUPS + CAPT)"
+    local root="$SRC_DIR/config/hypr/scripts/print/print-root"
+    local helper
+    helper=$(detect_aur_helper)
+    run sudo pacman -S --needed --noconfirm cups cups-filters ghostscript \
+        $( ((IS_ARTIX)) && printf cups-openrc) || { warn "CUPS did not install, printer skipped"; return 0; }
+    if [[ -n "$helper" ]]; then
+        run "$helper" -S --needed --noconfirm capt-src || { warn "capt-src did not build, printer skipped"; return 0; }
+    else
+        warn "no AUR helper for capt-src, printer skipped"
+        return 0
+    fi
+    if ((IS_ARTIX)); then
+        run sudo install -m 755 "$SRC_DIR/extras/printer/ccpd.openrc" /etc/init.d/ccpd
+        run sudo rc-update add cupsd default >/dev/null 2>&1 || true
+        run sudo rc-update add ccpd default >/dev/null 2>&1 || true
+        run sudo rc-service cupsd start >/dev/null 2>&1 || true
+    elif command -v systemctl >/dev/null; then
+        run sudo systemctl enable --now cups.service >/dev/null 2>&1 || true
+        run sudo systemctl enable ccpd.service >/dev/null 2>&1 || true
+    fi
+    if ! lpstat -p LBP6000 >/dev/null 2>&1; then
+        run sudo lpadmin -p LBP6000 -m CNCUPSLBP6018CAPTK.ppd -v ccp://localhost:59787 -E \
+            || warn "lpadmin could not add LBP6000"
+        run sudo ccpdadmin -p LBP6000 -o /dev/usb/lp0 >/dev/null 2>&1 \
+            || warn "ccpdadmin could not register LBP6000"
+    fi
+    if [[ -f "$root/install-print-fix.sh" ]]; then
+        local tmp
+        tmp=$(mktemp -d)
+        cp -a "$root/." "$tmp/"
+        printf '%s ALL=(root) NOPASSWD: /usr/local/bin/print-repair\n' "$USER" >"$tmp/print-repair-sudoers"
+        run sudo bash "$tmp/install-print-fix.sh" >/dev/null 2>&1 \
+            || warn "print-repair helper not installed — the printer works, self-repair does not"
+        rm -rf "$tmp"
+    fi
+    printer_plugged && ok "printer ready" || ok "printer configured — plug it in, ccpd picks it up on hotplug"
+}
+
+add_groups() {
+    local want=(video input)
+    ((GAMES)) && want+=(gamemode)
+    ((PRINTER)) && want+=(lp)
+    local g missing=()
+    for g in "${want[@]}"; do
+        getent group "$g" >/dev/null || continue
+        id -nG "$USER" | tr ' ' '\n' | grep -qx "$g" || missing+=("$g")
+    done
+    ((${#missing[@]})) || return 0
+    run sudo usermod -aG "$(IFS=,; echo "${missing[*]}")" "$USER" \
+        && ok "groups added: ${missing[*]} (log in again to apply)"
 }
 
 enable_services() {
     log "Enabling services"
     if ((IS_ARTIX)); then
         local svc
-        for svc in NetworkManager bluetoothd; do
+        for svc in NetworkManager bluetoothd cronie; do
             [[ -e "/etc/init.d/$svc" ]] || continue
             run sudo rc-update add "$svc" default >/dev/null 2>&1 || true
             run sudo rc-service "$svc" start >/dev/null 2>&1 || true
@@ -280,7 +511,7 @@ enable_services() {
         run sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
         run sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
     fi
-    ok "network and bluetooth enabled"
+    ok "network, bluetooth and cron enabled"
 }
 
 # Scripts used to sit flat in ~/.config/hypr/scripts; they now live in one
@@ -310,7 +541,17 @@ migrate_layout() {
 deploy_config() {
     log "Deploying the configuration"
     migrate_layout
+
+    # monitors.conf is the user's own layout: an update must not reset it to
+    # the generic rule the repository ships.
+    local monitors="$HOME/.config/hypr/config/monitors.conf" kept=""
+    [[ -s "$monitors" ]] && kept=$(<"$monitors")
+
     deploy_tree "$SRC_DIR/config" "$HOME/.config"
+
+    if [[ -n "$kept" ]] && ! ((DRY_RUN)); then
+        printf '%s\n' "$kept" > "$monitors"
+    fi
     deploy_tree "$SRC_DIR/home" "$HOME"
     deploy_tree "$SRC_DIR/bin" "$HOME/.local/bin"
 
@@ -386,7 +627,8 @@ ${BOLD}Hyprland desktop — automatic installation${RESET}
   target      ~/.config, ~/.local/bin, ~
   packages    $((SKIP_PACKAGES ? 0 : ${#PACMAN_PKGS[@]} + ${#AUR_PKGS[@]}))
   system      $( ((IS_ARTIX)) && echo "Artix (OpenRC)" || echo "Arch (systemd)")
-  gpu         $( ((HAS_NVIDIA)) && printf 'NVIDIA ')$( ((HAS_AMD)) && printf 'AMD ')$( ((HAS_INTEL)) && printf 'Intel')
+  gpu         $( ((HAS_NVIDIA)) && printf 'NVIDIA ')$( ((HAS_AMD)) && printf 'AMD ')$( ((HAS_INTEL)) && printf 'Intel ')(profile: $GPU_PROFILE)
+  machine     $( ((HAS_BATTERY)) && echo laptop || echo desktop)$( ((GAMES)) && printf ', games')$( ((PRINTER)) && printf ', printer')
   existing files are backed up before being replaced
 EOF
 fi
@@ -394,6 +636,13 @@ confirm || die "aborted"
 
 ((SKIP_PACKAGES)) || install_packages
 deploy_config
+((SKIP_PACKAGES)) || configure_kms
+((SKIP_PACKAGES)) || configure_cmdline
+((SKIP_PACKAGES)) || configure_zram
+((SKIP_PACKAGES)) || configure_lact
+configure_gamemode
+((SKIP_PACKAGES)) || install_printer
+((UPDATE)) || ((SKIP_PACKAGES)) || add_groups
 ((UPDATE)) || seed_wallpapers || true
 generate_theme
 ((UPDATE)) || ((SKIP_PACKAGES)) || enable_services
@@ -444,4 +693,5 @@ ${GREEN}${BOLD}Done.${RESET}
   6. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
 
   backup of the previous configuration: ${BACKUP_DIR/#$HOME/\~}
+$( ((HAS_BATTERY)) || printf '\n  desktop: the manual steps (BIOS, services, cron) are in docs/DESKTOP.md\n')
 EOF

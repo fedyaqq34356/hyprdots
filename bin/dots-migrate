@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+APPLY=0
+PROJECTS=1
+TARGET=""
+
+usage() {
+    cat <<USAGE
+usage: dots-migrate [--apply] [--no-projects] user@host
+
+  without --apply only shows what would be copied
+  copies ~/Projects (with ~/SEC), ~/.ssh, ~/.gnupg, Telegram, the ~/X -> ~/Projects/X links and the crontab
+  exclusions: ${EXCLUDE/#$HOME/\~}
+USAGE
+}
+
+HERE="$(dirname "$(readlink -f "$0")")"
+EXCLUDE=""
+for f in "$HERE/../extras/migrate/exclude.txt" \
+         "$(cat "$HOME/.config/hyprdots/source" 2>/dev/null)/extras/migrate/exclude.txt" \
+         "$HOME/.config/hyprdots/migrate-exclude.txt"; do
+    [[ -f "$f" ]] && EXCLUDE=$(readlink -f "$f")
+done
+
+while (($#)); do
+    case "$1" in
+        --apply) APPLY=1 ;;
+        --no-projects) PROJECTS=0 ;;
+        -h|--help) usage; exit 0 ;;
+        -*) echo "unknown option: $1" >&2; exit 2 ;;
+        *) TARGET=$1 ;;
+    esac
+    shift
+done
+[[ -n "$TARGET" ]] || { usage; exit 2; }
+[[ -n "$EXCLUDE" ]] || { echo "exclude list not found" >&2; exit 1; }
+command -v rsync >/dev/null || { echo "rsync is required" >&2; exit 1; }
+
+say() { printf '\e[1m:: %s\e[0m\n' "$*"; }
+
+remote_home=$(ssh "$TARGET" 'printf %s "$HOME"') || { echo "ssh $TARGET failed" >&2; exit 1; }
+ssh "$TARGET" 'command -v rsync >/dev/null' || { echo "install rsync on $TARGET" >&2; exit 1; }
+[[ "$remote_home" == "$HOME" ]] || echo "warning: remote home is $remote_home, crontab paths point to $HOME" >&2
+
+if pgrep -x Telegram >/dev/null || pgrep -x telegram-desktop >/dev/null; then
+    echo "close Telegram first: its session must not change while it is copied" >&2
+    ((APPLY)) && exit 1
+fi
+
+RSYNC=(rsync -aHAX --human-readable --exclude-from="$EXCLUDE")
+if ((APPLY)); then
+    RSYNC+=(--info=progress2,stats1)
+    ssh "$TARGET" 'gpgconf --kill all 2>/dev/null; pkill -x Telegram 2>/dev/null; true'
+else
+    RSYNC+=(--dry-run --itemize-changes --stats)
+fi
+
+sync() {
+    local src="$HOME/$1" dst="$1"
+    [[ -e "$src" ]] || { echo "skip ~/$1: missing"; return 0; }
+    say "~/$1"
+    ssh "$TARGET" "mkdir -p \"\$HOME/$(dirname "$dst")\""
+    if ((APPLY)); then
+        "${RSYNC[@]}" "$src/" "$TARGET:$dst/"
+    else
+        "${RSYNC[@]}" "$src/" "$TARGET:$dst/" | grep -E '^(Number of (regular )?files|Total (transferred )?file size|Number of created)' || true
+    fi
+}
+
+((PROJECTS)) && sync Projects
+sync .ssh
+sync .gnupg
+sync .local/share/TelegramDesktop
+
+say "links ~/X -> ~/Projects/X"
+links=()
+while IFS= read -r -d '' l; do
+    t=$(readlink "$l")
+    [[ "$t" == "$HOME/Projects/"* ]] || continue
+    links+=("$(basename "$l")" "${t#"$HOME"/}")
+done < <(find "$HOME" -maxdepth 1 -type l -print0)
+for ((i = 0; i < ${#links[@]}; i += 2)); do
+    printf '  ~/%s -> ~/%s\n' "${links[i]}" "${links[i+1]}"
+done
+if ((APPLY)) && ((${#links[@]})); then
+    ssh "$TARGET" 'while [ $# -gt 1 ]; do [ -e "$HOME/$1" ] || ln -s "$HOME/$2" "$HOME/$1"; shift 2; done' sh "${links[@]}"
+fi
+
+say "crontab"
+local_cron=$(crontab -l 2>/dev/null || true)
+if [[ -z "$local_cron" ]]; then
+    echo "  no crontab here"
+elif ((APPLY)); then
+    ssh "$TARGET" 'crontab -l > "$HOME/crontab.before-migrate" 2>/dev/null; true'
+    printf '%s\n' "$local_cron" | ssh "$TARGET" 'crontab -'
+    echo "  installed (old one saved to ~/crontab.before-migrate on $TARGET)"
+else
+    printf '%s\n' "$local_cron" | grep -vE '^\s*(#|$)' | sed 's/^/  /'
+fi
+
+if ((APPLY)); then
+    ssh "$TARGET" 'chmod 700 "$HOME/.ssh" "$HOME/.gnupg" 2>/dev/null; chmod 600 "$HOME"/.ssh/id_* 2>/dev/null; chmod 644 "$HOME"/.ssh/*.pub 2>/dev/null; true'
+    say "done — on $TARGET: start cronie (rc-service cronie start), open Telegram, check gpg -K"
+else
+    say "dry run only — repeat with --apply"
+fi
