@@ -59,7 +59,8 @@ if [[ ! -d "$SRC_DIR/config" ]]; then
     command -v git >/dev/null || die "git is required to fetch the repository"
     log "Fetching the repository"
     if [[ -d "$CLONE_DIR/.git" ]]; then
-        git -C "$CLONE_DIR" pull --ff-only
+        git -C "$CLONE_DIR" pull --ff-only \
+            || { git -C "$CLONE_DIR" fetch --quiet && git -C "$CLONE_DIR" reset --hard --quiet '@{u}'; }
     else
         git clone --depth 1 "$REPO_URL" "$CLONE_DIR"
     fi
@@ -70,7 +71,8 @@ if ((UPDATE)) && ((!PULLED)) && [[ -d "$SRC_DIR/.git" ]]; then
     command -v git >/dev/null || die "git is required to update"
     log "Fetching the latest revision"
     before=$(git -C "$SRC_DIR" rev-parse HEAD)
-    run git -C "$SRC_DIR" pull --ff-only
+    run git -C "$SRC_DIR" pull --ff-only \
+        || { run git -C "$SRC_DIR" fetch --quiet && run git -C "$SRC_DIR" reset --hard --quiet '@{u}'; }
     after=$(git -C "$SRC_DIR" rev-parse HEAD)
     if [[ "$before" == "$after" ]]; then
         ok "already up to date ($(git -C "$SRC_DIR" log -1 --format=%h))"
