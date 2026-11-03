@@ -20,6 +20,20 @@ def read_cpu_times() -> tuple[int, int] | None:
     idle = values[3] + (values[4] if len(values) > 4 else 0)
     return idle, sum(values)
 
+def read_core_times() -> list[tuple[int, int]]:
+    try:
+        lines = Path("/proc/stat").read_text().splitlines()
+    except OSError:
+        return []
+    out = []
+    for line in lines:
+        parts = line.split()
+        if not parts or not parts[0].startswith("cpu") or parts[0] == "cpu":
+            continue
+        values = [int(v) for v in parts[1:]]
+        out.append((values[3] + (values[4] if len(values) > 4 else 0), sum(values)))
+    return out
+
 def memory() -> tuple[float, str] | None:
     try:
         text = Path("/proc/meminfo").read_text()
@@ -37,7 +51,7 @@ def memory() -> tuple[float, str] | None:
         return None
 
     used = total - available
-    return used / total, f"{used / 1024 / 1024:.1f}G"
+    return used / total, f"{used / 1024 / 1024:.1f}G", total / 1024 / 1024
 
 def cpu_temperature() -> tuple[float, str] | None:
     candidates: list[Path] = []
@@ -67,7 +81,7 @@ def cpu_temperature() -> tuple[float, str] | None:
         celsius = millidegrees / 1000
         if 0 < celsius < 150:
             fraction = (celsius - 30) / (95 - 30)
-            return max(0.0, min(1.0, fraction)), f"{celsius:.0f}°"
+            return max(0.0, min(1.0, fraction)), f"{celsius:.0f}°", celsius
     return None
 
 BLANK = {"gpu": None, "gpu_label": "", "vram": None, "vram_label": "",
@@ -101,6 +115,7 @@ def amdgpu(dev: Path) -> dict:
     if used is not None and total:
         out["vram"] = used / total
         out["vram_label"] = f"{used / 1024 ** 3:.1f}G"
+        out["vram_total"] = total / 1024 ** 3
     for hw in sorted((dev / "hwmon").glob("hwmon*")):
         temps = {}
         for f in hw.glob("temp*_input"):
@@ -113,6 +128,7 @@ def amdgpu(dev: Path) -> dict:
             temp = milli / 1000
             out["gputemp"] = max(0.0, min(1.0, (temp - 30) / 70))
             out["gputemp_label"] = f"{temp:.0f}°"
+            out["gputemp_c"] = temp
             break
     return out
 
@@ -150,12 +166,46 @@ def gpu() -> dict:
         "vram_label": f"{used / 1024:.1f}G",
         "gputemp": max(0.0, min(1.0, (temp - 30) / 60)),
         "gputemp_label": f"{temp:.0f}°",
+        "gputemp_c": temp,
+        "vram_total": total / 1024,
     }
+
+def disk_device() -> str | None:
+    try:
+        src = subprocess.run(["findmnt", "-no", "SOURCE", "/"], capture_output=True,
+                             text=True, timeout=2).stdout.strip().split("[")[0]
+        name = Path(src).resolve().name
+        parent = Path(f"/sys/class/block/{name}/..").resolve().name
+        return parent if Path(f"/sys/block/{parent}").exists() else name
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+def disk_sectors(dev: str | None) -> int | None:
+    if not dev:
+        return None
+    try:
+        f = Path(f"/sys/block/{dev}/stat").read_text().split()
+        return int(f[2]) + int(f[6])
+    except (OSError, IndexError, ValueError):
+        return None
+
+def disk_temperature() -> float | None:
+    for h in Path("/sys/class/hwmon").glob("hwmon*"):
+        try:
+            if (h / "name").read_text().strip() == "nvme":
+                return int((h / "temp1_input").read_text()) / 1000
+        except (OSError, ValueError):
+            continue
+    return None
 
 def main() -> int:
     previous = read_cpu_times()
+    previous_cores = read_core_times()
     gpu_cache = gpu()
     tick = 0
+    dev = disk_device()
+    prev_sec = disk_sectors(dev)
+    prev_t = time.monotonic()
 
     while True:
         time.sleep(INTERVAL)
@@ -173,13 +223,39 @@ def main() -> int:
                 sample["cpu_label"] = f"{busy * 100:.0f}%"
         previous = current
 
+        cores = read_core_times()
+        if len(cores) == len(previous_cores):
+            loads = []
+            for (idle_now, total_now), (idle_was, total_was) in zip(cores, previous_cores):
+                span = total_now - total_was
+                loads.append(round(max(0.0, min(1.0, 1 - (idle_now - idle_was) / span)), 3)
+                             if span > 0 else 0.0)
+            sample["cores"] = loads
+        previous_cores = cores
+
         mem = memory()
         sample["mem"] = mem[0] if mem else None
         sample["mem_label"] = mem[1] if mem else ""
+        sample["mem_total"] = mem[2] if mem else None
 
         temp = cpu_temperature()
         sample["temp"] = temp[0] if temp else None
         sample["temp_label"] = temp[1] if temp else ""
+        sample["temp_c"] = temp[2] if temp else None
+
+        try:
+            du = shutil.disk_usage("/")
+            sample["disk"] = du.used / du.total
+            sample["disk_total"] = du.total / 1024 ** 3
+        except OSError:
+            sample["disk"] = None
+        now_sec, now_t = disk_sectors(dev), time.monotonic()
+        if now_sec is not None and prev_sec is not None and now_t > prev_t:
+            mbs = (now_sec - prev_sec) * 512 / 1e6 / (now_t - prev_t)
+            sample["disk_io"] = round(max(0.0, min(1.0, mbs / 400)), 3)
+            sample["disk_mbs"] = round(mbs, 1)
+        prev_sec, prev_t = now_sec, now_t
+        sample["disk_temp_c"] = disk_temperature()
 
         if tick % 2 == 0:
             gpu_cache = gpu()
