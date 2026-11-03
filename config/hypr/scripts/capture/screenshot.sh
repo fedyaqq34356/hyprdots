@@ -13,9 +13,6 @@ notify() { bash "$NOTIFY" "$@" >/dev/null 2>&1; }
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
-# freeze() runs inside $(pick_region), a subshell, so a PID kept in a
-# variable never reaches the parent and the frozen overlay stayed up until
-# Esc. Keep the PID in a file instead.
 FREEZE_PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/screenshot-freeze.$$"
 freeze() {
     have hyprpicker || return 0

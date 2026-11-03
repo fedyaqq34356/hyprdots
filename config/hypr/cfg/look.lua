@@ -21,8 +21,12 @@ if mf then
                     scale    = tonumber(f[4]) or f[4] or "auto",
                 }
                 for i = 5, #f - 1, 2 do
-                    if f[i] == "transform" or f[i] == "vrr" or f[i] == "bitdepth" then
+                    if f[i] == "transform" or f[i] == "vrr" or f[i] == "bitdepth"
+                        or f[i] == "supports_wide_color" or f[i] == "sdrbrightness"
+                        or f[i] == "sdrsaturation" then
                         m[f[i]] = tonumber(f[i + 1])
+                    elseif f[i] == "cm" then
+                        m.cm = f[i + 1]
                     elseif f[i] == "mirror" then
                         m.mirror = f[i + 1]
                     end
@@ -56,7 +60,7 @@ hl.config({
         rounding_power = 2.6,
 
         active_opacity   = 1.0,
-        inactive_opacity = 0.94,
+        inactive_opacity = 1.0,
 
         dim_inactive = true,
         dim_strength = 0.08,
@@ -128,7 +132,9 @@ hl.config({
     },
 
     render = {
-        direct_scanout = 2,
+        direct_scanout    = 2,
+        send_content_type = false,
+        cm_auto_hdr       = 0,
     },
 })
 
