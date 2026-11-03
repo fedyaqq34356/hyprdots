@@ -71,6 +71,7 @@ ShellRoot {
     LazyLoader { id: mediaL; MediaPanel {} }
     LazyLoader { id: calendarL; loading: true; Calendar {} }
     LazyLoader { id: sysRingsL; SysRings {} }
+    LazyLoader { id: procsL; Procs {} }
     LazyLoader { id: batteryL; BatteryPanel {} }
     LazyLoader { id: displaysL; Displays {} }
     LazyLoader { id: timerL; TimerPanel {} }
@@ -388,6 +389,18 @@ ShellRoot {
         appid: "quickshell"
         name: "sysRings"
         onPressed: panelDo(sysRingsL, p => p.toggle())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "procs"
+        onPressed: panelDo(procsL, p => p.toggle())
+    }
+
+    Connections {
+        target: IslandBus
+        function onSysOpen() { panelDo(sysRingsL, p => { p.shown = true; }); }
+        function onProcsOpen() { panelDo(procsL, p => p.openHeaviest()); }
     }
 
     GlobalShortcut {

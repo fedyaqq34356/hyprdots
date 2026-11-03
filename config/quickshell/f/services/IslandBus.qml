@@ -42,4 +42,6 @@ Singleton {
     signal wallApplied(string path, color tone)
 
     signal calendarAt(real ms)
+    signal sysOpen()
+    signal procsOpen()
 }

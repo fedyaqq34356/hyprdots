@@ -29,3 +29,4 @@ NotifDeck NotifDeck.qml
 PowerSheet PowerSheet.qml
 Displays Displays.qml
 AulaPanel AulaPanel.qml
+Procs Procs.qml

@@ -70,7 +70,6 @@ bind("SHIFT",          "Print", exec(shot .. "edit"))
 bind("ALT",            "Print", exec(shot .. "window"))
 bind("CTRL",           "Print", exec(shot .. "all"))
 bind("$mainMod",       "Print", exec(shot .. "output"))
--- AULA F75 has no PrtSc: Fn+F8 sends XF86AudioPlay, used as Print
 bind("",               "XF86AudioPlay", exec(shot .. "region"))
 bind("SHIFT",          "XF86AudioPlay", exec(shot .. "edit"))
 bind("ALT",            "XF86AudioPlay", exec(shot .. "window"))
@@ -115,6 +114,7 @@ bind("$mainMod SHIFT", "R", exec("hyprctl reload"))
 bind("$mainMod SHIFT", "F5", exec(S .. "/system/panel-reset.sh"))
 
 bind("$mainMod",      "F1", qs("sysRings"))
+bind("CTRL SHIFT",    "Escape", qs("procs"))
 bind("$mainMod CTRL", "B",  qs("battery"))
 bind("$mainMod CTRL", "D",  qs("displays"))
 
