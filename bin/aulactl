@@ -268,31 +268,68 @@ def connection(cands):
             return k
     return "none"
 
+class Yield(Exception):
+    """Живой кадр уступает записи: кадр пропускаем, следующий догонит."""
+
 class Lock:
-    def __init__(self, wait=3.0):
+    """Один лок на устройство + флаг «ждёт запись».
+
+    Живой поток держит лок почти непрерывно (кадр через донгл ~150 мс,
+    кадры каждые 40–50 мс), и запись, опрашивая лок, проигрывала гонку до
+    таймаута → «занята». Теперь запись сначала берёт aulactl.prio, а живой
+    кадр, увидев его занятым, сам пропускает ход — запись получает
+    устройство не позже чем через один кадр."""
+
+    def __init__(self, wait=3.0, live=False):
         d = os.environ.get("XDG_RUNTIME_DIR") or "/tmp"
         self.path = os.path.join(d, "aulactl.lock")
+        self.prio = os.path.join(d, "aulactl.prio")
         self.wait = wait
+        self.live = live
         self.fd = None
+        self.pfd = None
 
-    def __enter__(self):
-        self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT, 0o600)
-        end = time.monotonic() + self.wait
+    @staticmethod
+    def _take(fd, end):
         while True:
             try:
-                fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                return self
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return True
             except BlockingIOError:
                 if time.monotonic() > end:
-                    os.close(self.fd)
-                    raise AulaError("busy", "клавиатура занята другим вызовом aulactl")
-                time.sleep(0.02)
+                    return False
+                time.sleep(0.01)
+
+    def _busy(self):
+        self._close()
+        raise AulaError("busy", "клавиатура занята другим вызовом aulactl")
+
+    def _close(self):
+        for fd in (self.fd, self.pfd):
+            if fd is not None:
+                os.close(fd)
+        self.fd = self.pfd = None
+
+    def __enter__(self):
+        end = time.monotonic() + self.wait
+        self.pfd = os.open(self.prio, os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o600)
+        if self.live:
+            try:
+                fcntl.flock(self.pfd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            except BlockingIOError:
+                self._close()
+                raise Yield()
+            os.close(self.pfd)
+            self.pfd = None
+        elif not self._take(self.pfd, end):
+            self._busy()
+        self.fd = os.open(self.path, os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o600)
+        if not self._take(self.fd, end):
+            self._busy()
+        return self
 
     def __exit__(self, *a):
-        try:
-            fcntl.flock(self.fd, fcntl.LOCK_UN)
-        finally:
-            os.close(self.fd)
+        self._close()
 
 def _open(path):
     try:
@@ -1082,10 +1119,12 @@ def cmd_live(args):
             last = time.monotonic()
             return
         try:
-            with Lock(wait=0.2):
+            with Lock(wait=0.2, live=True):
                 d = ensure()
                 if d:
                     d.live(frame)
+        except Yield:
+            pass
         except AulaError as e:
             if args.json:
                 emit({"event": "error", "error": e.code, "message": e.message})

@@ -400,8 +400,16 @@ Singleton {
                     const r = JSON.parse(this.text);
                     if (r.ok) {
                         root.error = "";
+                        root.busyTries = 0;
                         root.adopt(r, false);
+                    } else if (r.error === "busy" && root.busyTries < 8) {
+                        root.busyTries++;
+                        root.pending = true;
+                        root.again = false;
+                        busyRetry.restart();
+                        return;
                     } else {
+                        root.busyTries = 0;
                         root.error = r.error || "io";
                         root.errorText = r.message || "";
                     }
@@ -415,6 +423,13 @@ Singleton {
     }
 
     property string errorText: ""
+    property int busyTries: 0
+
+    Timer {
+        id: busyRetry
+        interval: 250
+        onTriggered: root.commit()
+    }
 
     Process {
         id: watcher
