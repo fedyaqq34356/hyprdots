@@ -1129,6 +1129,13 @@ no polling process, which keeps a widget that is glanced at a few times a day fr
 `nvidia-smi` around the clock. Hardware the machine does not have shows `n/a` rather than a
 fabricated zero.
 
+**Processes** — `Ctrl` + `Shift` + `Esc` pours one card out of the island: the heaviest app, its
+CPU, memory and uptime, and a CPU graph that flows like water under it. Arrows, the wheel or typing a
+name move to another app; hold `Enter` (or press and hold the icon) to close it. The app is asked to
+quit first and only killed if it is still there three seconds later. Processes are grouped by app,
+only your own are listed, and the session itself — Hyprland, the shell, PipeWire, portals — is locked.
+Clicking the CPU orb on `Super` + `F1` opens it on whatever is using the CPU right now.
+
 **Calendar heatmap** — day cells are shaded by how many commits were made that day, across every git
 repository under `$HOME`. `git-activity.py` counts them into a JSON cache once an hour; the calendar
 only reads it, so the panel never blocks on a filesystem walk. The scale is a square root rather than
@@ -1410,6 +1417,7 @@ back on the way out. Brightness, volume, refresh rate and idle timeouts are deli
 | `Super` + `Shift` + `M` | audio panel (output and microphone) |
 | `Super` + `Shift` + `D` | calendar with a commit heatmap |
 | `Super` + `F1` | system monitor rings |
+| `Ctrl` + `Shift` + `Esc` | processes — find and close an app |
 | `Super` + `Ctrl` + `B` | battery — charge, time left, health and cycles |
 | `Super` + `Shift` + `N` | notification centre |
 | `Super` + `Ctrl` + `N` | do not disturb |
@@ -2343,6 +2351,13 @@ VPN, но только пока туннель поднят: определен�
 процесса опроса. Виджет, на который смотрят пару раз в день, не дёргает `nvidia-smi` круглые сутки.
 Железо, которого в машине нет, показывает `n/a`, а не выдуманный ноль.
 
+**Процессы** — `Ctrl` + `Shift` + `Esc` выливает из острова одну карточку: самое тяжёлое
+приложение, его CPU, память и время работы, а под ними течёт график CPU. Стрелки, колесо или ввод
+имени переключают на другое приложение; удержание `Enter` (или иконки) закрывает его. Сначала
+приложение просят выйти, и только если через три секунды оно ещё живо — убивают. Процессы собраны
+по приложениям, показываются только твои, а сама сессия — Hyprland, шелл, PipeWire, порталы — под
+замком. Клик по орбу CPU на `Super` + `F1` открывает панель сразу на том, кто сейчас грузит процессор.
+
 **Тепловая карта в календаре** — ячейки дней залиты по числу коммитов за этот день во всех git-репозиториях
 внутри `$HOME`. `git-activity.py` считает их в JSON-кэш раз в час, календарь только читает его и
 никогда не ждёт обхода файловой системы. Шкала корневая, а не линейная: один коммит должен быть
@@ -2613,6 +2628,7 @@ HDA-кодека, автосон USB кроме устройств ввода, S
 | `Super` + `Shift` + `M` | звук: вывод и микрофон |
 | `Super` + `Shift` + `D` | календарь с тепловой картой коммитов |
 | `Super` + `F1` | кольца системного монитора |
+| `Ctrl` + `Shift` + `Esc` | процессы — найти и закрыть приложение |
 | `Super` + `Ctrl` + `B` | батарея — заряд, на сколько хватит, здоровье и циклы |
 | `Super` + `Shift` + `N` | центр уведомлений |
 | `Super` + `Ctrl` + `N` | не беспокоить |

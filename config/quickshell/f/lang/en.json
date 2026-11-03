@@ -797,6 +797,15 @@
   "isle.src.peri": "Device battery",
   "isle.src.net": "Wi-Fi",
   "isle.src.vpn": "VPN",
+  "isle.src.sys": "Heavy load and heat",
+  "sys.temp": "TEMP",
+  "sys.mem": "MEMORY",
+  "sys.vram": "VRAM",
+  "sys.cool": "cool",
+  "sys.ok": "normal",
+  "sys.warm": "warm",
+  "sys.hot": "hot",
+  "sys.gb": "GB",
   "isle.src.print": "Printing",
   "isle.o.srcBt": "Headphones",
   "isle.o.srcPower": "Charger, low battery",
@@ -963,5 +972,21 @@
   "aula.charging": "Charging",
   "aula.lowTitle": "Keyboard battery %1%",
   "aula.lowBody": "AULA F75 is running low — plug in the cable",
-  "aula.lowBodyLeft": "About %1 left — plug in the cable"
+  "aula.lowBodyLeft": "About %1 left — plug in the cable",
+  "procs.type": "type to find",
+  "procs.now": "now",
+  "procs.min": "min",
+  "procs.hour": "h",
+  "procs.day": "d",
+  "procs.up": "UP",
+  "procs.system": "system process — protected",
+  "procs.failed": "could not close",
+  "procs.forced": "was not responding — forced",
+  "procs.closing": "closing…",
+  "procs.hint": "← →  ·  hold ↵ to close",
+  "procs.loading": "reading processes…",
+  "plural.proc": {
+    "many": "processes",
+    "one": "process"
+  }
 }
