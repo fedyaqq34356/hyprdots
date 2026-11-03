@@ -102,7 +102,41 @@ Scope {
             return "timer";
         if (Reminders.soon !== null && Reminders.ringing === null)
             return "remind";
+        if (IslandConfig.on("sys") && root.sysHot)
+            return "sys";
         return "";
+    }
+
+    readonly property bool sysWatch:
+        IslandConfig.s("enabled") && IslandConfig.s("leftSlot") && IslandConfig.on("sys")
+    property bool sysHeld: false
+    function sysSync() {
+        if (root.sysWatch === root.sysHeld)
+            return;
+        root.sysHeld = root.sysWatch;
+        root.sysHeld ? Sys.acquire() : Sys.release();
+        if (!root.sysHeld)
+            root.sysHot = false;
+    }
+    onSysWatchChanged: root.sysSync()
+    Component.onCompleted: root.sysSync()
+    Component.onDestruction: if (root.sysHeld) Sys.release()
+
+    readonly property real sysLoad: Math.max(0, Sys.cpu, Sys.gpu)
+    readonly property real sysHeat: Math.max(0, Sys.temp, Sys.gputemp)
+    readonly property bool sysOver: root.sysLoad > 0.85 || root.sysHeat > 0.85
+    readonly property bool sysUnder: root.sysLoad < 0.7 && root.sysHeat < 0.75
+    property bool sysHot: false
+
+    Timer {
+        running: root.sysWatch && !root.sysHot && root.sysOver
+        interval: 8000
+        onTriggered: root.sysHot = true
+    }
+    Timer {
+        running: root.sysHot && root.sysUnder
+        interval: 6000
+        onTriggered: root.sysHot = false
     }
 
     property bool mediaBig: false
@@ -895,6 +929,7 @@ Scope {
         function demo(kind: string): string { return root.runDemo(kind); }
         function play(kind: string): void { root.runDemo(kind); }
         function pin(on: bool): void { root.pinned = on; }
+        function sys(on: bool): void { root.sysHot = on && root.sysWatch; }
         function media(): string { root.toggleMedia(); return root.mediaBig ? "open" : "closed"; }
         function call(action: string): string {
             if (root.callState === "")

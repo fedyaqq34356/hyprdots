@@ -16,6 +16,16 @@ Singleton {
     property real vram: -1
     property real gputemp: -1
 
+    property var cores: []
+    property real memTotal: -1
+    property real vramTotal: -1
+    property real tempC: -1
+    property real gputempC: -1
+    property real disk: -1
+    property real diskTotal: -1
+    property real diskIo: 0
+    property real diskTempC: -1
+
     property string cpuLabel: ""
     property string memLabel: ""
     property string tempLabel: ""
@@ -45,6 +55,16 @@ Singleton {
                 root.gpu = s.gpu === null ? -1 : s.gpu;
                 root.vram = s.vram === null ? -1 : s.vram;
                 root.gputemp = s.gputemp === null ? -1 : s.gputemp;
+
+                root.cores = s.cores || [];
+                root.memTotal = s.mem_total == null ? -1 : s.mem_total;
+                root.vramTotal = s.vram_total == null ? -1 : s.vram_total;
+                root.tempC = s.temp_c == null ? -1 : s.temp_c;
+                root.gputempC = s.gputemp_c == null ? -1 : s.gputemp_c;
+                root.disk = s.disk == null ? -1 : s.disk;
+                root.diskTotal = s.disk_total == null ? -1 : s.disk_total;
+                root.diskIo = s.disk_io == null ? 0 : s.disk_io;
+                root.diskTempC = s.disk_temp_c == null ? -1 : s.disk_temp_c;
 
                 root.cpuLabel = s.cpu_label || "";
                 root.memLabel = s.mem_label || "";

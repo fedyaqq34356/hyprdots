@@ -2777,6 +2777,9 @@ PanelWindow {
                 switch (win.hub.leftKind) {
                 case "print": return Colors.accentAlt;
                 case "remind": return Colors.warn;
+                case "sys":
+                    return Colors.mix(Colors.warn, Colors.bad,
+                                      Math.max(0, Math.min(1, (win.hub.sysHeat - 0.75) / 0.2)));
                 case "task":
                     return win.hub.taskResult === "ok" ? Colors.good
                          : win.hub.taskResult === "bad" ? Colors.bad
@@ -2817,6 +2820,16 @@ PanelWindow {
                     ? (win.hub.downloadPhase === "ok" ? "ok" : "")
                     : win.hub.taskResult
                 icon: win.hub.launch ? win.hub.launch.icon : ""
+                load: win.hub.sysLoad
+            }
+
+            TapHandler {
+                enabled: win.hub.leftKind === "sys"
+                onTapped: IslandBus.sysOpen()
+            }
+            HoverHandler {
+                enabled: win.hub.leftKind === "sys"
+                cursorShape: Qt.PointingHandCursor
             }
 
             TapHandler {

@@ -1,5 +1,6 @@
 import Quickshell.Widgets
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Shapes as Vec
 import "root:/design"
 import "root:/reusables"
@@ -15,6 +16,7 @@ Item {
     property string taskGlyph: "󰣪"
     property string result: ""
     property string icon: ""
+    property real load: 0
 
     readonly property var timer: Timers.soonest
     readonly property var remind: Reminders.soon
@@ -29,6 +31,8 @@ Item {
     readonly property real value: {
         if (slot.finished)
             return 1;
+        if (slot.kind === "sys")
+            return Math.max(0, Math.min(1, slot.load));
         if (slot.kind === "remind" && slot.remind)
             return Math.max(0, Math.min(1, (slot.remind.at - Reminders.now) / 3600000));
         if (slot.kind !== "timer" || !slot.timer)
@@ -198,6 +202,40 @@ Item {
             scale: slot.result === "" ? 1 : 0.4
             Behavior on opacity { NumberAnimation { duration: 180 } }
             Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.InBack } }
+        }
+    }
+
+    Item {
+        id: heart
+        anchors.centerIn: parent
+        visible: slot.kind === "sys"
+        width: Math.round(slot.size * 0.34)
+        height: width
+
+        readonly property int beat: Math.round(1300 - 700 * Math.max(0, Math.min(1, slot.load)))
+
+        RectangularShadow {
+            anchors.fill: parent
+            radius: width / 2
+            blur: 6
+            color: Colors.alpha(slot.tint, 0.7 * heart.scale - 0.3)
+        }
+        Rectangle {
+            anchors.fill: parent
+            radius: width / 2
+            antialiasing: true
+            color: slot.tint
+        }
+
+        SequentialAnimation on scale {
+            running: slot.kind === "sys" && slot.live
+            loops: Animation.Infinite
+            paused: running && Stage.gaming
+            onStopped: heart.scale = 1
+            NumberAnimation { to: 1.22; duration: heart.beat * 0.16; easing.type: Easing.OutCubic }
+            NumberAnimation { to: 0.96; duration: heart.beat * 0.18; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 1.12; duration: heart.beat * 0.14; easing.type: Easing.OutCubic }
+            NumberAnimation { to: 0.9;  duration: heart.beat * 0.52; easing.type: Easing.InOutSine }
         }
     }
 
