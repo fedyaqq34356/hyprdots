@@ -13,6 +13,7 @@ survive, collapsed to one, because the shape of a file is part of reading it.
 Usage:
     dots-sync            copy everything the manifest lists
     dots-sync --check    report what would change, copy nothing
+    dots-sync PATH...    copy only files under these $HOME-relative paths
 """
 
 import re
@@ -64,13 +65,30 @@ MANIFEST = [
     (".local/bin/serezha-shot", "bin/serezha-shot"),
     (".local/bin/serezha-bar-hypr", "bin/serezha-bar-hypr"),
     (".local/bin/hyprdo", "bin/hyprdo"),
-    (".local/bin/pulse-autoconnect", "bin/pulse-autoconnect"),
-    (".local/bin/mic-denoise", "bin/mic-denoise"),
     (".local/bin/aulactl", "bin/aulactl"),
     (".local/bin/dots-migrate", "bin/dots-migrate"),
     (".local/share/applications/serezha-files.desktop",
      "config/serezha/applications/serezha-files.desktop"),
+    (".config/pipewire/rnnoise.conf", "extras/pulse-elite/.config/pipewire/rnnoise.conf"),
+    (".config/pipewire/pipewire.conf.d/60-pulse-elite-mic.conf", "extras/pulse-elite/.config/pipewire/pipewire.conf.d/60-pulse-elite-mic.conf"),
+    (".config/wireplumber/wireplumber.conf.d/51-pulse-elite.conf", "extras/pulse-elite/.config/wireplumber/wireplumber.conf.d/51-pulse-elite.conf"),
+    (".config/wireplumber/wireplumber.conf.d/52-pulse-elite-default.conf", "extras/pulse-elite/.config/wireplumber/wireplumber.conf.d/52-pulse-elite-default.conf"),
+    (".config/wireplumber/wireplumber.conf.d/53-playstation-link.conf", "extras/pulse-elite/.config/wireplumber/wireplumber.conf.d/53-playstation-link.conf"),
+    (".local/share/wireplumber/scripts/pulse-elite-default.lua", "extras/pulse-elite/.local/share/wireplumber/scripts/pulse-elite-default.lua"),
+    (".local/bin/pulse-autoconnect", "extras/pulse-elite/.local/bin/pulse-autoconnect"),
+    (".local/bin/mic-denoise", "extras/pulse-elite/.local/bin/mic-denoise"),
 ]
+
+PERSONAL = (
+    ".config/pipewire/rnnoise.conf",
+    ".config/pipewire/pipewire.conf.d/60-pulse-elite-mic.conf",
+    ".config/wireplumber/wireplumber.conf.d/51-pulse-elite.conf",
+    ".config/wireplumber/wireplumber.conf.d/52-pulse-elite-default.conf",
+    ".config/wireplumber/wireplumber.conf.d/53-playstation-link.conf",
+    ".local/share/wireplumber/scripts/pulse-elite-default.lua",
+    ".local/bin/pulse-autoconnect",
+    ".local/bin/mic-denoise",
+)
 
 # Имена из SKIP_EXACT, которые по этим путям всё-таки публикуются. Запрет там
 # стоит из-за сгенерированных файлов: ~/.config/gtk-3.0/gtk.css пишет matugen,
@@ -335,7 +353,7 @@ def walk(src: Path):
         if any(part in SKIP_NAMES for part in child.relative_to(src).parts):
             continue
         rel = str(child.relative_to(HOME))
-        if rel.startswith(SKIP_PREFIXES):
+        if rel.startswith(SKIP_PREFIXES) or rel in PERSONAL:
             continue
         if child.is_file():
             yield child
@@ -343,6 +361,7 @@ def walk(src: Path):
 
 def main() -> int:
     check = "--check" in sys.argv
+    only = tuple(a for a in sys.argv[1:] if not a.startswith("-"))
     changed = 0
 
     for rel_src, rel_dst in MANIFEST:
@@ -352,6 +371,8 @@ def main() -> int:
             continue
 
         for path in walk(src):
+            if only and not str(path.relative_to(HOME)).startswith(only):
+                continue
             body = clean(path)
             if body is None:
                 continue

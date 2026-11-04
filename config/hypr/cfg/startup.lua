@@ -30,7 +30,7 @@ local once = {
     S .. "/tools/downloads-sort.py",
 
     "hyprctl setcursor Matugen-Cursor 24",
-    v.home .. "/.local/bin/pulse-autoconnect",
+    "[ -x ~/.local/bin/pulse-autoconnect ] && exec ~/.local/bin/pulse-autoconnect",
 }
 
 if v.backlight or v.battery then

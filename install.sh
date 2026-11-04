@@ -11,6 +11,7 @@ UPDATE=0
 PULLED=0
 GAMES=auto
 PRINTER=auto
+PULSE=auto
 
 BOLD=$'\e[1m'; DIM=$'\e[2m'; RED=$'\e[31m'; GREEN=$'\e[32m'
 YELLOW=$'\e[33m'; BLUE=$'\e[34m'; RESET=$'\e[0m'
@@ -32,6 +33,8 @@ ${BOLD}usage:${RESET} install.sh [options]
   --no-games      skip the gaming packages
   --printer       set up the Canon LBP6000 (CUPS + CAPT), default when it is plugged in
   --no-printer    skip the printer
+  --pulse-elite   install the PlayStation Pulse Elite headset profile (default when it is paired)
+  --no-pulse-elite  skip it, and remove a copy left by an older install
   -y, --yes       do not ask for confirmation
   -h, --help      show this help
 EOF
@@ -47,6 +50,8 @@ while (($#)); do
     --no-games) GAMES=0 ;;
     --printer) PRINTER=1 ;;
     --no-printer) PRINTER=0 ;;
+    --pulse-elite) PULSE=1 ;;
+    --no-pulse-elite) PULSE=0 ;;
     -y | --yes) ASSUME_YES=1 ;;
     -h | --help) usage; exit 0 ;;
     *) die "unknown option: $1" ;;
@@ -87,6 +92,7 @@ if ((UPDATE)) && ((!PULLED)) && [[ -d "$SRC_DIR/.git" ]]; then
     ((ASSUME_YES)) && args+=(-y)
     [[ "$GAMES" != auto ]] && { ((GAMES)) && args+=(--games) || args+=(--no-games); }
     [[ "$PRINTER" != auto ]] && { ((PRINTER)) && args+=(--printer) || args+=(--no-printer); }
+    [[ "$PULSE" != auto ]] && { ((PULSE)) && args+=(--pulse-elite) || args+=(--no-pulse-elite); }
     exec bash "$SRC_DIR/install.sh" "${args[@]}"
 fi
 
@@ -153,6 +159,15 @@ if [[ "$PRINTER" == auto ]]; then
     ((UPDATE)) || ! printer_plugged || PRINTER=1
 fi
 
+PULSE_MAC="@PULSE_MAC@"
+if [[ "$PULSE" == auto ]]; then
+    PULSE=0
+    [[ -e "$HOME/.config/hyprdots/pulse-elite" ]] && PULSE=1
+    grep -qsi 'playstation.*link' /sys/bus/usb/devices/*/product && PULSE=1
+    command -v bluetoothctl >/dev/null \
+        && timeout 3 bluetoothctl devices 2>/dev/null | grep -qi "$PULSE_MAC" && PULSE=1
+fi
+
 gpu_packages() {
     ((HAS_AMD)) && printf '%s\n' mesa vulkan-radeon libva-mesa-driver libva-utils lact
     ((HAS_AMD)) && ((IS_ARTIX)) && printf '%s\n' lact-openrc
@@ -162,6 +177,9 @@ gpu_packages() {
     fi
     if ((IS_ARTIX)); then
         printf '%s\n' elogind-openrc networkmanager-openrc bluez-openrc cronie cronie-openrc
+    else
+        printf '%s\n' cronie
+        ((HAS_BATTERY)) || printf '%s\n' zram-generator
     fi
 }
 
@@ -257,6 +275,9 @@ install_packages() {
 }
 
 BACKUP_DIR="$HOME/.config/dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
+STATE_DIR="$HOME/.config/hyprdots"
+INSTALLED_TMP=$(mktemp)
+trap 'rm -f "$INSTALLED_TMP"' EXIT
 
 backup_path() {
     local target="$1" rel
@@ -275,7 +296,40 @@ deploy_tree() {
         run mkdir -p "$(dirname "$target")"
         run install -m "$(stat -c '%a' "$file")" "$file" "$target" \
             || warn "could not write ${target/#$HOME/\~}, skipped"
+        printf '%s\n' "${target#"$HOME"/}" >>"$INSTALLED_TMP"
     done < <(find "$src" -type f -print0)
+}
+
+record_install() {
+    ((DRY_RUN)) && return 0
+    mkdir -p "$STATE_DIR"
+    local list="$STATE_DIR/installed.list" origin="$STATE_DIR/origin-backup" first
+    { [[ -f "$list" ]] && cat "$list"; cat "$INSTALLED_TMP"; } | sort -u >"$list.new"
+    mv "$list.new" "$list"
+    [[ -f "$origin" ]] && return 0
+    first=$(find "$HOME/.config" -maxdepth 1 -type d -name 'dotfiles-backup-*' 2>/dev/null | sort | head -n1)
+    printf '%s\n' "${first:-none}" >"$origin"
+}
+
+deploy_pulse() {
+    local src="$SRC_DIR/extras/pulse-elite" file target removed=0
+    [[ -d "$src" ]] || return 0
+    if ((PULSE)); then
+        deploy_tree "$src" "$HOME"
+        ((DRY_RUN)) || { mkdir -p "$STATE_DIR"; : >"$STATE_DIR/pulse-elite"; }
+        ok "Pulse Elite headset profile installed"
+        return 0
+    fi
+    ((DRY_RUN)) || rm -f "$STATE_DIR/pulse-elite"
+    while IFS= read -r -d '' file; do
+        target="$HOME/${file#"$src"/}"
+        [[ -f "$target" ]] || continue
+        backup_path "$target"
+        run rm -f "$target"
+        removed=1
+    done < <(find "$src" -type f -print0)
+    ((removed)) && ok "removed the Pulse Elite headset profile (not paired here)"
+    return 0
 }
 
 # Files that need the real home directory rather than a tilde: qt6ct, fuzzel,
@@ -408,8 +462,8 @@ configure_gamemode() {
 
 configure_zram() {
     ((HAS_BATTERY)) && return 0
+    ((IS_ARTIX)) || { configure_zram_systemd; return 0; }
     [[ -e /etc/init.d/zram ]] && { ok "zram swap already set up"; return 0; }
-    ((IS_ARTIX)) || { warn "zram: use zram-generator on systemd"; return 0; }
     log "zram swap (half of RAM, zstd)"
     run sudo install -m 755 "$SRC_DIR/extras/zram/zram.openrc" /etc/init.d/zram
     run sudo install -m 644 "$SRC_DIR/extras/zram/zram.confd" /etc/conf.d/zram
@@ -419,6 +473,19 @@ configure_zram() {
         warn "a swap entry is still in /etc/fstab — comment it out and delete the swapfile"
     fi
     ok "zram enabled from the next boot"
+}
+
+configure_zram_systemd() {
+    local conf=/etc/systemd/zram-generator.conf
+    [[ -e "$conf" ]] && { ok "zram swap already set up"; return 0; }
+    [[ -e /usr/lib/systemd/system-generators/zram-generator ]] || { warn "zram-generator is missing, zram skipped"; return 0; }
+    log "zram swap (half of RAM, zstd)"
+    printf '[zram0]\nzram-size = ram / 2\ncompression-algorithm = zstd\nswap-priority = 100\n' \
+        | run sudo install -m 644 /dev/stdin "$conf"
+    run sudo install -m 644 "$SRC_DIR/extras/zram/99-zram.conf" /etc/sysctl.d/99-zram.conf
+    run sudo systemctl daemon-reload
+    run sudo systemctl start systemd-zram-setup@zram0.service >/dev/null 2>&1 || true
+    ok "zram enabled"
 }
 
 configure_cmdline() {
@@ -465,8 +532,11 @@ install_printer() {
         run sudo rc-update add ccpd default >/dev/null 2>&1 || true
         run sudo rc-service cupsd start >/dev/null 2>&1 || true
     elif command -v systemctl >/dev/null; then
+        [[ -e /usr/lib/systemd/system/ccpd.service || -e /etc/systemd/system/ccpd.service ]] \
+            || { run sudo install -m 644 "$SRC_DIR/extras/printer/ccpd.service" /etc/systemd/system/ccpd.service \
+                 && run sudo systemctl daemon-reload; }
         run sudo systemctl enable --now cups.service >/dev/null 2>&1 || true
-        run sudo systemctl enable ccpd.service >/dev/null 2>&1 || true
+        run sudo systemctl enable --now ccpd.service >/dev/null 2>&1 || warn "ccpd.service did not start"
     fi
     if ! lpstat -p LBP6000 >/dev/null 2>&1; then
         run sudo lpadmin -p LBP6000 -m CNCUPSLBP6018CAPTK.ppd -v ccp://localhost:59787 -E \
@@ -512,6 +582,7 @@ enable_services() {
     elif command -v systemctl >/dev/null; then
         run sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
         run sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
+        run sudo systemctl enable --now cronie.service >/dev/null 2>&1 || true
     fi
     ok "network, bluetooth and cron enabled"
 }
@@ -568,6 +639,9 @@ deploy_config() {
     if [[ -d "$SRC_DIR/.git" ]]; then
         ((DRY_RUN)) || printf '%s\n' "$SRC_DIR" > "$HOME/.config/hyprdots/source"
     fi
+
+    deploy_pulse
+    record_install
 
     expand_home
     configure_gpu
@@ -695,5 +769,6 @@ ${GREEN}${BOLD}Done.${RESET}
   6. run ${BOLD}shell-switch status${RESET} to check the Quickshell bar (${BOLD}shell-switch restart${RESET} to reload it)
 
   backup of the previous configuration: ${BACKUP_DIR/#$HOME/\~}
+  to remove everything again: ${BOLD}bash ${SRC_DIR/#$HOME/\~}/uninstall.sh${RESET}
 $( ((HAS_BATTERY)) || printf '\n  desktop: the manual steps (BIOS, services, cron) are in docs/DESKTOP.md\n')
 EOF
