@@ -102,7 +102,7 @@ fi
 
 if ((APPLY)); then
     ssh "$TARGET" 'chmod 700 "$HOME/.ssh" "$HOME/.gnupg" 2>/dev/null; chmod 600 "$HOME"/.ssh/id_* 2>/dev/null; chmod 644 "$HOME"/.ssh/*.pub 2>/dev/null; true'
-    say "done — on $TARGET: start cronie (rc-service cronie start), open Telegram, check gpg -K"
+    say "done — on $TARGET: start cronie (rc-service cronie start, or systemctl enable --now cronie), open Telegram, check gpg -K"
 else
     say "dry run only — repeat with --apply"
 fi

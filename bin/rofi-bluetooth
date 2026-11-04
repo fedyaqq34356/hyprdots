@@ -13,8 +13,9 @@ if ! pgrep -x bluetoothd >/dev/null 2>&1; then
                  -mesg "служба Bluetooth не запущена")
     case "$ans" in
         "󰂯  Запустить bluetoothd")
-            pkexec rc-service bluetoothd start >/dev/null 2>&1 \
-                || sudo rc-service bluetoothd start >/dev/null 2>&1
+            start='rc-service bluetoothd start 2>/dev/null || systemctl start bluetooth'
+            pkexec sh -c "$start" >/dev/null 2>&1 \
+                || sudo sh -c "$start" >/dev/null 2>&1
             sleep 2
             ;;
         *) exit 0 ;;

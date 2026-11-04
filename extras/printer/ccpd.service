@@ -1,0 +1,12 @@
+[Unit]
+Description=Canon CAPT printer daemon
+Requires=cups.service
+After=cups.service
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/ccpd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
