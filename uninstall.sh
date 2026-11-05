@@ -80,6 +80,10 @@ installed_files() {
     } | sort -u
 }
 
+built_files() {
+    printf '%s\n' .local/bin/islandd .local/bin/serezha-wsbar .local/bin/serezha-mountd
+}
+
 origin_backup() {
     local origin=""
     [[ -f "$STATE_DIR/origin-backup" ]] && origin=$(<"$STATE_DIR/origin-backup")
@@ -90,7 +94,7 @@ origin_backup() {
     return 0
 }
 
-mapfile -t FILES < <(installed_files)
+mapfile -t FILES < <({ installed_files; built_files; } | sort -u)
 ORIGIN=$(origin_backup)
 present=0
 for rel in "${FILES[@]}"; do

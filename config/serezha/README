@@ -123,8 +123,9 @@ Xwayland, портал GTK и waybar, которые раньше стояли �
       waybar — это GTK3: с одним модулем вместо шести он весил 28.5 МБ,
       то есть платился сам тулкит. maybar — живой форк yambar, рисует
       через fcft и pixman в wl_shm. Звук, сеть, батарея и часы у него
-      свои; столы и заголовок окна отдаёт serezha-bar-hypr — bash на
-      событийном сокете Hyprland, без опроса. Если maybar не стоит,
+      свои; столы и заголовок окна отдаёт serezha-wsbar — 0.5 МБ на Rust,
+      спит на событийном сокете Hyprland и спрашивает его напрямую, без
+      hyprctl и jq. Если maybar не стоит,
       режим поднимает waybar, как раньше.
 
   портал GTK    24 МБ → 0
@@ -133,10 +134,10 @@ Xwayland, портал GTK и waybar, которые раньше стояли �
       погашенный бэкенд на следующем диалоге поднимается сам, свежим.
       Режим гасит его на входе и на reap, как gvfs. Диалог работает.
 
-  udiskie       36 МБ → serezha-automount 3 МБ
+  udiskie       36 МБ → serezha-mountd 0.5 МБ
       udiskie — Python, PyGObject и GTK-интроспекция ради события,
-      которое случается раз в день. Замена спит на выводе udevadm и
-      вызывает udisksctl на вставленный носитель. Поведение то же:
+      которое случается раз в день. Замена на Rust слушает uevent ядра
+      через netlink и вызывает udisksctl на вставленный носитель. Поведение то же:
       монтирует съёмное, размонтирование остаётся ручным.
 
   Thunar        60 МБ → nnn 3 МБ
@@ -254,8 +255,8 @@ sudo без пароля на этот единственный путь. Ста
   awww-daemon       демон обоев
   startup-wallpaper.sh, wallpaper-rotate.sh   обои и их ротация с matugen
   notify-trace.sh, notif-missed.sh            журнал уведомлений для шелла
-  downloads-sort.py раскладка ~/Downloads по inotify
-  udiskie           заменён на serezha-automount
+  islandd sort      раскладка ~/Downloads (или downloads-sort.py)
+  udiskie           заменён на serezha-mountd
 
 Гасятся по настройке в config:
   Thunar, tumblerd, thunar-volman  KILL_THUNAR=no оставляет их в покое
@@ -278,10 +279,10 @@ sudo без пароля на этот единственный путь. Ста
 
 Появляются:
   maybar            бар (или waybar, если maybar не стоит)
-  serezha-bar-hypr  столы и заголовок для бара, спит на сокете Hyprland
+  serezha-wsbar     столы и заголовок для бара, спит на сокете Hyprland
   serezha-xlazy     дисплей X11 по требованию, 0.1 МБ
   mako              демон уведомлений
-  serezha-automount автомонтирование, спит на udevadm
+  serezha-mountd    автомонтирование, спит на uevent ядра
 
 НАСТРОЙКИ
 ---------
@@ -348,8 +349,10 @@ cliphist с двумя cat, GTK-приложение — шину at-spi.
   ~/.local/bin/serezha-dnd                 не беспокоить
   ~/.local/bin/serezha-env                 обёртка запуска приложений
   ~/.local/bin/serezha-mem                 замер памяти
-  ~/.local/bin/serezha-automount           автомонтирование
-  ~/.local/bin/serezha-bar-hypr            столы и заголовок для бара
+  ~/.local/bin/serezha-automount           автомонтирование, запускает serezha-mountd
+  ~/.local/bin/serezha-bar-hypr            столы для бара, запускает serezha-wsbar
+  ~/.local/bin/serezha-wsbar               собирается из src/wsbar.rs (rustc)
+  ~/.local/bin/serezha-mountd              собирается из src/mountd.rs (rustc)
   ~/.local/bin/serezha-xlazy               собирается из src/xlazy.c
   ~/.local/bin/serezha-power               энергопрофиль (ставится в
                                            /usr/local/bin)

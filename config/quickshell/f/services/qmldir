@@ -21,6 +21,7 @@ singleton MicLevel MicLevel.qml
 singleton Network Network.qml
 singleton NotifHistory NotifHistory.qml
 singleton NotifKind NotifKind.qml
+singleton Islandd Islandd.qml
 singleton Outbound Outbound.qml
 singleton Peripherals Peripherals.qml
 singleton Prefs Prefs.qml
@@ -43,3 +44,4 @@ singleton DotsUpdate DotsUpdate.qml
 singleton Reminders Reminders.qml
 singleton Notes Notes.qml
 singleton Aula Aula.qml
+singleton Mouse Mouse.qml

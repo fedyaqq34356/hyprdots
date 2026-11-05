@@ -15,8 +15,6 @@ Singleton {
     property string exitCountry: ""
     property bool checking: false
 
-    readonly property var prefixes: ["wg", "tun", "tailscale", "proton", "nordlynx"]
-
     readonly property string label: {
         if (!root.up) return I18n.t("net.noTunnel");
         let out = root.iface;
@@ -26,51 +24,19 @@ Singleton {
              + (root.exitCountry === "" ? "" : "  ·  " + root.exitCountry);
     }
 
-    Process {
-        id: probe
-        command: ["ip", "-json", "link", "show", "up"]
+    readonly property string linkIface: Islandd.vpnIface
 
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let links;
-                try {
-                    links = JSON.parse(text);
-                } catch (e) {
-                    return;
-                }
-
-                let found = "";
-                for (const link of links) {
-                    const name = link.ifname || "";
-                    for (const p of root.prefixes) {
-                        if (name.startsWith(p)) {
-                            found = name;
-                            break;
-                        }
-                    }
-                    if (found !== "") break;
-                }
-
-                const wasUp = root.up;
-                root.up = found !== "";
-                root.iface = found;
-
-                if (root.up !== wasUp) {
-                    root.exitIp = "";
-                    root.exitCountry = "";
-                    if (root.up)
-                        root.lookup();
-                }
-            }
+    onLinkIfaceChanged: {
+        const found = root.linkIface;
+        const wasUp = root.up;
+        root.up = found !== "";
+        root.iface = found;
+        if (root.up !== wasUp) {
+            root.exitIp = "";
+            root.exitCountry = "";
+            if (root.up)
+                root.lookup();
         }
-    }
-
-    Timer {
-        interval: 4000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: probe.running = true
     }
 
     Process {
@@ -102,7 +68,6 @@ Singleton {
     }
 
     function refresh() {
-        probe.running = true;
         if (root.up)
             root.lookup();
     }

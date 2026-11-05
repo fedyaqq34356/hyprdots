@@ -2,6 +2,8 @@
 
 set -u
 
+[[ -x "$HOME/.local/bin/serezha-wsbar" ]] && exec "$HOME/.local/bin/serezha-wsbar"
+
 SOCK="${XDG_RUNTIME_DIR:-/run/user/$UID}/hypr/${HYPRLAND_INSTANCE_SIGNATURE:-}/.socket2.sock"
 [[ -S "$SOCK" ]] || exit 1
 

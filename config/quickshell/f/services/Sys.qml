@@ -25,6 +25,12 @@ Singleton {
     property real diskTotal: -1
     property real diskIo: 0
     property real diskTempC: -1
+    property real cpuW: -1
+    property bool cpuWExact: false
+    property real gpuW: -1
+    property real totalW: -1
+    property real vcore: -1
+    property real gpuV: -1
 
     property string cpuLabel: ""
     property string memLabel: ""
@@ -38,7 +44,7 @@ Singleton {
 
     Process {
         running: root.users > 0
-        command: [Quickshell.env("HOME") + "/.config/hypr/scripts/system/sysmon.py"]
+        command: [Quickshell.env("HOME") + "/.local/bin/islandd", "sys"]
 
         stdout: SplitParser {
             onRead: function (line) {
@@ -65,6 +71,12 @@ Singleton {
                 root.diskTotal = s.disk_total == null ? -1 : s.disk_total;
                 root.diskIo = s.disk_io == null ? 0 : s.disk_io;
                 root.diskTempC = s.disk_temp_c == null ? -1 : s.disk_temp_c;
+                root.cpuW = s.cpu_w == null ? -1 : s.cpu_w;
+                root.cpuWExact = !!s.cpu_w_exact;
+                root.gpuW = s.gpu_w == null ? -1 : s.gpu_w;
+                root.totalW = s.total_w == null ? -1 : s.total_w;
+                root.vcore = s.vcore == null ? -1 : s.vcore;
+                root.gpuV = s.gpu_v == null ? -1 : s.gpu_v;
 
                 root.cpuLabel = s.cpu_label || "";
                 root.memLabel = s.mem_label || "";

@@ -27,7 +27,7 @@ local once = {
 
     S .. "/audio/mic-lock.sh",
 
-    S .. "/tools/downloads-sort.py",
+    "[ -x ~/.local/bin/islandd ] && exec ~/.local/bin/islandd sort || exec " .. S .. "/tools/downloads-sort.py",
 
     "hyprctl setcursor Matugen-Cursor 24",
     "[ -x ~/.local/bin/pulse-autoconnect ] && exec ~/.local/bin/pulse-autoconnect",

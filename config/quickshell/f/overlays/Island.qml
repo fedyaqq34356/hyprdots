@@ -482,50 +482,24 @@ Scope {
     property string downloadPath: ""
     property string downloadPhase: ""
 
-    Process {
-        id: dlProbe
-        command: ["sh", "-c",
-            "find \"$1\" -maxdepth 1 -type f \\( -name '*.part' -o -name '*.crdownload' \\) | wc -l",
-            "sh", root.downloadsDir]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const n = parseInt(this.text.trim()) || 0;
-                const was = root.downloading;
-                root.downloading = n;
-                if (n > 0) {
-                    dlDone.stop();
-                    root.downloadPhase = "busy";
-                } else if (was > 0) {
-                    dlNewest.running = true;
-                }
+    Connections {
+        target: Islandd
+        enabled: IslandConfig.s("enabled")
+        function onDownloadingChanged() {
+            root.downloading = Islandd.downloading;
+            if (root.downloading > 0) {
+                dlDone.stop();
+                root.downloadPhase = "busy";
             }
         }
-    }
-
-    Timer {
-        interval: 1500
-        repeat: true
-        running: IslandConfig.s("enabled")
-        triggeredOnStart: true
-        onTriggered: if (!dlProbe.running) dlProbe.running = true
-    }
-
-    Process {
-        id: dlNewest
-        command: ["sh", "-c",
-            "find \"$1\" -maxdepth 1 -type f ! -name '*.part' ! -name '*.crdownload' -newermt '-20 seconds' "
-            + "-printf '%T@\\t%p\\n' | sort -rn | head -1 | cut -f2-",
-            "sh", root.downloadsDir]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const path = this.text.trim();
-                root.downloadPhase = path !== "" ? "ok" : "";
-                dlDone.restart();
-                if (path === "")
-                    return;
-                root.downloadPath = path;
-                root.flash("download", root.fileGlyph(path), path.split("/").pop(), -1, true);
-            }
+        function onDownloadDone(path) {
+            root.downloading = 0;
+            root.downloadPhase = path !== "" ? "ok" : "";
+            dlDone.restart();
+            if (path === "")
+                return;
+            root.downloadPath = path;
+            root.flash("download", root.fileGlyph(path), path.split("/").pop(), -1, true);
         }
     }
 

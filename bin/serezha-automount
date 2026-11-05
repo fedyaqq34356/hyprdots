@@ -2,6 +2,8 @@
 
 set -u
 
+[[ -x "$HOME/.local/bin/serezha-mountd" ]] && exec "$HOME/.local/bin/serezha-mountd" "$@"
+
 have() { command -v "$1" >/dev/null 2>&1; }
 have udisksctl || { printf 'serezha-automount: нет udisksctl\n' >&2; exit 1; }
 
