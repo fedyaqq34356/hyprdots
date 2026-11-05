@@ -105,7 +105,7 @@ PACMAN_PKGS=(
     starship zoxide fzf eza bat ripgrep lazygit thunar
     brightnessctl playerctl pipewire pipewire-pulse wireplumber upower bluez bluez-utils
     lm_sensors usb_modeswitch linux-firmware udiskie noise-suppression-for-voice
-    cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python
+    cliphist wl-clipboard grim slurp satty hyprpicker ffmpeg imagemagick jq python rust
     git pciutils mesa vulkan-icd-loader
     waybar fuzzel mako networkmanager foot nnn udisks2 xwayland-satellite socat
     qt5ct qt6ct kvantum kvantum-qt5 papirus-icon-theme xdg-user-dirs polkit
@@ -611,6 +611,22 @@ migrate_layout() {
     return 0
 }
 
+# islandd feeds the shell (system stats, mouse battery, downloads, VPN,
+# outbound connections) from one small process instead of polling with
+# shell commands. Without it the shell still runs, those widgets stay empty.
+build_islandd() {
+    local manifest="$SRC_DIR/src/islandd/Cargo.toml"
+    [[ -f "$manifest" ]] || return 0
+    command -v cargo >/dev/null 2>&1 || { warn "no cargo: islandd not built"; return 0; }
+    local target="${XDG_CACHE_HOME:-$HOME/.cache}/islandd-build"
+    if run cargo build --release --quiet --manifest-path "$manifest" --target-dir "$target"; then
+        run install -Dm755 "$target/release/islandd" "$HOME/.local/bin/islandd"
+        ok "islandd built"
+    else
+        warn "islandd build failed"
+    fi
+}
+
 deploy_config() {
     log "Deploying the configuration"
     migrate_layout
@@ -627,6 +643,7 @@ deploy_config() {
     fi
     deploy_tree "$SRC_DIR/home" "$HOME"
     deploy_tree "$SRC_DIR/bin" "$HOME/.local/bin"
+    build_islandd
 
     # The mode's file manager needs a desktop entry so that xdg-open can name
     # it as the handler for inode/directory.

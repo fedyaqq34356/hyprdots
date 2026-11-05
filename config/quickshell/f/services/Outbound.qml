@@ -34,50 +34,37 @@ Singleton {
         return out;
     }
 
-    Process {
-        id: probe
-        command: [Quickshell.env("HOME") + "/.config/hypr/scripts/system/outbound-scan.sh"]
+    function ingest(conns) {
+        const now = Date.now();
+        const fresh = [];
 
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const now = Date.now();
-                const lines = this.text.split("\n");
-                const fresh = [];
+        for (const c of conns) {
+            if (c.length < 3) continue;
+            const key = c[0] + "|" + c[1];
+            if (root.seen[key] !== undefined) continue;
+            root.seen[key] = now;
 
-                for (const line of lines) {
-                    if (line.trim() === "") continue;
-                    const parts = line.split("\t");
-                    if (parts.length < 3) continue;
+            if (!root.ready) continue;
 
-                    const key = parts[0] + "|" + parts[1];
-                    if (root.seen[key] !== undefined) continue;
-                    root.seen[key] = now;
+            fresh.push({ proc: c[0], host: c[1], port: c[2], at: now });
+        }
 
-                    if (!root.ready) continue;
+        root.ready = true;
 
-                    fresh.push({ proc: parts[0], host: parts[1],
-                                 port: parts[2], at: now });
-                }
-
-                root.ready = true;
-
-                if (fresh.length > 0) {
-                    let list = root.recent.concat(fresh);
-                    if (list.length > root.keep)
-                        list = list.slice(list.length - root.keep);
-                    root.recent = list;
-                }
-            }
+        if (fresh.length > 0) {
+            let list = root.recent.concat(fresh);
+            if (list.length > root.keep)
+                list = list.slice(list.length - root.keep);
+            root.recent = list;
         }
     }
 
-    Timer {
-        interval: 3000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: probe.running = true
+    Connections {
+        target: Islandd
+        function onConnsChanged() { root.ingest(Islandd.conns); }
     }
+
+    Component.onCompleted: if (Islandd.connsReady) root.ingest(Islandd.conns)
 
     Timer {
         interval: 1000

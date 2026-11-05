@@ -452,6 +452,7 @@ Packages stay installed.
 | `config/quickshell/f/` | the shell: `bar`, `panels`, `overlays`, `desk`, `services`, `design`, `reusables`, `lang` |
 | `config/matugen/` | templates the palette is rendered into |
 | `bin/` | commands that land in `~/.local/bin` |
+| `src/islandd/` | Rust helper the installer builds into `~/.local/bin/islandd`: system stats, mouse battery, downloads, VPN and outbound connections for the shell, plus the downloads sorter, without spawning shell commands on timers |
 | `home/` | dotfiles that land in `~` |
 | `extras/` | optional pieces the installer does not deploy |
 
@@ -1029,7 +1030,7 @@ The mode used to sit at 532 MB, and these processes held nearly all of what came
 | --- | --- | --- | --- |
 | terminal | kitty, 210 MB | **foot**, 8 MB | a Python runtime and an OpenGL renderer against C and `wl_shm` |
 | files | Thunar, 60 MB | **nnn**, 1 MB | and `tumbler` leaves with it — the thumbnailer read every file in a directory |
-| automount | udiskie, 36 MB | **serezha-automount**, 3 MB | `udevadm` and `udisksctl` instead of PyGObject and GTK |
+| automount | udiskie, 36 MB | **serezha-mountd**, 0.5 MB | Rust on kernel uevents, `udisksctl` only when a disk appears |
 | X11 | Xwayland, 66 MB | **serezha-xlazy**, 0.1 MB | Xwayland starts on the first X11 client — see below |
 | bar | waybar, 31 MB | **maybar**, 8 MB | a maintained yambar fork drawing through `wl_shm`, no GTK3 |
 | file dialog | portal-gtk, 24 MB | **on demand**, 0 MB | D-Bus brings the backend back on the next dialog |

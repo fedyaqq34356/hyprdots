@@ -198,6 +198,78 @@ def disk_temperature() -> float | None:
             continue
     return None
 
+REST_W = 25.0
+PSU_EFF = 0.87
+
+def hwmon_by_name(name: str) -> Path | None:
+    for h in sorted(Path("/sys/class/hwmon").glob("hwmon*")):
+        try:
+            if (h / "name").read_text().strip() == name:
+                return h
+        except OSError:
+            continue
+    return None
+
+def rapl_zone() -> Path | None:
+    for z in sorted(Path("/sys/class/powercap").glob("intel-rapl:*")):
+        try:
+            if (z / "name").read_text().strip().startswith("package"):
+                return z
+        except OSError:
+            continue
+    return None
+
+class Power:
+    def __init__(self) -> None:
+        self.zone = rapl_zone()
+        self.wrap = read_int(self.zone / "max_energy_range_uj") if self.zone else None
+        self.prev: tuple[int, float] | None = None
+        dev = amdgpu_device()
+        self.gpu_hw = next(iter(sorted((dev / "hwmon").glob("hwmon*"))), None) if dev else None
+        self.board = None
+        for name in ("nct6775", "nct6779", "nct6791", "nct6792", "nct6793", "nct6795",
+                     "nct6796", "nct6797", "nct6798", "nct6799", "it87", "it8686",
+                     "it8688", "asus_wmi_sensors", "zenpower"):
+            self.board = hwmon_by_name(name)
+            if self.board:
+                break
+
+    def cpu_watts(self, load: float | None) -> tuple[float | None, bool]:
+        if self.zone:
+            uj = read_int(self.zone / "energy_uj")
+            now = time.monotonic()
+            if uj is not None:
+                prev, self.prev = self.prev, (uj, now)
+                if prev and now > prev[1]:
+                    d = uj - prev[0]
+                    if d < 0 and self.wrap:
+                        d += self.wrap
+                    if d >= 0:
+                        return d / 1e6 / (now - prev[1]), True
+                return None, True
+        if load is None:
+            return None, False
+        return 18 + 50 * load, False
+
+    def sample(self, load: float | None) -> dict:
+        out: dict = {}
+        cpu_w, exact = self.cpu_watts(load)
+        out["cpu_w"] = round(cpu_w, 1) if cpu_w is not None else None
+        out["cpu_w_exact"] = exact
+        gpu_w = None
+        if self.gpu_hw:
+            uw = read_int(self.gpu_hw / "power1_average") or read_int(self.gpu_hw / "power1_input")
+            gpu_w = uw / 1e6 if uw is not None else None
+            mv = read_int(self.gpu_hw / "in0_input")
+            out["gpu_v"] = mv / 1000 if mv is not None else None
+        out["gpu_w"] = round(gpu_w, 1) if gpu_w is not None else None
+        if self.board and self.board.name != "zenpower":
+            mv = read_int(self.board / "in0_input")
+            out["vcore"] = mv / 1000 if mv is not None else None
+        if cpu_w is not None:
+            out["total_w"] = round((cpu_w + (gpu_w or 0) + REST_W) / PSU_EFF)
+        return out
+
 def main() -> int:
     previous = read_cpu_times()
     previous_cores = read_core_times()
@@ -206,6 +278,7 @@ def main() -> int:
     dev = disk_device()
     prev_sec = disk_sectors(dev)
     prev_t = time.monotonic()
+    power = Power()
 
     while True:
         time.sleep(INTERVAL)
@@ -256,6 +329,8 @@ def main() -> int:
             sample["disk_mbs"] = round(mbs, 1)
         prev_sec, prev_t = now_sec, now_t
         sample["disk_temp_c"] = disk_temperature()
+
+        sample.update(power.sample(sample.get("cpu")))
 
         if tick % 2 == 0:
             gpu_cache = gpu()

@@ -212,7 +212,7 @@ start_maybar() {
 
 start_bar() {
     [[ "$BAR" == yes ]] || return 0
-    have maybar && { start_maybar; return 0; }
+    have maybar && { rs_build wsbar; start_maybar; return 0; }
     have waybar || { msg "нет ни maybar, ни waybar"; return 0; }
     pgrep -x waybar >/dev/null && return 0
 
@@ -243,6 +243,8 @@ start_notify() {
 
 start_automount() {
     [[ "$AUTOMOUNT" == yes ]] || { stop_proc "serezha-automount"; return 0; }
+    rs_build mountd
+    pgrep -x serezha-mountd >/dev/null && return 0
     pgrep -f "serezha-automount" >/dev/null && return 0
     have "$HOME/.local/bin/serezha-automount" ||
         [[ -x "$HOME/.local/bin/serezha-automount" ]] || return 0
@@ -252,6 +254,14 @@ start_automount() {
 XLAZY_SRC="$CFG_DIR/src/xlazy.c"
 XLAZY_BIN="$HOME/.local/bin/serezha-xlazy"
 XLAZY_STATE="${XDG_RUNTIME_DIR:-/tmp}/serezha-xdisplay"
+
+rs_build() {
+    local src="$CFG_DIR/src/$1.rs" bin="$HOME/.local/bin/serezha-$1"
+    [[ -x "$bin" && "$bin" -nt "$src" ]] && return 0
+    [[ -r "$src" ]] && have rustc || return 1
+    rustc --edition 2021 -C opt-level=s -C panic=abort -C strip=symbols \
+        -o "$bin" "$src" >/dev/null 2>&1
+}
 
 xlazy_build() {
     [[ -x "$XLAZY_BIN" && "$XLAZY_BIN" -nt "$XLAZY_SRC" ]] && return 0
@@ -414,8 +424,10 @@ mode_off() {
     stop_proc waybar
     stop_proc maybar
     pkill -f "^(\S*/)?bash \S*/serezha-bar-hypr" >/dev/null 2>&1
+    stop_proc serezha-wsbar
     stop_proc mako
     stop_proc serezha-automount
+    stop_proc serezha-mountd
     pkill -f "serezha-automount" >/dev/null 2>&1
 
     power_off
@@ -484,7 +496,7 @@ mode_status() {
            { pgrep -x serezha-xlazy >/dev/null && echo 'по требованию' || echo нет; })"
     printf 'Thunar:     %s\n' "$(pgrep -x Thunar     >/dev/null && echo да || echo нет)"
     printf 'автомонт.:  %s\n' \
-        "$(pgrep -f serezha-automount >/dev/null && echo 'serezha-automount' ||
+        "$({ pgrep -x serezha-mountd || pgrep -f serezha-automount; } >/dev/null && echo 'serezha-automount' ||
            { pgrep -x udiskie >/dev/null && echo udiskie || echo нет; })"
     printf 'энергия:    %s\n' \
         "$([[ -d /run/serezha-power ]] && echo 'профиль режима' || echo 'системная')"
@@ -505,6 +517,7 @@ mode_reload() {
     stop_proc waybar
     stop_proc maybar
     pkill -f "^(\S*/)?bash \S*/serezha-bar-hypr" >/dev/null 2>&1
+    stop_proc serezha-wsbar
     stop_proc mako
     have hyprctl && hyprctl reload >/dev/null 2>&1
     start_notify
