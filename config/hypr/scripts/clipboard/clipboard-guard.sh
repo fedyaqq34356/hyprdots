@@ -62,6 +62,9 @@ if [[ "${1:-}" == "--entry" ]]; then
     exit 0
 fi
 
+I="$HOME/.local/bin/islandd"
+[[ -x "$I" ]] && exec wl-paste --watch "$I" clip "$0"
+
 wl-paste --watch sh -c '
     types=$(wl-paste --list-types 2>/dev/null | tr "\n" "," | sed "s/,$//")
     exec "$0" --entry "$types"

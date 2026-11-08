@@ -54,3 +54,42 @@ pub fn home() -> PathBuf {
 pub fn parent_gone(parent: libc::pid_t) -> bool {
     unsafe { libc::getppid() != parent }
 }
+
+pub fn hypr_request(cmd: &str) -> Option<String> {
+    use std::io::Read;
+    let sig = std::env::var("HYPRLAND_INSTANCE_SIGNATURE").ok()?;
+    let run = std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".into());
+    let mut s = std::os::unix::net::UnixStream::connect(format!("{run}/hypr/{sig}/.socket.sock")).ok()?;
+    s.set_read_timeout(Some(std::time::Duration::from_secs(2))).ok()?;
+    s.write_all(cmd.as_bytes()).ok()?;
+    let mut out = String::new();
+    s.read_to_string(&mut out).ok()?;
+    Some(out)
+}
+
+pub fn notify(args: &[&str]) {
+    let child = std::process::Command::new("timeout")
+        .arg("5")
+        .arg("notify-send")
+        .args(args)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+    if let Ok(mut c) = child {
+        std::thread::spawn(move || {
+            let _ = c.wait();
+        });
+    }
+}
+
+pub fn local_time(fmt: &str) -> String {
+    let t = unsafe { libc::time(std::ptr::null_mut()) };
+    let mut tm: libc::tm = unsafe { std::mem::zeroed() };
+    unsafe { libc::localtime_r(&t, &mut tm) };
+    let mut buf = [0u8; 128];
+    let mut f = fmt.as_bytes().to_vec();
+    f.push(0);
+    let n = unsafe { libc::strftime(buf.as_mut_ptr().cast(), buf.len(), f.as_ptr().cast(), &tm) };
+    String::from_utf8_lossy(&buf[..n]).into_owned()
+}

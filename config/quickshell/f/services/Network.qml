@@ -149,7 +149,50 @@ Singleton {
         }
     }
 
+    property bool fallback: false
+
+    Process {
+        id: netd
+        running: true
+        command: [Islandd.bin, "net"]
+        stdout: SplitParser {
+            onRead: line => {
+                let ev;
+                try { ev = JSON.parse(line); } catch (e) { return; }
+                root.fallback = false;
+                root.radio = !!ev.radio;
+                root.networks = ev.networks || [];
+                root.connected = !!ev.connected;
+                root.ssid = ev.ssid || "";
+                root.strength = ev.strength || 0;
+                root.linkRate = ev.rate || "";
+                root.wifiIface = ev.wifiIface || "";
+                root.iface = ev.iface || "";
+                root.wiredName = ev.wiredName || "";
+                root.wired = !!ev.wired;
+                root.primedRadio = true;
+                root.primedLink = true;
+                root.primedWire = true;
+            }
+        }
+        onRunningChanged: {
+            if (running)
+                return;
+            root.fallback = true;
+            root.refresh();
+            netdRetry.start();
+        }
+    }
+
+    Timer {
+        id: netdRetry
+        interval: 30000
+        onTriggered: netd.running = true
+    }
+
     function refresh() {
+        if (!root.fallback)
+            return;
         radioState.running = true;
         scan.running = true;
         ifaceProc.running = true;
@@ -221,11 +264,9 @@ Singleton {
         }
     }
 
-    Component.onCompleted: refresh()
-
     Timer {
         interval: 15000
-        running: true
+        running: root.fallback
         repeat: true
         onTriggered: root.refresh()
     }
@@ -233,7 +274,7 @@ Singleton {
     Process {
         id: monitor
         command: ["nmcli", "monitor"]
-        running: true
+        running: root.fallback
         stdout: SplitParser {
             onRead: debounce.restart()
         }

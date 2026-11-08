@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+I="$HOME/.local/bin/islandd"
+[[ -x "$I" ]] && exec -a "$0" "$I" wallpaper-rotate
+
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 INTERVAL=10800
 

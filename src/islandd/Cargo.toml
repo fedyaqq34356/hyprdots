@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dbus = { version = "0.9", default-features = false }
 libc = "0.2"
 serde_json = "1"
 

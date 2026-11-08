@@ -612,8 +612,9 @@ migrate_layout() {
 }
 
 # islandd feeds the shell (system stats, mouse battery, downloads, VPN,
-# outbound connections) from one small process instead of polling with
-# shell commands. Without it the shell still runs, those widgets stay empty.
+# outbound connections, Wi-Fi state) from one small process instead of
+# polling with shell commands, and replaces the session helper scripts and
+# aulactl. Without it the shell still runs on the shell/Python fallbacks.
 build_islandd() {
     local manifest="$SRC_DIR/src/islandd/Cargo.toml"
     [[ -f "$manifest" ]] || return 0
@@ -621,6 +622,7 @@ build_islandd() {
     local target="${XDG_CACHE_HOME:-$HOME/.cache}/islandd-build"
     if run cargo build --release --quiet --manifest-path "$manifest" --target-dir "$target"; then
         run install -Dm755 "$target/release/islandd" "$HOME/.local/bin/islandd"
+        run ln -sfn islandd "$HOME/.local/bin/aulactl"
         ok "islandd built"
     else
         warn "islandd build failed"

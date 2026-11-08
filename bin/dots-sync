@@ -68,7 +68,7 @@ MANIFEST = [
     (".local/bin/serezha-shot", "bin/serezha-shot"),
     (".local/bin/serezha-bar-hypr", "bin/serezha-bar-hypr"),
     (".local/bin/hyprdo", "bin/hyprdo"),
-    (".local/bin/aulactl", "bin/aulactl"),
+    ("Projects/islandd/aulactl.py", "bin/aulactl"),
     (".local/bin/dots-migrate", "bin/dots-migrate"),
     (".local/share/applications/serezha-files.desktop",
      "config/serezha/applications/serezha-files.desktop"),
