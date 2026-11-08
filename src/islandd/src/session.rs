@@ -132,10 +132,13 @@ fn wait_pid(pid: i32) -> bool {
     true
 }
 
+const QS_MALLOC: &str = "narenas:2,background_thread:true,dirty_decay_ms:2000,muzzy_decay_ms:0";
+
 fn start_qs() {
     let _ = Command::new("setsid")
         .args(["-f", "quickshell", "-n", "-c", "f"])
         .env("QS_NO_RELOAD_POPUP", "1")
+        .env("MALLOC_CONF", std::env::var("MALLOC_CONF").unwrap_or_else(|_| QS_MALLOC.into()))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

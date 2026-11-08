@@ -63,6 +63,7 @@ Item {
             id: shot
             anchors.fill: parent
             source: sc.url
+            sourceSize: Qt.size(Math.ceil(width * 2), Math.ceil(height * 2))
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
             cache: false

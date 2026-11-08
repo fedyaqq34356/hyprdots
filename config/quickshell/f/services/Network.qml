@@ -226,20 +226,16 @@ Singleton {
     property real lastRx: -1
     property real lastTx: -1
 
-    Process {
-        id: traffic
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const n = text.trim().split("\n").map(v => parseFloat(v));
-                if (n.length < 2 || isNaN(n[0])) return;
-                if (root.lastRx >= 0) {
-                    root.rxRate = Math.max(0, n[0] - root.lastRx);
-                    root.txRate = Math.max(0, n[1] - root.lastTx);
-                }
-                root.lastRx = n[0];
-                root.lastTx = n[1];
-            }
-        }
+    FileView {
+        id: rxFile
+        path: root.iface !== "" ? "/sys/class/net/" + root.iface + "/statistics/rx_bytes" : ""
+        blockLoading: true
+    }
+
+    FileView {
+        id: txFile
+        path: root.iface !== "" ? "/sys/class/net/" + root.iface + "/statistics/tx_bytes" : ""
+        blockLoading: true
     }
 
     Timer {
@@ -248,10 +244,17 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            traffic.command = ["cat",
-                "/sys/class/net/" + root.iface + "/statistics/rx_bytes",
-                "/sys/class/net/" + root.iface + "/statistics/tx_bytes"];
-            traffic.running = true;
+            rxFile.reload();
+            txFile.reload();
+            const rx = parseFloat(rxFile.text());
+            const tx = parseFloat(txFile.text());
+            if (isNaN(rx) || isNaN(tx)) return;
+            if (root.lastRx >= 0) {
+                root.rxRate = Math.max(0, rx - root.lastRx);
+                root.txRate = Math.max(0, tx - root.lastTx);
+            }
+            root.lastRx = rx;
+            root.lastTx = tx;
         }
     }
 

@@ -23,7 +23,7 @@ notify() {
 }
 
 start_qs() {
-    QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1 9>&-
+    MALLOC_CONF="${MALLOC_CONF:-narenas:2,background_thread:true,dirty_decay_ms:2000,muzzy_decay_ms:0}" QS_NO_RELOAD_POPUP=1 setsid -f quickshell -n -c f >/dev/null 2>&1 9>&-
 }
 
 while true; do
