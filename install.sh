@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="https://github.com/fedyaqq34356/hyprdots.git"
-CLONE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots"
+REPO_URL="https://github.com/fedyaqq34356/rosa.git"
+CLONE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/rosa"
 
 DRY_RUN=0
 SKIP_PACKAGES=0
@@ -57,6 +57,15 @@ while (($#)); do
     *) die "unknown option: $1" ;;
     esac
     shift
+done
+
+for pair in "${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots|$CLONE_DIR" "$HOME/.config/hyprdots|$HOME/.config/rosa"; do
+    old=${pair%%|*}
+    new=${pair##*|}
+    if [[ -d "$old" && ! -L "$old" && ! -e "$new" ]]; then
+        run mv "$old" "$new"
+        run ln -s "$new" "$old"
+    fi
 done
 
 SRC_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -159,13 +168,14 @@ if [[ "$PRINTER" == auto ]]; then
     ((UPDATE)) || ! printer_plugged || PRINTER=1
 fi
 
-PULSE_MAC="@PULSE_MAC@"
+PULSE_MAC=""
+command -v bluetoothctl >/dev/null \
+    && PULSE_MAC=$(timeout 3 bluetoothctl devices 2>/dev/null | awk 'tolower($0) ~ /pulse elite/ { print $2; exit }')
 if [[ "$PULSE" == auto ]]; then
     PULSE=0
-    [[ -e "$HOME/.config/hyprdots/pulse-elite" ]] && PULSE=1
+    [[ -e "$HOME/.config/rosa/pulse-elite" ]] && PULSE=1
     grep -qsi 'playstation.*link' /sys/bus/usb/devices/*/product && PULSE=1
-    command -v bluetoothctl >/dev/null \
-        && timeout 3 bluetoothctl devices 2>/dev/null | grep -qi "$PULSE_MAC" && PULSE=1
+    [[ -n "$PULSE_MAC" ]] && PULSE=1
 fi
 
 gpu_packages() {
@@ -205,7 +215,7 @@ setup_repos() {
     if ! repo_enabled extra || { ((GAMES)) && ! repo_enabled multilib; }; then
         log "Enabling the Arch repositories on Artix"
         run sudo pacman -S --needed --noconfirm artix-archlinux-support
-        run sudo cp -a "$conf" "$conf.hyprdots-$(date +%Y%m%d-%H%M%S)"
+        run sudo cp -a "$conf" "$conf.rosa-$(date +%Y%m%d-%H%M%S)"
     fi
     if ((GAMES)) && ! repo_enabled lib32; then
         if grep -q '^#\[lib32\]' "$conf"; then
@@ -275,7 +285,7 @@ install_packages() {
 }
 
 BACKUP_DIR="$HOME/.config/dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
-STATE_DIR="$HOME/.config/hyprdots"
+STATE_DIR="$HOME/.config/rosa"
 INSTALLED_TMP=$(mktemp)
 trap 'rm -f "$INSTALLED_TMP"' EXIT
 
@@ -316,6 +326,15 @@ deploy_pulse() {
     [[ -d "$src" ]] || return 0
     if ((PULSE)); then
         deploy_tree "$src" "$HOME"
+        if [[ -n "$PULSE_MAC" ]]; then
+            while IFS= read -r -d '' file; do
+                target="$HOME/${file#"$src"/}"
+                grep -q '@PULSE_MAC' "$target" 2>/dev/null || continue
+                run sed -i -e "s|@PULSE_MAC_U@|${PULSE_MAC//:/_}|g" -e "s|@PULSE_MAC@|$PULSE_MAC|g" "$target"
+            done < <(find "$src" -type f -print0)
+        else
+            warn "Pulse Elite is not paired yet: pair it, then run rosa-update to fill in its address"
+        fi
         ((DRY_RUN)) || { mkdir -p "$STATE_DIR"; : >"$STATE_DIR/pulse-elite"; }
         ok "Pulse Elite headset profile installed"
         return 0
@@ -332,9 +351,6 @@ deploy_pulse() {
     return 0
 }
 
-# Files that need the real home directory rather than a tilde: qt6ct, fuzzel,
-# hyprlock and the screencast portal do not expand ~, so the published copies
-# carry an @HOME@ marker that is filled in here.
 expand_home() {
     local file
     while IFS= read -r -d '' file; do
@@ -344,11 +360,6 @@ expand_home() {
         "$HOME/.local/share/applications" -type f -print0 2>/dev/null)
 }
 
-# The black mode's power profile touches the CPU governor, PCIe ASPM, USB
-# autosuspend and the GPU power cap — all of it root-only. The script lands in
-# /usr/local/bin and gets one passwordless sudo rule for itself alone, so that
-# switching modes does not stop to ask for a password. Nothing else in the
-# repository asks for root, and the rule grants nothing beyond this one path.
 install_power() {
     local src="$SRC_DIR/bin/serezha-power"
     local dst=/usr/local/bin/serezha-power
@@ -371,9 +382,6 @@ install_power() {
     ok "power profile helper installed"
 }
 
-# Hyprland 0.55 moved the configuration to Lua: hyprland.lua wins over
-# hyprland.conf whenever both exist. Older builds have no Lua parser, so on
-# them the Lua copy is removed and the hyprlang files take over again.
 configure_parser() {
     local hypr="$HOME/.config/hypr" ver
     [[ -f "$hypr/hyprland.lua" ]] || return 0
@@ -587,10 +595,6 @@ enable_services() {
     ok "network, bluetooth and cron enabled"
 }
 
-# Scripts used to sit flat in ~/.config/hypr/scripts; they now live in one
-# folder per job. An update would otherwise leave the old flat copies behind
-# next to the new ones, so every flat script that has a namesake in the new
-# layout is backed up and removed. Machine state moves out of the config dir.
 migrate_layout() {
     local scripts="$HOME/.config/hypr/scripts" state="$HOME/.local/state/hypr"
     local file name
@@ -611,10 +615,6 @@ migrate_layout() {
     return 0
 }
 
-# islandd feeds the shell (system stats, mouse battery, downloads, VPN,
-# outbound connections, Wi-Fi state) from one small process instead of
-# polling with shell commands, and replaces the session helper scripts and
-# aulactl. Without it the shell still runs on the shell/Python fallbacks.
 build_islandd() {
     local manifest="$SRC_DIR/src/islandd/Cargo.toml"
     [[ -f "$manifest" ]] || return 0
@@ -633,8 +633,6 @@ deploy_config() {
     log "Deploying the configuration"
     migrate_layout
 
-    # monitors.conf is the user's own layout: an update must not reset it to
-    # the generic rule the repository ships.
     local monitors="$HOME/.config/hypr/config/monitors.conf" kept=""
     [[ -s "$monitors" ]] && kept=$(<"$monitors")
 
@@ -645,18 +643,17 @@ deploy_config() {
     fi
     deploy_tree "$SRC_DIR/home" "$HOME"
     deploy_tree "$SRC_DIR/bin" "$HOME/.local/bin"
+    run ln -sfn rosa-update "$HOME/.local/bin/hyprdots-update"
     build_islandd
 
-    # The mode's file manager needs a desktop entry so that xdg-open can name
-    # it as the handler for inode/directory.
     if [[ -d "$SRC_DIR/config/serezha/applications" ]]; then
         deploy_tree "$SRC_DIR/config/serezha/applications" \
             "$HOME/.local/share/applications"
     fi
 
-    run mkdir -p "$HOME/.config/hyprdots"
+    run mkdir -p "$HOME/.config/rosa"
     if [[ -d "$SRC_DIR/.git" ]]; then
-        ((DRY_RUN)) || printf '%s\n' "$SRC_DIR" > "$HOME/.config/hyprdots/source"
+        ((DRY_RUN)) || printf '%s\n' "$SRC_DIR" > "$HOME/.config/rosa/source"
     fi
 
     deploy_pulse
@@ -746,9 +743,6 @@ generate_theme
 reload_session() {
     log "Reloading the running session"
     if command -v hyprctl >/dev/null && pgrep -x Hyprland >/dev/null; then
-        # A session still on hyprland.conf needs a full reset to pick up
-        # hyprland.lua. Its autostart already ran, so the marker tells the
-        # Lua config not to start every daemon a second time.
         if [[ -f "$HOME/.config/hypr/hyprland.lua" ]] \
             && [[ "$(hyprctl eval 'return 1' 2>/dev/null)" == *"only supported with the lua"* ]]; then
             [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && ! ((DRY_RUN)) \

@@ -1,4 +1,5 @@
 #!/bin/sh
+[ -x "$HOME/.local/bin/islandd" ] && exit 0
 
 OUT="$HOME/.cache/notify-trace.log"
 printf '\n===== сессия начата %s =====\n' "$(date '+%F %T')" >> "$OUT"

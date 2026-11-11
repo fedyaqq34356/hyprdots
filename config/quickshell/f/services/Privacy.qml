@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import QtQuick
+import "root:/services"
 
 Singleton {
     id: root
@@ -24,13 +25,14 @@ Singleton {
         return false;
     }
 
-    property bool camera: false
+    property bool polled: false
+    readonly property bool camera: Islandd.cameraReady ? Islandd.camera : root.polled
     property bool watching: false
 
     Timer {
         interval: 4000
         repeat: true
-        running: root.watching
+        running: root.watching && !Islandd.cameraReady
         triggeredOnStart: true
         onTriggered: if (!probe.running) probe.running = true
     }
@@ -38,6 +40,6 @@ Singleton {
     Process {
         id: probe
         command: ["sh", "-c", "fuser -s /dev/video* 2>/dev/null"]
-        onExited: (code) => root.camera = code === 0
+        onExited: (code) => root.polled = code === 0
     }
 }

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for dir in "$HOME/hyprdots" "${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots"; do
+for dir in "${XDG_DATA_HOME:-$HOME/.local/share}/rosa" "$HOME/rosa" "${XDG_DATA_HOME:-$HOME/.local/share}/hyprdots" "$HOME/hyprdots"; do
     if [[ -d "$dir/.git" ]]; then
         exec bash "$dir/install.sh" --update "$@"
     fi
 done
 
-echo "no hyprdots checkout found; run the installer once first" >&2
+echo "no rosa checkout found; run the installer once first" >&2
 exit 1

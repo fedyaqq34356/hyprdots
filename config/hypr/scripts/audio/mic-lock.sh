@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+I="$HOME/.local/bin/islandd"
+[[ -x "$I" ]] && exec -a "$0" "$I" mic-lock
 
 SRC="@DEFAULT_SOURCE@"
 DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"

@@ -10,6 +10,9 @@ Singleton {
 
     readonly property string scripts: Quickshell.env("HOME") + "/.config/hypr/scripts/print/"
 
+    property bool useIslandd: true
+    property bool statusGot: false
+
     property int users: 0
 
     function acquire() { root.users++; }
@@ -62,10 +65,15 @@ Singleton {
 
     Process {
         id: status
-        command: [root.scripts + "print-status.sh"]
+        command: root.useIslandd ? [Islandd.bin, "print", "status"]
+                             : [root.scripts + "print-status.sh"]
+
+        onRunningChanged: if (!running && root.useIslandd) nativeCheck.restart()
 
         stdout: StdioCollector {
             onStreamFinished: {
+                if (this.text.length > 0)
+                    root.statusGot = true;
                 let p;
                 try {
                     p = JSON.parse(this.text);
@@ -83,6 +91,17 @@ Singleton {
                 if (!known)
                     root.selected = p.default || (root.printers[0]?.name ?? "");
             }
+        }
+    }
+
+    Timer {
+        id: nativeCheck
+        interval: 400
+        onTriggered: {
+            if (root.statusGot || !root.useIslandd)
+                return;
+            root.useIslandd = false;
+            root.refresh();
         }
     }
 
@@ -127,10 +146,15 @@ Singleton {
     function refresh() {
         if (!root.awake)
             return;
-        status.running = true;
+        if (!status.running) {
+            root.statusGot = false;
+            status.running = true;
+        }
         if (root.capt.needed && root.selected !== "") {
             captProc.running = false;
-            captProc.command = [root.scripts + "print-capt-status.py", root.selected];
+            captProc.command = root.useIslandd
+                ? [Islandd.bin, "print", "capt", root.selected]
+                : [root.scripts + "print-capt-status.py", root.selected];
             captProc.running = true;
         }
     }

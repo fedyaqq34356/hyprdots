@@ -38,6 +38,7 @@ KILL_ALWAYS=(
     "downloads-sort.py"
     "monitor-flicker-fix.py"
     "udiskie"
+    "automount.sh"
 )
 
 ORPHAN_PROCS=(
@@ -453,25 +454,15 @@ mode_off() {
             sleep 0.2
         done
     fi
-    start_once startup-wallpaper.sh "$s/startup-wallpaper.sh"
-    start_once wallpaper-rotate.sh  "$s/wallpaper-rotate.sh"
-    start_once notify-trace.sh      "$s/notify-trace.sh"
-    start_once notif-missed.sh      "$s/notif-missed.sh"
-    start_once clipboard-guard.sh   "$s/clipboard-guard.sh"
-    start_once mic-lock.sh          "$s/mic-lock.sh"
-    start_once downloads-sort.py    "$s/downloads-sort.py"
+    start_once startup-wallpaper.sh "$s/wallpaper/startup-wallpaper.sh"
+    start_once wallpaper-rotate.sh  "$s/wallpaper/wallpaper-rotate.sh"
+    start_once notify-trace.sh      "$s/notify/notify-trace.sh"
+    start_once notif-missed.sh      "$s/notify/notif-missed.sh"
+    start_once clipboard-guard.sh   "$s/clipboard/clipboard-guard.sh"
+    start_once mic-lock.sh          "$s/audio/mic-lock.sh"
+    start_once downloads-sort.py    "$s/tools/downloads-sort.py"
 
-    pgrep -x udiskie >/dev/null || { have udiskie &&
-        setsid -f udiskie --no-tray --automount --notify >/dev/null 2>&1; }
-
-    if ! pgrep -f "wl-paste --type text" >/dev/null; then
-        setsid -f wl-paste --type text --watch \
-            "$s/cliphist-store.sh" >/dev/null 2>&1
-    fi
-    if ! pgrep -f "wl-paste --type image" >/dev/null; then
-        setsid -f wl-paste --type image --watch \
-            cliphist -max-items 150 store >/dev/null 2>&1
-    fi
+    pgrep -x udiskie >/dev/null || start_once automount.sh "$s/system/automount.sh"
     pgrep -x wl-clip-persist >/dev/null || { have wl-clip-persist &&
         setsid -f wl-clip-persist --clipboard regular >/dev/null 2>&1; }
 
@@ -497,7 +488,8 @@ mode_status() {
     printf 'Thunar:     %s\n' "$(pgrep -x Thunar     >/dev/null && echo да || echo нет)"
     printf 'автомонт.:  %s\n' \
         "$({ pgrep -x serezha-mountd || pgrep -f serezha-automount; } >/dev/null && echo 'serezha-automount' ||
-           { pgrep -x udiskie >/dev/null && echo udiskie || echo нет; })"
+           { pgrep -f automount.sh >/dev/null && echo 'islandd mount' ||
+             { pgrep -x udiskie >/dev/null && echo udiskie || echo нет; }; })"
     printf 'энергия:    %s\n' \
         "$([[ -d /run/serezha-power ]] && echo 'профиль режима' || echo 'системная')"
 }

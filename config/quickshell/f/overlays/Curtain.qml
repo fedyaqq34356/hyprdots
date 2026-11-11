@@ -17,7 +17,6 @@ Scope {
         if (root.showing)
             return;
         root.showing = true;
-        faceTex.scheduleUpdate();
         absorb.restart();
     }
 
@@ -40,7 +39,7 @@ Scope {
     SequentialAnimation {
         id: absorb
         ScriptAction { script: root.k = 0 }
-        PauseAnimation { duration: 60 }
+        PauseAnimation { duration: 16 }
         NumberAnimation {
             target: root; property: "k"
             from: 0; to: 1; duration: 1500
@@ -83,7 +82,7 @@ Scope {
 
             LockFace {
                 anchors.fill: parent
-                live: root.armed || root.showing || root.peek
+                live: (root.armed && !root.showing) || root.peek
             }
         }
 
@@ -91,19 +90,18 @@ Scope {
             id: faceTex
             sourceItem: faceBox
             hideSource: true
-            live: root.peek
+            live: (root.armed && !root.showing) || root.peek
             visible: false
         }
 
         ShaderEffect {
             anchors.fill: parent
-            fragmentShader: "root:/design/shaders/melt.frag.qsb"
+            fragmentShader: "root:/design/shaders/glass3.frag.qsb"
             blending: true
 
             property var source: faceTex
             property real progress: root.k
-            property vector2d sink: Qt.vector2d(win.tcx / Math.max(1, win.width),
-                                                (win.tcy + win.th * 0.25) / Math.max(1, win.height))
+            property vector2d origin: Qt.vector2d(0.5, 0.5)
             property real aspect: win.width / Math.max(1, win.height)
             property color rimColor: Colors.accent
         }

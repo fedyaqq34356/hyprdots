@@ -65,6 +65,10 @@ fi
 I="$HOME/.local/bin/islandd"
 [[ -x "$I" ]] && exec wl-paste --watch "$I" clip "$0"
 
+D="$(dirname "$0")"
+setsid -f wl-paste --type text --watch "$D/cliphist-store.sh" >/dev/null 2>&1
+setsid -f wl-paste --type image --watch cliphist -max-items 150 store >/dev/null 2>&1
+
 wl-paste --watch sh -c '
     types=$(wl-paste --list-types 2>/dev/null | tr "\n" "," | sed "s/,$//")
     exec "$0" --entry "$types"

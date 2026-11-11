@@ -14,6 +14,8 @@ Scope {
     id: root
 
     property bool shown: false
+    property bool batView: false
+    property var screenOverride: null
 
     function toggle() { root.shown = !root.shown; }
     function close()  { root.shown = false; }
@@ -203,7 +205,7 @@ Scope {
     PanelWindow {
         id: win
         WlrLayershell.namespace: "qs-aula"
-        screen: Focus.screen
+        screen: root.screenOverride || Focus.screen
         visible: root.shown
         focusable: true
 
@@ -314,7 +316,12 @@ Scope {
                 }
 
                 focus: true
-                Keys.onEscapePressed: root.close()
+                Keys.onEscapePressed: {
+                    if (root.batView)
+                        root.batView = false;
+                    else
+                        root.close();
+                }
                 Keys.onPressed: event => {
                     if (event.key === Qt.Key_B) {
                         root.brush = !root.brush;
@@ -402,6 +409,27 @@ Scope {
                             Behavior on color { ColorAnimation { duration: Motion.base } }
                             Behavior on width { Spring {} }
 
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: parent.radius
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Colors.alpha(Colors.accent, 0.7)
+                                opacity: root.batView ? 1 : pillHover.hovered && pillTap.enabled ? 0.45 : 0
+                                Behavior on opacity { NumberAnimation { duration: Motion.base } }
+                            }
+
+                            HoverHandler {
+                                id: pillHover
+                                cursorShape: pillTap.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            }
+
+                            TapHandler {
+                                id: pillTap
+                                enabled: Aula.charging || Aula.battery >= 0 || Mouse.known || root.batView
+                                onTapped: { Sfx.tap(); root.batView = !root.batView; }
+                            }
+
                             Row {
                                 id: connRow
                                 anchors.centerIn: parent
@@ -464,6 +492,40 @@ Scope {
                                     color: !Aula.charging && Aula.battery <= 10 ? Colors.bad
                                          : !Aula.charging && Aula.battery <= 20 ? Colors.warn : Colors.fg
                                     opacity: Aula.batteryStale ? 0.5 : 0.9
+                                    font.family: root.mono
+                                    font.pixelSize: Fonts.small
+                                    font.features: Fonts.nums
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: Mouse.known
+                                    text: "·"
+                                    color: Colors.fgDim
+                                    opacity: 0.5
+                                    font.family: root.mono
+                                    font.pixelSize: Fonts.small
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: Mouse.known
+                                    text: "󰍽"
+                                    color: Mouse.charging ? Colors.good
+                                         : Mouse.battery <= 5 ? Colors.bad
+                                         : Mouse.battery <= 20 ? Colors.warn : Colors.fgDim
+                                    opacity: Mouse.batteryStale || !Mouse.online ? 0.5 : 1
+                                    font.family: Fonts.glyph
+                                    font.pixelSize: Fonts.medium
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: Mouse.known
+                                    text: (Mouse.coarse ? "~" : "") + Mouse.battery + "%"
+                                    color: !Mouse.charging && Mouse.battery <= 5 ? Colors.bad
+                                         : !Mouse.charging && Mouse.battery <= 20 ? Colors.warn : Colors.fg
+                                    opacity: Mouse.batteryStale || !Mouse.online ? 0.5 : 0.9
                                     font.family: root.mono
                                     font.pixelSize: Fonts.small
                                     font.features: Fonts.nums
@@ -733,6 +795,12 @@ Scope {
                             font.pixelSize: Fonts.tiny
                             Behavior on opacity { NumberAnimation { duration: Motion.fast } }
                         }
+                    }
+
+                    AulaBattery {
+                        anchors.fill: parent
+                        open: root.batView && root.shown
+                        onDismiss: { Sfx.tap(); root.batView = false; }
                     }
 
                     Rectangle {
@@ -1478,6 +1546,7 @@ Scope {
             Aula.refresh();
             root.hoverMode = "";
             root.brush = false;
+            root.batView = false;
             root.naming = false;
             root.tab = Aula.kind === "native" ? "native" : "own";
             root.fromMode = "__off";

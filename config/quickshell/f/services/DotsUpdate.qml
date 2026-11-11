@@ -13,7 +13,7 @@ Singleton {
     property int files: 0
     property bool busy: false
 
-    readonly property string script: Quickshell.env("HOME") + "/.local/bin/hyprdots-update"
+    readonly property string script: Quickshell.env("HOME") + "/.local/bin/rosa-update"
 
     function refresh() {
         if (root.busy)
@@ -23,9 +23,9 @@ Singleton {
     }
 
     function open() {
-        Quickshell.execDetached(["env", "HYPRDOTS_LANG=" + Prefs.language,
-                                 "kitty", "--class", "hyprdots-update",
-                                 "--title", "hyprdots", root.script]);
+        Quickshell.execDetached(["env", "ROSA_LANG=" + Prefs.language,
+                                 "kitty", "--class", "rosa-update",
+                                 "--title", "Rosa", root.script]);
     }
 
     function size() {

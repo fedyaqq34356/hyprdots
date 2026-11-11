@@ -115,6 +115,7 @@ PanelWindow {
         || (win.hub.kind === "cmd" && win.hub.cmd.big)
         || win.hub.kind === "weather"
         || win.ringing
+        || win.jarvis
 
     Connections {
         target: win.hub
@@ -153,7 +154,7 @@ PanelWindow {
         win.hub.replyOn !== "" && win.hub.replyOn === win.modelData.name
         && win.wideKind === "notif"
 
-    WlrLayershell.keyboardFocus: win.replying || win.big ? WlrKeyboardFocus.Exclusive
+    WlrLayershell.keyboardFocus: win.replying || win.big || win.asking ? WlrKeyboardFocus.Exclusive
                                                          : WlrKeyboardFocus.None
 
     property bool grabbing: false
@@ -211,11 +212,15 @@ PanelWindow {
     readonly property bool ringing:
         win.hub.kind === "call" && win.hub.callState === "ring"
 
+    readonly property bool jarvis: win.hub.kind === "jarvis" && win.lead
+    readonly property bool asking: win.jarvis && Jarvis.state === "askpass"
+
     readonly property bool wide:
         win.wideKind !== "" && !win.seeking
         && (win.hub.pinned || win.forced || win.hub.demoWide || win.replying
             || win.big
             || win.ringing
+            || win.jarvis
             || (win.hovering && IslandConfig.s("hoverWide")
                 && !win.hushed))
 
@@ -285,6 +290,9 @@ PanelWindow {
         case "remind": return Colors.warn;
         case "record": return Colors.bad;
         case "notif":  return iconTint.found ? iconTint.color : win.hub.notifTint;
+        case "jarvis": return Jarvis.state === "askpass" ? Colors.warn
+                            : Jarvis.state === "speaking" ? Qt.rgba(0.42, 0.74, 1.0, 1)
+                            : Colors.accentAlt;
         case "call":   return win.hub.callState === "live" ? Colors.good
                             : callTint.found ? callTint.color : Colors.accent;
         case "osd":    return Feedback.channel === "source" ? Colors.accentAlt
@@ -409,6 +417,7 @@ PanelWindow {
         epsilon: 0.25
         target: win.big ? IslandConfig.s("mediaBigHeight")
               : win.wideKind === "media" ? IslandConfig.s("mediaHeight")
+              : win.wideKind === "jarvis" ? Math.max(IslandConfig.s("wideHeight"), body.want)
               : win.wideKind === "notif"
               ? Math.max(IslandConfig.s("wideHeight") + (win.notifTools ? 40 : 0), body.want + 24)
               : IslandConfig.s("wideHeight") + (win.notifTools ? 40 : 0)
@@ -1624,11 +1633,6 @@ PanelWindow {
                     if (win.hub.kind !== "gta"
                         && !(IslandConfig.s("tapWide") && win.wideKind !== ""))
                         return;
-                    if (win.hub.kind === "gta") {
-                        Quickshell.execDetached(["hyprdo", "dispatch", "global", "quickshell:gtavi"]);
-                        win.hub.gtaOn = false;
-                        return;
-                    }
                     if (win.forced) {
                         force.stop();
                         win.forced = false;

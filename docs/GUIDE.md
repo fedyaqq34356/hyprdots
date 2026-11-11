@@ -361,7 +361,7 @@ sudo pacman -S power-profiles-daemon-openrc && \
 As your normal user (not root), with the network up:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/rosa/main/install.sh)
 ```
 
 The installer detects Arch or Artix and your GPU, installs every package (plus `yay` for the AUR if
@@ -392,14 +392,14 @@ One command. It fetches the repository, installs every dependency, backs up what
 in place and generates the colour scheme:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/rosa/main/install.sh)
 ```
 
 Or, from a clone:
 
 ```bash
-git clone https://github.com/fedyaqq34356/hyprdots.git
-cd hyprdots
+git clone https://github.com/fedyaqq34356/rosa.git
+cd rosa
 ./install.sh
 ```
 
@@ -422,10 +422,10 @@ comes from `zram-generator`; on Artix the OpenRC scripts are installed instead.
 ### Uninstall
 
 ```bash
-bash ~/.local/share/hyprdots/uninstall.sh      # or ./uninstall.sh from your clone
+bash ~/.local/share/rosa/uninstall.sh      # or ./uninstall.sh from your clone
 ```
 
-Every file the installer wrote is moved to `~/.config/hyprdots-removed-<timestamp>`, and the
+Every file the installer wrote is moved to `~/.config/rosa-removed-<timestamp>`, and the
 configuration you had before the first install is put back from its backup. `--system` also removes
 the root helpers (sudoers rules, zram, the amdgpu initramfs drop-in), `--dry-run` shows the plan.
 Packages stay installed.
@@ -487,7 +487,7 @@ Hyprland and the bar in place. No logout needed.
 From a clone, the same thing:
 
 ```bash
-cd hyprdots && ./install.sh --update
+cd rosa && ./install.sh --update
 ```
 
 `--dry-run` works here too and prints every step without touching anything.
@@ -1189,7 +1189,6 @@ home/            .zshrc, .zshenv, .bashrc
 bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
 install.sh       automatic installer
 extras/          pacman hook and helper that snapshot /etc before a transaction
-IDEAS.md         a running list of what could be built next
 ```
 
 Files generated at runtime — `colors.conf`, `lock-colors.conf`, `colors.css`,

@@ -1,7 +1,13 @@
 mod aula;
 mod clip;
+#[cfg(feature = "jarvis")]
+mod jarvis;
+mod miclock;
+mod mount;
 mod mouse;
 mod net;
+mod print;
+mod remind;
 mod session;
 mod sort;
 mod sys;
@@ -10,7 +16,7 @@ mod watch;
 
 fn usage() -> ! {
     eprintln!(
-        "usage: islandd <sys | mouse [status|watch [-i SECS]] | sort | watch | net | aula ARGS | clip | notif-missed | wallpaper-rotate | watchdog>"
+        "usage: islandd <sys | mouse [status|watch [-i SECS]] | sort | watch | net | aula ARGS | clip | notif-missed | wallpaper-rotate | watchdog | mic-lock | mount | print [status|capt NAME]>"
     );
     std::process::exit(2);
 }
@@ -24,9 +30,13 @@ fn main() {
     if me == "aulactl" {
         std::process::exit(aula::main(&argv[1..]));
     }
+    #[cfg(feature = "jarvis")]
+    if me == "jarvis-askpass" {
+        std::process::exit(jarvis::main(&["askpass".to_string()]));
+    }
     let args = &argv[1..];
     let mode = args.first().map(String::as_str);
-    if matches!(mode, Some("sys" | "mouse" | "watch" | "net")) {
+    if matches!(mode, Some("sys" | "mouse" | "watch" | "net" | "print")) {
         unsafe { libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM) };
     }
     match mode {
@@ -40,6 +50,11 @@ fn main() {
         Some("notif-missed") => session::notif_missed(),
         Some("wallpaper-rotate") => session::wallpaper_rotate(),
         Some("watchdog") => session::watchdog(),
+        Some("mic-lock") => miclock::run(),
+        Some("mount") => mount::run(),
+        Some("print") => print::run(&args[1..]),
+        #[cfg(feature = "jarvis")]
+        Some("jarvis") => std::process::exit(jarvis::main(&args[1..])),
         Some("gaming") => std::process::exit(if session::is_gaming() { 0 } else { 1 }),
         _ => usage(),
     }

@@ -4,7 +4,6 @@ RoundKey RoundKey.qml
 StatusLine StatusLine.qml
 OsdCard OsdCard.qml
 TimerCard TimerCard.qml
-GtaCard GtaCard.qml
 AlarmCard AlarmCard.qml
 RecordCard RecordCard.qml
 NotifCard NotifCard.qml
@@ -22,3 +21,5 @@ NotifKey NotifKey.qml
 CallCard CallCard.qml
 RemindCard RemindCard.qml
 PlayGlyph PlayGlyph.qml
+JarvisCard JarvisCard.qml
+JarvisPickKey JarvisPickKey.qml

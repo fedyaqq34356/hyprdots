@@ -9,8 +9,36 @@ fn runtime() -> PathBuf {
     PathBuf::from(std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".into()))
 }
 
+const TRACE_CAP: u64 = 1 << 20;
+
+fn one_line(s: &str, max: usize) -> String {
+    s.chars().take(max).map(|c| if c.is_control() { ' ' } else { c }).collect()
+}
+
+fn trace(path: &Path, msg: &dbus::Message) {
+    use std::io::Write;
+    if std::env::var_os("ISLANDD_NO_TRACE").is_some() {
+        return;
+    }
+    if fs::metadata(path).is_ok_and(|m| m.len() > TRACE_CAP) {
+        let _ = fs::rename(path, path.with_extension("log.old"));
+    }
+    let (app, _, _, summary, body) = msg.get5::<String, u32, String, String, String>();
+    let line = format!(
+        "{}\t{}\t{}\t{}\n",
+        crate::util::local_time("%F %T"),
+        one_line(&app.unwrap_or_default(), 60),
+        one_line(&summary.unwrap_or_default(), 200),
+        one_line(&body.unwrap_or_default(), 400)
+    );
+    if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(path) {
+        let _ = f.write_all(line.as_bytes());
+    }
+}
+
 pub fn notif_missed() {
     use dbus::blocking::Connection;
+    let trace_log = home().join(".cache/notify-trace.log");
     let flag = runtime().join("session-locked");
     let count = runtime().join("missed-notifications");
     if !count.exists() {
@@ -32,6 +60,7 @@ pub fn notif_missed() {
         if msg.member().as_deref() != Some("Notify") {
             continue;
         }
+        trace(&trace_log, &msg);
         if read_str(&flag).as_deref() != Some("1") {
             continue;
         }

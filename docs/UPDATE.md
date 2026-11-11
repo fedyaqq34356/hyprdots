@@ -6,14 +6,23 @@
 
 **Everything added in this round, and every key that now does something.**
 
-<a href="../README.md"><img src="https://img.shields.io/badge/back%20to-README-E4E3D8?style=flat-square&labelColor=13140E" alt="README"></a>
-<img src="https://img.shields.io/badge/idle%20CPU-32%25%20→%203%25-C6C8B5?style=flat-square&labelColor=13140E" alt="idle CPU">
+<a href="../README.md"><img src="https://img.shields.io/badge/back%20to-README-E3DACB?style=flat-square&labelColor=1A1816" alt="README"></a>
+<img src="https://img.shields.io/badge/idle%20CPU-32%25%20→%203%25-C6C8B5?style=flat-square&labelColor=1A1816" alt="idle CPU">
 
 <br>
 
 </div>
 
-### Latest — the dynamic island · `Super` + `Shift` + `I`
+### Latest — hyprdots is now Rosa
+
+The project has a name. The repository moved to `github.com/fedyaqq34356/rosa`, the updater is
+`rosa-update` and its state lives in `~/.config/rosa`. Existing installs move over on the next
+update: the old folders turn into links, `hyprdots-update` still works, and the `HYPRDOTS_*`
+variables are still read. The Pulse Elite profile now finds the headset by name instead of a
+hard-coded address, the GTA VI countdown is gone, and a handful of scripts that nothing called
+were removed.
+
+### Earlier — the dynamic island · `Super` + `Shift` + `I`
 
 <img src="../assets/island/island-media.gif" alt="The dynamic island opening into a player card" width="100%">
 

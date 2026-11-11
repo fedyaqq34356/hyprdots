@@ -46,6 +46,11 @@ blocked() {
     return 1
 }
 
+if [ "$ACTION" = check ]; then
+    blocked
+    exit
+fi
+
 if REASON=$(blocked); then
     logger -t idle-guard "skipped $ACTION: $REASON" 2>/dev/null
     exit 0

@@ -60,7 +60,6 @@ for i = 1, 9 do
         bind("$mainMod SHIFT", tostring(i), dsp.window.move({ workspace = i }))
     end
 end
-bind("$mainMod SHIFT", "6", qs("gtavi"))
 
 bind("$mainMod", "P", exec(S .. "/system/power-menu.sh"))
 
@@ -70,11 +69,6 @@ bind("SHIFT",          "Print", exec(shot .. "edit"))
 bind("ALT",            "Print", exec(shot .. "window"))
 bind("CTRL",           "Print", exec(shot .. "all"))
 bind("$mainMod",       "Print", exec(shot .. "output"))
-bind("",               "XF86AudioPlay", exec(shot .. "region"))
-bind("SHIFT",          "XF86AudioPlay", exec(shot .. "edit"))
-bind("ALT",            "XF86AudioPlay", exec(shot .. "window"))
-bind("CTRL",           "XF86AudioPlay", exec(shot .. "all"))
-bind("$mainMod",       "XF86AudioPlay", exec(shot .. "output"))
 bind("$mainMod SHIFT", "S",     exec(shot .. "region"))
 bind("$mainMod SHIFT", "C",     exec(shot .. "color"))
 bind("$mainMod SHIFT", "T",     exec(shot .. "ocr"))
@@ -90,6 +84,7 @@ bind("", "XF86AudioMute",        qs("volumeMute"), locked)
 bind("", "XF86AudioMicMute",     qs("micMute"),    locked)
 
 bind("", "XF86AudioPause", qs("mediaToggle"), locked)
+bind("", "XF86AudioPlay",  qs("mediaToggle"), locked)
 bind("", "XF86AudioNext",  qs("mediaNext"),   locked)
 bind("", "XF86AudioPrev",  qs("mediaPrev"),   locked)
 
@@ -115,6 +110,7 @@ bind("$mainMod SHIFT", "F5", exec(S .. "/system/panel-reset.sh"))
 
 bind("$mainMod",      "F1", qs("sysRings"))
 bind("CTRL SHIFT",    "Escape", qs("procs"))
+bind("$mainMod CTRL", "S",  qs("speed"))
 bind("$mainMod CTRL", "B",  qs("battery"))
 bind("$mainMod CTRL", "D",  qs("displays"))
 

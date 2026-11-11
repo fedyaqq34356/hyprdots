@@ -10,7 +10,6 @@
 
 [Default Applications]
 x-scheme-handler/terminal=foot.desktop
-x-scheme-handler/claude-cli=claude-code-url-handler.desktop
 x-scheme-handler/http=librewolf.desktop
 x-scheme-handler/https=librewolf.desktop
 x-scheme-handler/chrome=zen.desktop

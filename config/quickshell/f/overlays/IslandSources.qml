@@ -84,6 +84,7 @@ Scope {
     }
 
     Component.onCompleted: {
+        clipPrime.restart();
         src.lastPower = Power.plugged ? 1 : 0;
         if (src.printWatch)
             Printing.watch();
@@ -331,15 +332,24 @@ Scope {
     property real clipAt: 0
     property bool clipPrimed: false
 
+    readonly property bool clipOn: IslandConfig.s("enabled") && IslandConfig.on("clip")
+
+    Connections {
+        target: Islandd
+        enabled: src.clipOn
+        function onClip(line) { src.clipLine(line) }
+    }
+
     Process {
         id: clipWatch
-        running: IslandConfig.s("enabled") && IslandConfig.on("clip")
-        command: ["wl-paste", "--watch",
+        running: src.clipOn && !Islandd.alive
+        command: ["setpriv", "--pdeathsig", "TERM", "wl-paste", "--watch",
                   Quickshell.env("HOME") + "/.config/hypr/scripts/clipboard/island-clip.sh"]
         onRunningChanged: {
-            src.clipPrimed = false;
-            if (clipWatch.running)
+            if (clipWatch.running) {
+                src.clipPrimed = false;
                 clipPrime.restart();
+            }
         }
         stdout: SplitParser {
             onRead: (line) => src.clipLine(line)

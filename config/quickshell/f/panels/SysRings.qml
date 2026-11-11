@@ -291,7 +291,7 @@ Scope {
                     anchors.fill: parent
                     open: root.shown
                     cardW: 700
-                    cardH: 368
+                    cardH: 412
                     radius: 34
                     glow: Sys.temp >= Sys.gputemp ? cpu.tone : gpu.tone
 
@@ -357,6 +357,60 @@ Scope {
                             okBelow: 80
                             cores: []
                             tint: Colors.accentAlt
+                        }
+                    }
+
+                    Row {
+                        id: watts
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 22
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 16
+                        visible: Sys.totalW > 0
+                        opacity: Math.max(0, (drip.g - 0.8) / 0.2)
+                        transform: Translate { y: (1 - watts.opacity) * 8 }
+
+                        property real sTotal: Sys.totalW
+                        Behavior on sTotal { NumberAnimation { duration: 900; easing.type: Easing.InOutCubic } }
+
+                        Row {
+                            spacing: 4
+                            Text {
+                                id: wNow
+                                text: "≈" + Math.round(watts.sTotal)
+                                color: Colors.alpha(Colors.fg, 0.85)
+                                font.family: Fonts.display
+                                font.features: Fonts.nums
+                                font.pixelSize: Fonts.medium
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                anchors.baseline: wNow.baseline
+                                text: "W"
+                                color: Colors.alpha(Colors.fgDim, 0.45)
+                                font.family: Fonts.display
+                                font.pixelSize: Fonts.small
+                                font.weight: Font.Medium
+                            }
+                        }
+
+                        Text {
+                            anchors.baseline: wNow.baseline
+                            text: {
+                                const p = [];
+                                if (Sys.cpuW >= 0)
+                                    p.push("cpu " + (Sys.cpuWExact ? "" : "~") + Math.round(Sys.cpuW) + "W"
+                                           + (Sys.vcore > 0 ? " " + Sys.vcore.toFixed(2) + "V" : ""));
+                                if (Sys.gpuW >= 0)
+                                    p.push("gpu " + Math.round(Sys.gpuW) + "W"
+                                           + (Sys.gpuV > 0 ? " " + Sys.gpuV.toFixed(2) + "V" : ""));
+                                return p.join("   ");
+                            }
+                            color: Colors.alpha(Colors.fgDim, 0.45)
+                            font.family: Fonts.mono
+                            font.features: Fonts.nums
+                            font.pixelSize: Fonts.tiny
+                            font.weight: Font.DemiBold
                         }
                     }
                 }

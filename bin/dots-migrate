@@ -19,8 +19,9 @@ USAGE
 HERE="$(dirname "$(readlink -f "$0")")"
 EXCLUDE=""
 for f in "$HERE/../extras/migrate/exclude.txt" \
-         "$(cat "$HOME/.config/hyprdots/source" 2>/dev/null)/extras/migrate/exclude.txt" \
-         "$HOME/.config/hyprdots/migrate-exclude.txt"; do
+         "$(cat "$HOME/.config/rosa/source" 2>/dev/null || cat "$HOME/.config/hyprdots/source" 2>/dev/null)/extras/migrate/exclude.txt" \
+         "$HOME/.config/hyprdots/migrate-exclude.txt" \
+         "$HOME/.config/rosa/migrate-exclude.txt"; do
     [[ -f "$f" ]] && EXCLUDE=$(readlink -f "$f")
 done
 

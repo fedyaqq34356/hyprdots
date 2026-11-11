@@ -45,3 +45,4 @@ singleton Reminders Reminders.qml
 singleton Notes Notes.qml
 singleton Aula Aula.qml
 singleton Mouse Mouse.qml
+singleton Jarvis Jarvis.qml

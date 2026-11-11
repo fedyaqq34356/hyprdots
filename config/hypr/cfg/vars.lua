@@ -57,7 +57,7 @@ local function detectGpu()
     return "generic"
 end
 
-M.gpu = os.getenv("HYPRDOTS_GPU") or detectGpu()
+M.gpu = os.getenv("ROSA_GPU") or os.getenv("HYPRDOTS_GPU") or detectGpu()
 
 local b = io.popen("ls -d /sys/class/power_supply/BAT* /sys/class/backlight/* 2>/dev/null")
 local found = b and b:read("a") or ""

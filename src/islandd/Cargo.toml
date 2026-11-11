@@ -7,6 +7,15 @@ edition = "2021"
 dbus = { version = "0.9", default-features = false }
 libc = "0.2"
 serde_json = "1"
+tungstenite = { version = "0.24", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"], optional = true }
+rmpv = { version = "1", optional = true }
+earshot = { version = "1.2", optional = true }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
+libpulse-binding = { version = "2", default-features = false }
+
+[features]
+default = []
+jarvis = ["dep:tungstenite", "dep:rmpv", "dep:rustls", "dep:earshot"]
 
 [profile.release]
 opt-level = "s"

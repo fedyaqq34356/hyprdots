@@ -6,7 +6,7 @@ local once = {
 
     "gnome-keyring-daemon --start --components=secrets",
     "hyprpolkitagent",
-    "udiskie --no-tray --automount --notify",
+    S .. "/system/automount.sh",
     "pipewire",
     "pipewire-pulse",
     S .. "/audio/start-wireplumber.sh",
@@ -19,15 +19,13 @@ local once = {
     S .. "/wallpaper/startup-wallpaper.sh",
     S .. "/wallpaper/wallpaper-rotate.sh",
     "xdg-user-dirs-update",
-    "wl-paste --type text --watch " .. S .. "/clipboard/cliphist-store.sh",
-    "wl-paste --type image --watch cliphist -max-items 150 store",
     "wl-clip-persist --clipboard regular -f '^([^i]|i[^m]|im[^a]|ima[^g]|imag[^e]|image[^/])'",
     S .. "/clipboard/clipboard-guard.sh",
     "dbus-update-activation-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_RUNTIME_DIR HYPRLAND_INSTANCE_SIGNATURE",
 
     S .. "/audio/mic-lock.sh",
 
-    "[ -x ~/.local/bin/islandd ] && exec ~/.local/bin/islandd sort || exec " .. S .. "/tools/downloads-sort.py",
+    S .. "/tools/downloads-sort.py",
 
     "hyprctl setcursor Matugen-Cursor 24",
     "[ -x ~/.local/bin/pulse-autoconnect ] && exec ~/.local/bin/pulse-autoconnect",

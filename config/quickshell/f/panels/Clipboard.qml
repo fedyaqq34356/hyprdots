@@ -13,6 +13,7 @@ Scope {
     id: root
 
     property bool shown: false
+    property bool opening: false
     property var entries: []
 
     readonly property string previewDir:
@@ -21,15 +22,16 @@ Scope {
     readonly property string mono: Fonts.mono
 
     function toggle() {
-        if (shown) {
+        if (shown || opening) {
             close();
         } else {
+            opening = true;
             lister.running = true;
-            shown = true;
         }
     }
 
     function close() {
+        root.opening = false;
         root.shown = false;
     }
 
@@ -100,14 +102,19 @@ Scope {
                     });
                 }
                 root.entries = out;
+                root.pruneTexts();
+                if (root.opening) {
+                    root.opening = false;
+                    root.shown = true;
+                }
                 if (imageIds.length > 0) {
                     decoder.command = ["sh", "-c",
-                        "mkdir -p '" + root.previewDir + "'; for i in " +
-                        imageIds.slice(0, 30).join(" ") +
-                        "; do [ -f '" + root.previewDir + "'/$i ] || " +
-                        "cliphist decode $i > '" + root.previewDir + "'/$i 2>/dev/null; done"];
+                        "d=\"$1\"; shift; mkdir -p \"$d\"; for i in \"$@\"; do " +
+                        "[ -s \"$d/$i\" ] || cliphist decode \"$i\" > \"$d/$i\" 2>/dev/null; done",
+                        "sh", root.previewDir].concat(imageIds);
                     decoder.running = true;
                 }
+                root.loadTexts();
             }
         }
     }
@@ -156,6 +163,7 @@ Scope {
     }
 
     property var fullText: ({})
+    property var fullLen: ({})
     function bodyOf(e) {
         const t = root.fullText[e.id];
         return t !== undefined ? t : e.body;
@@ -163,37 +171,76 @@ Scope {
     function metaOf(e) {
         if (e.kind !== "text")
             return e.meta;
-        const n = root.bodyOf(e).length;
-        const lines = root.bodyOf(e).split("\n").length;
+        const t = root.bodyOf(e);
+        const n = root.fullLen[e.id] !== undefined ? root.fullLen[e.id] : t.length;
+        const lines = t.split("\n").length;
         return lines > 1 ? lines + " lines · " + n + " chars" : n > 60 ? n + " chars" : "";
+    }
+
+    function pruneTexts() {
+        const text = {};
+        const len = {};
+        for (const e of root.entries) {
+            if (root.fullText[e.id] !== undefined) {
+                text[e.id] = root.fullText[e.id];
+                len[e.id] = root.fullLen[e.id];
+            }
+        }
+        root.fullText = text;
+        root.fullLen = len;
+    }
+
+    function loadTexts() {
+        if (texter.running)
+            return;
+        const ids = root.entries
+            .filter(e => !e.isImage && root.fullText[e.id] === undefined)
+            .map(e => e.id);
+        if (ids.length === 0)
+            return;
+        texter.want = ids;
+        texter.command = ["sh", "-c",
+            "umask 077; f=\"${XDG_RUNTIME_DIR:-/tmp}/qs-cliptext.$$\"; " +
+            "for i in \"$@\"; do cliphist decode \"$i\" > \"$f\" 2>/dev/null; " +
+            "n=$(LC_ALL=C.UTF-8 wc -m < \"$f\"); " +
+            "printf '\\036%s\\037%s\\037' \"$i\" \"$n\"; head -c 20000 \"$f\"; done; rm -f \"$f\"",
+            "sh"].concat(ids);
+        texter.running = true;
     }
     function codey(e) {
         const t = root.bodyOf(e);
         return /[{};]\s*$|^\s{2,}|=>|\)\s*\{|^\$ |^#!/m.test(t);
     }
 
-    readonly property var current: root.isle && root.shown && root.results.length > 0
-        ? root.results[Math.min(root.index, root.results.length - 1)] : null
-    onCurrentChanged: {
-        const e = root.current;
-        if (!e || e.isImage || root.fullText[e.id] !== undefined || fuller.running)
-            return;
-        fuller.want = e.id;
-        fuller.command = ["sh", "-c", "cliphist decode " + e.id + " | head -c 4000"];
-        fuller.running = true;
-    }
-
     Process {
-        id: fuller
-        property string want: ""
+        id: texter
+        property var want: []
         stdout: StdioCollector {
             onStreamFinished: {
-                const next = Object.assign({}, root.fullText);
-                next[fuller.want] = this.text.replace(/\s+$/, "");
-                root.fullText = next;
+                const text = Object.assign({}, root.fullText);
+                const len = Object.assign({}, root.fullLen);
+                for (const chunk of this.text.split("\x1e")) {
+                    const a = chunk.indexOf("\x1f");
+                    const b = a < 0 ? -1 : chunk.indexOf("\x1f", a + 1);
+                    if (b < 0)
+                        continue;
+                    const id = chunk.substring(0, a);
+                    text[id] = chunk.substring(b + 1).replace(/\uFFFD$/, "").replace(/\s+$/, "");
+                    const n = parseInt(chunk.substring(a + 1, b));
+                    if (!isNaN(n))
+                        len[id] = n;
+                }
+                for (const id of texter.want) {
+                    if (text[id] === undefined) {
+                        const e = root.entries.find(x => x.id === id);
+                        text[id] = e ? e.body : "";
+                    }
+                }
+                root.fullText = text;
+                root.fullLen = len;
             }
         }
-        onRunningChanged: if (!fuller.running) Qt.callLater(root.currentChanged)
+        onRunningChanged: if (!texter.running) Qt.callLater(root.loadTexts)
     }
 
     Binding { target: IslandBus; property: "searching"; value: (root.shown || clipDrip.holding) && root.isle }
@@ -226,15 +273,19 @@ Scope {
         Sfx.tapAlt();
         root.close();
         copier.command = ["sh", "-c",
-                          "cliphist decode " + entry.id + " | wl-copy"];
+            "umask 077; f=\"${XDG_RUNTIME_DIR:-/tmp}/qs-clipcopy.$$\"; " +
+            "cliphist decode \"$1\" > \"$f\" 2>/dev/null && [ -s \"$f\" ] && wl-copy < \"$f\"; rm -f \"$f\"",
+            "sh", entry.id];
         copier.running = true;
     }
 
     function wipe() {
         root.close();
-        copier.command = ["cliphist", "wipe"];
+        copier.command = ["sh", "-c", "cliphist wipe; rm -rf \"$1\"", "sh", root.previewDir];
         copier.running = true;
         root.entries = [];
+        root.fullText = {};
+        root.fullLen = {};
     }
 
     function glyphFor(kind) {
@@ -246,10 +297,21 @@ Scope {
 
     readonly property var results: {
         const q = search.text.toLowerCase().trim();
-        if (q === "")
-            return root.entries.slice(0, 60);
-        return root.entries.filter(e => e.body.toLowerCase().includes(q))
-                           .slice(0, 60);
+        const seen = {};
+        const out = [];
+        for (const e of root.entries) {
+            const full = root.fullText[e.id];
+            if (!e.isImage && full !== undefined) {
+                const key = full.trim();
+                if (seen[key])
+                    continue;
+                seen[key] = true;
+            }
+            if (q !== "" && !(full !== undefined ? full : e.body).toLowerCase().includes(q))
+                continue;
+            out.push(e);
+        }
+        return out;
     }
 
     HyprlandFocusGrab {
@@ -675,7 +737,7 @@ Scope {
 
                                 Row {
                                     spacing: 8
-                                    visible: clipRow.modelData.meta !== ""
+                                    visible: root.metaOf(clipRow.modelData) !== ""
 
                                     Rectangle {
                                         anchors.verticalCenter: parent.verticalCenter
@@ -701,7 +763,7 @@ Scope {
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: clipRow.width - 220
-                                        text: clipRow.modelData.meta
+                                        text: root.metaOf(clipRow.modelData)
                                         color: Colors.fgDim
                                         opacity: 0.55
                                         font.family: root.mono

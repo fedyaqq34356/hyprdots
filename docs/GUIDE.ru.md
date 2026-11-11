@@ -375,7 +375,7 @@ sudo pacman -S power-profiles-daemon-openrc && \
 От обычного пользователя (не root), с работающей сетью:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/rosa/main/install.sh)
 ```
 
 Установщик сам определяет Arch или Artix и видеокарту, ставит все пакеты (и `yay` для AUR, если
@@ -405,14 +405,14 @@ start-hyprland
 конфигов и генерирует цветовую схему.
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/rosa/main/install.sh)
 ```
 
 Или из клона:
 
 ```bash
-git clone https://github.com/fedyaqq34356/hyprdots.git
-cd hyprdots
+git clone https://github.com/fedyaqq34356/rosa.git
+cd rosa
 ./install.sh
 ```
 
@@ -435,10 +435,10 @@ cd hyprdots
 ### Удаление
 
 ```bash
-bash ~/.local/share/hyprdots/uninstall.sh      # или ./uninstall.sh из своего клона
+bash ~/.local/share/rosa/uninstall.sh      # или ./uninstall.sh из своего клона
 ```
 
-Всё, что положил установщик, переносится в `~/.config/hyprdots-removed-<время>`, а конфигурация,
+Всё, что положил установщик, переносится в `~/.config/rosa-removed-<время>`, а конфигурация,
 которая была до первой установки, возвращается из бэкапа. `--system` убирает и системные части
 (правила sudoers, zram, drop-in amdgpu для initramfs), `--dry-run` показывает план. Пакеты остаются.
 
@@ -498,7 +498,7 @@ Hyprland с панелью на месте. Перелогиниваться н�
 Из клона то же самое:
 
 ```bash
-cd hyprdots && ./install.sh --update
+cd rosa && ./install.sh --update
 ```
 
 `--dry-run` работает и здесь: покажет каждый шаг, ничего не меняя.
@@ -1178,7 +1178,6 @@ home/            .zshrc, .zshenv, .bashrc
 bin/             shell-autostart, shell-switch, shell-watchdog, dots-update
 install.sh       автоматический установщик
 extras/          хук pacman и скрипт, снимающий /etc перед транзакцией
-IDEAS.md         список того, что можно сделать дальше
 ```
 
 Файлы, которые создаются во время работы — `colors.conf`, `lock-colors.conf`, `colors.css`,

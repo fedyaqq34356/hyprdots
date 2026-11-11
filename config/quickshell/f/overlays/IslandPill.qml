@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Wayland
 import Quickshell.Widgets
 import QtQuick
 import QtQuick.Effects
@@ -44,6 +45,20 @@ Item {
     implicitHeight: height
 
     SystemClock { id: tick; precision: SystemClock.Minutes }
+
+    readonly property int crabIdleSec: 90
+    property bool userIdle: false
+    readonly property bool crabOn: (pill.userIdle || IslandBus.crabDemo) && pill.visible && !pill.flashing
+                                   && !Stage.gaming && !Idle.screenOff && !IslandBus.locked
+                                   && !Jarvis.active
+    readonly property bool hideClock: pill.flashing || pill.crabOn
+
+    IdleMonitor {
+        enabled: !IslandBus.locked
+        timeout: pill.crabIdleSec
+        respectInhibitors: true
+        onIsIdleChanged: pill.userIdle = isIdle
+    }
 
     TextMetrics {
         id: clockEm
@@ -342,16 +357,16 @@ Item {
             RollText {
                 id: clockText
                 anchors.horizontalCenter: parent.horizontalCenter
-                y: pill.flashing ? -height : Math.round((parent.height - height) / 2)
+                y: pill.flashing ? -height : pill.crabOn ? parent.height : Math.round((parent.height - height) / 2)
                 text: Qt.formatDateTime(tick.date, "HH:mm")
                 color: Colors.fg
                 family: Fonts.mono
                 pixelSize: 13
                 weight: Font.DemiBold
-                opacity: pill.flashing ? 0 : 1
-                scale: pill.flashing ? 0.86 : 1
+                opacity: pill.hideClock ? 0 : 1
+                scale: pill.hideClock ? 0.86 : 1
 
-                layer.enabled: IslandConfig.s("blurSwap") && opacity < 0.99
+                layer.enabled: IslandConfig.s("blurSwap") && opacity < 0.99 && opacity > 0.01
                 layer.smooth: true
                 layer.effect: MultiEffect {
                     blurEnabled: true
@@ -362,10 +377,10 @@ Item {
                 Behavior on y {
                     SequentialAnimation {
                         PauseAnimation {
-                            duration: pill.flashing ? 0 : Motion.isleRevealDelay
+                            duration: pill.hideClock ? 0 : Motion.isleRevealDelay
                         }
                         NumberAnimation {
-                            duration: pill.flashing ? Motion.isleHideMs
+                            duration: pill.hideClock ? Motion.isleHideMs
                                                     : Motion.isleRevealMs
                             easing.type: Easing.Bezier
                             easing.bezierCurve: Motion.isleContent
@@ -375,10 +390,10 @@ Item {
                 Behavior on opacity {
                     SequentialAnimation {
                         PauseAnimation {
-                            duration: pill.flashing ? 0 : Motion.isleRevealDelay
+                            duration: pill.hideClock ? 0 : Motion.isleRevealDelay
                         }
                         NumberAnimation {
-                            duration: pill.flashing ? Motion.isleHideMs
+                            duration: pill.hideClock ? Motion.isleHideMs
                                                     : Motion.isleRevealMs
                         }
                     }
@@ -386,14 +401,40 @@ Item {
                 Behavior on scale {
                     SequentialAnimation {
                         PauseAnimation {
-                            duration: pill.flashing ? 0 : Motion.isleRevealDelay
+                            duration: pill.hideClock ? 0 : Motion.isleRevealDelay
                         }
                         NumberAnimation {
-                            duration: pill.flashing ? Motion.isleHideMs
+                            duration: pill.hideClock ? Motion.isleHideMs
                                                     : Motion.isleRevealMs
                             easing.type: Easing.Bezier
                             easing.bezierCurve: Motion.isleContent
                         }
+                    }
+                }
+            }
+
+            IslandCrab {
+                id: crab
+                anchors.horizontalCenter: parent.horizontalCenter
+                p: Math.max(2, Math.floor(pill.inner / 9))
+                y: Math.round((parent.height - height) / 2) + (pill.crabOn ? 0 : -6)
+                body: Colors.accent
+                eye: Colors.bg
+                opacity: pill.crabOn ? 1 : 0
+                visible: opacity > 0.01
+                running: pill.crabOn && opacity > 0.99
+                dancing: pill.miniMedia
+
+                Behavior on opacity {
+                    SequentialAnimation {
+                        PauseAnimation { duration: pill.crabOn ? Motion.isleRevealDelay + 120 : 0 }
+                        NumberAnimation { duration: pill.crabOn ? 420 : 140; easing.type: Easing.OutCubic }
+                    }
+                }
+                Behavior on y {
+                    SequentialAnimation {
+                        PauseAnimation { duration: pill.crabOn ? Motion.isleRevealDelay + 120 : 0 }
+                        NumberAnimation { duration: pill.crabOn ? 420 : 140; easing.type: Easing.OutBack }
                     }
                 }
             }

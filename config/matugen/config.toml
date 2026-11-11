@@ -107,3 +107,11 @@ post_hook   = "python3 $HOME/.config/hypr/scripts/theme/gen-libreoffice-theme.py
 [templates.mangohud]
 input_path  = "~/.config/matugen/templates/mangohud.conf"
 output_path = "~/.config/MangoHud/MangoHud.conf"
+
+[templates.obsidian-tz]
+input_path  = "~/.config/matugen/templates/obsidian.css"
+output_path = "~/TZ/.obsidian/snippets/matugen.css"
+
+[templates.obsidian-vault]
+input_path  = "~/.config/matugen/templates/obsidian.css"
+output_path = "~/Projects/obsidian-vault/.obsidian/snippets/matugen.css"

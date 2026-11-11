@@ -43,18 +43,110 @@ Singleton {
     readonly property int battery: root.liveBattery >= 0 ? root.liveBattery : store.batLast
     readonly property bool batteryStale: root.liveBattery < 0 && store.batLast >= 0
     readonly property double batteryAt: store.batLastAt
+    readonly property var batHist: store.batHist || []
+
+    function chan(c) { const q = Qt.color(c); return (q.r + q.g + q.b) / 3; }
+    readonly property real loadNow: {
+        if (!store.on)
+            return 0;
+        const m = root.current;
+        const pal = store.palette >= 7 ? 0.5 : root.chan(root.hwPalette[store.palette] || "#ffffff");
+        const col = root.chan(root.color), mix = (root.chan(root.color) + root.chan(root.color2)) / 2;
+        const lit = ({
+            solid: col, gradient: mix, aurora: 0.8 * mix, wave: 0.45 * col, pulse: 0.5 * col, music: 0.3 * mix,
+            breathe: 0.5 * pal, rainbow: 0.5, waterfall: 0.5, sine_wave: 0.35 * pal, ripples: 0.2 * pal,
+            blossom: 0.5, rainbow_wheel: store.palette >= 7 ? 0.5 : 0.5 * pal, windmill: 0.5, neon: 0.85 * pal,
+            raindrops: 0.12 * pal, stars: 0.1 * pal, flash_away: 0.2 * pal, snake: 0.08 * pal,
+            reactive: 0.05 * pal, static: pal
+        })[m.key];
+        const b = store.brightness / 9;
+        return Math.max(0, Math.min(1, (lit === undefined ? 0.5 : lit) * (m.kind === "live" ? Math.pow(b, 2.2) : b)));
+    }
+
+    onLoadNowChanged: loadMark.restart()
+    Timer {
+        id: loadMark
+        interval: 4000
+        onTriggered: root.markLoad()
+    }
+    function markLoad() {
+        if (!file.done)
+            return;
+        const L = Math.round(root.loadNow * 1000) / 1000;
+        const log = (store.loadLog || []).slice();
+        if (log.length && Math.abs(log[log.length - 1][1] - L) < 0.005)
+            return;
+        const h = store.batHist || [];
+        log.push([log.length || !h.length ? Math.round(Date.now() / 1000) : h[0][0], L]);
+        while (log.length > 400)
+            log.shift();
+        store.loadLog = log;
+        root.save();
+    }
+
+    function loadOver(t1, t2) {
+        const log = store.loadLog || [];
+        if (!log.length)
+            return root.loadNow;
+        let cur = log[0][1], acc = 0, at = t1;
+        for (const e of log) {
+            if (e[0] <= t1) { cur = e[1]; continue; }
+            if (e[0] >= t2)
+                break;
+            acc += cur * (e[0] - at);
+            at = e[0];
+            cur = e[1];
+        }
+        acc += cur * (t2 - at);
+        return t2 > t1 ? acc / (t2 - t1) : cur;
+    }
+
+    readonly property var drainModel: {
+        const h = store.batHist || [];
+        const seg = [];
+        let after = 99;
+        for (let i = 1; i < h.length; i++) {
+            const dt = (h[i][0] - h[i - 1][0]) / 3600;
+            if (dt <= 0 || dt > 2) {
+                after = 0;
+                continue;
+            }
+            if (++after <= 2)
+                continue;
+            seg.push({ dt: dt, dp: h[i - 1][1] - h[i][1], L: root.loadOver(h[i - 1][0], h[i][0]) });
+        }
+        let T = 0, P = 0, LT = 0, W = 0, active = 0;
+        for (let j = 0; j < seg.length; j++) {
+            const x = seg[j], w = Math.pow(0.85, seg.length - 1 - j);
+            T += x.dt * w; P += x.dp * w; LT += x.L * x.dt * w; W += w; active += x.dt;
+            x.w = w;
+        }
+        if (active < 0.5 || seg.length < 3)
+            return null;
+        const R = P / T, Lm = LT / T;
+        let vL = 0, cov = 0;
+        for (const x of seg) { vL += x.w * x.dt * (x.L - Lm) * (x.L - Lm); cov += x.w * (x.L - Lm) * (x.dp - x.dt * R); }
+        let base = Math.min(0.5, R), k;
+        if (vL / T > 0.02) {
+            k = Math.max(0, cov / vL);
+            base = Math.max(0.1, R - k * Lm);
+        } else {
+            k = Lm > 0.05 ? Math.max(0, (R - base) / Lm) : 3.0;
+        }
+        const last = h.length ? h[h.length - 1][1] : 100;
+        return { base: base, k: k, hours: active, rough: active < 6 || last > 80 };
+    }
+
+    function rateAt(L) { return root.drainModel ? root.drainModel.base + root.drainModel.k * L : -1; }
+    readonly property real drainRate: root.rateAt(root.loadNow)
 
     readonly property real hoursLeft: {
+        if (root.charging || root.battery < 0 || root.drainRate <= 0)
+            return -1;
         const h = store.batHist || [];
-        if (root.charging || h.length < 2 || root.battery < 0)
-            return -1;
-        const a = h[0], b = h[h.length - 1];
-        const dt = (b[0] - a[0]) / 3600, dp = a[1] - b[1];
-        if (dt < 0.5 || dp < 2)
-            return -1;
-        const left = root.battery / (dp / dt);
-        const since = Math.max(0, (Date.now() / 1000 - b[0]) / 3600);
-        return Math.max(0, left - (root.batteryStale ? since : 0));
+        const last = h.length ? h[h.length - 1][0] : Date.now() / 1000;
+        const since = Math.max(0, (Date.now() / 1000 - last) / 3600);
+        return Math.max(0, root.battery / root.drainRate - (root.batteryStale ? since : 0));
     }
 
     function leftText(h) {
@@ -186,7 +278,7 @@ Singleton {
         watchChanges: true
         onFileChanged: reload()
         property bool done: false
-        onLoaded: file.done = true
+        onLoaded: { file.done = true; Qt.callLater(root.markLoad); }
         onLoadFailed: error => {
             if (error === FileViewError.FileNotFound) {
                 store.fresh = true;
@@ -211,6 +303,7 @@ Singleton {
             property int batLast: -1
             property real batLastAt: 0
             property var batHist: []
+            property var loadLog: []
             property int batWarned: 101
         }
     }

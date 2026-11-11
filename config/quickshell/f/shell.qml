@@ -6,7 +6,6 @@ import QtQuick
 import "root:/bar"
 import "root:/design"
 import "root:/desk"
-import "root:/gtavi"
 import "root:/overlays"
 import "root:/panels"
 import "root:/services"
@@ -72,6 +71,7 @@ ShellRoot {
     LazyLoader { id: calendarL; loading: true; Calendar {} }
     LazyLoader { id: sysRingsL; SysRings {} }
     LazyLoader { id: procsL; Procs {} }
+    LazyLoader { id: speedL; Speed {} }
     LazyLoader { id: batteryL; BatteryPanel {} }
     LazyLoader { id: displaysL; Displays {} }
     LazyLoader { id: timerL; TimerPanel {} }
@@ -105,11 +105,10 @@ ShellRoot {
 
     Lock {
         id: lock
-        onUnlocked: curtain.up()
+        onUnlocked: Emergence.launch()
     }
-    Curtain { id: curtain; armed: lock.locked }
 
-    Ferro { locked: lock.locked }
+    Binding { target: IslandBus; property: "locked"; value: lock.locked }
     WallPour {}
 
     IpcHandler {
@@ -139,6 +138,7 @@ ShellRoot {
         function brightness(level: int): void { Aula.setBrightness(level); }
         function light(): void { Aula.setOn(!Aula.on); }
         function battery(level: int): void { Aula.hwBattery = level; }
+        function mouse(level: int): void { Mouse.liveBattery = level; }
         function preset(name: string): void {
             const i = (Aula.presets || []).findIndex(p => p.name === name);
             if (i >= 0)
@@ -201,20 +201,13 @@ ShellRoot {
         function onCornerRadiusChanged() { root.pushWindowRounding(); }
     }
 
-    Component.onCompleted: root.pushWindowRounding()
+    Component.onCompleted: { root.pushWindowRounding(); Mouse.found; }
 
     FocusTrail {}
     Greeting {}
 
-    GtaVI { id: gtavi }
-
     PowerSheet { id: powerSheet }
 
-    GlobalShortcut {
-        appid: "quickshell"
-        name: "gtavi"
-        onPressed: gtavi.toggle()
-    }
     Dim {}
 
     LazyLoader {
@@ -395,6 +388,12 @@ ShellRoot {
         appid: "quickshell"
         name: "procs"
         onPressed: panelDo(procsL, p => p.toggle())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "speed"
+        onPressed: panelDo(speedL, p => p.toggle())
     }
 
     Connections {

@@ -16,6 +16,7 @@ Usage:
     dots-sync PATH...    copy only files under these $HOME-relative paths
 """
 
+import json
 import re
 import shutil
 import sys
@@ -24,8 +25,6 @@ from pathlib import Path
 HOME = Path.home()
 REPO = Path(__file__).resolve().parent.parent
 
-# What travels, and where it lands. Source is relative to $HOME, destination to
-# the repository root.
 MANIFEST = [
     (".config/quickshell/f", "config/quickshell/f"),
     (".config/hypr", "config/hypr"),
@@ -54,7 +53,7 @@ MANIFEST = [
     (".local/bin/shell-autostart", "bin/shell-autostart"),
     (".local/bin/shell-watchdog", "bin/shell-watchdog"),
     (".local/bin/shell-switch", "bin/shell-switch"),
-    (".local/bin/hyprdots-update", "bin/hyprdots-update"),
+    (".local/bin/rosa-update", "bin/rosa-update"),
     (".local/bin/qs-solo", "bin/qs-solo"),
     (".local/bin/serezha-mode", "bin/serezha-mode"),
     (".local/bin/serezha-menu", "bin/serezha-menu"),
@@ -93,16 +92,8 @@ PERSONAL = (
     ".local/bin/mic-denoise",
 )
 
-# Имена из SKIP_EXACT, которые по этим путям всё-таки публикуются. Запрет там
-# стоит из-за сгенерированных файлов: ~/.config/gtk-3.0/gtk.css пишет matugen,
-# а «config» — это имя доброй половины машинных файлов. В дереве serezha те же
-# имена носят написанные руками статичные файлы, и без них режим не собрать.
-# Состояние машины, а не конфигурация: в какой режим сессия переключена
-# сейчас. Публиковать нечего — у чужой машины оно своё.
 SKIP_PATHS = {
     ".config/serezha/state",
-    # Симлинк, которым переключается режим. У чужой машины он свой, и
-    # опубликованная копия сделала бы вид, что режим прибит гвоздями.
     ".config/hypr/config/mode.conf",
     ".config/hypr/config/gpu.conf",
 }
@@ -113,16 +104,11 @@ KEEP_PATHS = {
     ".config/serezha/gtk-4.0/gtk.css",
 }
 
-# Never published: machine state, generated palettes, caches, private lists.
 SKIP_NAMES = {
     "__pycache__", ".git", "out", "themes", "flavors", "plugins",
 }
 
-# Исключения по пути, а не по имени: каталог "scripts" есть и у rofi, и у
-# hypr, и второй из них — сердце конфигурации.
 SKIP_PREFIXES = (
-    # Сторонний набор тем rofi со своей лицензией: ставится отдельно и чужому
-    # репозиторию не принадлежит.
     ".config/rofi/applets",
     ".config/rofi/launchers",
     ".config/rofi/powermenu",
@@ -132,24 +118,17 @@ SKIP_PREFIXES = (
 SKIP_SUFFIXES = {".log", ".bak", ".swp", ".pyc", ".png", ".jpg", ".jpeg"}
 SKIP_EXACT = {
     "colors.conf", "lock-colors.conf", "current-wallpaper", "hyprpaper.conf",
-    # Раскладка мониторов этой машины: у читателя свои выходы.
     "monitors.conf",
     "matugen.rasi", "colors.css", "colors-matugen.css", "gtk.css",
     "idle-inhibit.list", "outbound-ignore.list", "list.rasi", "grid.rasi",
     "dunstrc", "config", "matugen.conf", "mic-level", "lock-choice",
-    # Записывают в себя абсолютный путь к сгенерированной палитре, то есть
-    # домашний каталог этой машины.
     "qt5ct.conf", "qt6ct.conf",
 }
 
-# Comments are removed from these; everything else is copied byte for byte.
-# .jsonc — это json, в который waybar разрешает писать // комментарии, и по
-# части комментариев он ведёт себя как C, а не как конфиг с решётками.
 CLIKE = {".qml", ".js", ".jsonc", ".css", ".rasi", ".qss", ".c"}
 HASHLIKE = {".conf", ".sh", ".py", ".toml", ".ini", ".yaml", ".yml", ".inc",
             ".profile", ".local"}
 LUALIKE = {".lua"}
-
 
 def strip_clike(text: str) -> str:
     """Drop // and /* */ comments, respecting strings.
@@ -162,11 +141,6 @@ def strip_clike(text: str) -> str:
     i, n = 0, len(text)
     quote = None
 
-    # Последний значимый символ — по нему отличается деление от регулярного
-    # выражения. После `(`, `=`, `&&` и им подобных косая черта открывает
-    # регексп; после имени, числа или закрывающей скобки — делит. Без этого
-    # `/^https?:\/\//` выглядит как начало комментария, и половина строки
-    # уезжает в никуда.
     prev = ""
     REGEX_AFTER = set("(,=:[!&|?{};+-*%^~<>")
 
@@ -191,9 +165,6 @@ def strip_clike(text: str) -> str:
             i += 1
             continue
 
-        # Регулярное выражение: читаем до закрывающей косой, помня про
-        # экранирование и про класс символов, внутри которого косая ничего
-        # не закрывает.
         if (c == "/" and i + 1 < n and text[i + 1] not in "/*"
                 and prev in REGEX_AFTER):
             out.append(c)
@@ -218,9 +189,6 @@ def strip_clike(text: str) -> str:
             prev = "/"
             continue
 
-        # Комментарий заменяется пробелами, а не вырезается: так номера
-        # строк не съезжают, и дальше видно, какая строка состояла из одного
-        # комментария, а какая была пустой с самого начала.
         if c == "/" and i + 1 < n and text[i + 1] == "/":
             while i < n and text[i] != "\n":
                 out.append(" ")
@@ -244,7 +212,6 @@ def strip_clike(text: str) -> str:
 
     return "".join(out)
 
-
 def strip_hash(text: str) -> str:
     """Drop whole-line # comments, keeping the shebang.
 
@@ -262,12 +229,10 @@ def strip_hash(text: str) -> str:
         lines.append(line)
     return "\n".join(lines)
 
-
 def strip_lua(text: str) -> str:
     """Drop whole-line -- comments, the same way strip_hash does for #."""
     return "\n".join(" " if line.lstrip().startswith("--") else line
                      for line in text.split("\n"))
-
 
 def tidy(text: str, original: str) -> str:
     """Drop the lines a comment used to occupy, tidy what is left.
@@ -302,7 +267,6 @@ def tidy(text: str, original: str) -> str:
 
     return "\n".join(out) + "\n"
 
-
 def clean(path: Path) -> bytes | None:
     """The published form of one file, or None if it should not travel."""
     try:
@@ -314,15 +278,14 @@ def clean(path: Path) -> bytes | None:
     kept = rel in KEEP_PATHS
     if not kept and (path.name in SKIP_EXACT or path.suffix in SKIP_SUFFIXES):
         return None
-    # Рабочие копии «на всякий случай» — .bak, .bak-pre, .bak-netpanel и
-    # прочие хвосты: в репозитории им делать нечего.
     if ".bak" in path.name or path.name.endswith("~"):
         return None
-    # Оригиналы тем, отложенные на время «Серёжа мода». Это копии рабочих
-    # файлов под другим именем, и запреты по имени их не ловят: qt6ct.conf
-    # публиковать нельзя, а qt6ct.conf.pre-serezha — то же самое с хвостом.
     if path.name.endswith(".pre-serezha"):
         return None
+
+    override = FILTER.get("override", {}).get(rel)
+    if override:
+        return (FILTER_DIR / override).read_bytes()
 
     raw = path.read_bytes()
     try:
@@ -330,11 +293,14 @@ def clean(path: Path) -> bytes | None:
     except UnicodeDecodeError:
         return raw
 
-    # Домашний каталог этой машины в публикуемой копии заменяется меткой:
-    # у читателя он другой, а файлы вроде qt6ct и fuzzel абсолютный путь
-    # требуют — тильду они не разворачивают. Обратно метку подставляет
-    # install.sh при установке.
     text = text.replace(str(HOME), "@HOME@")
+    for real, mark in PLACEHOLDERS:
+        text = text.replace(real, mark)
+    drop = FILTER.get("drop_lines", {}).get(rel)
+    if drop:
+        text = "\n".join(l for l in text.split("\n") if not re.search(drop, l, re.I))
+    for a, b in FILTER.get("replace", {}).get(rel, []):
+        text = text.replace(a, b)
 
     if path.suffix in CLIKE:
         stripped = strip_clike(text)
@@ -342,11 +308,12 @@ def clean(path: Path) -> bytes | None:
         stripped = strip_lua(text)
     elif path.suffix in HASHLIKE or not path.suffix:
         stripped = strip_hash(text)
+    elif rel in FILTER.get("drop_lines", {}) or rel in FILTER.get("replace", {}):
+        return text.encode("utf-8")
     else:
         return raw
 
     return tidy(stripped, text).encode("utf-8")
-
 
 def walk(src: Path):
     if src.is_file():
@@ -356,16 +323,55 @@ def walk(src: Path):
         if any(part in SKIP_NAMES for part in child.relative_to(src).parts):
             continue
         rel = str(child.relative_to(HOME))
-        if rel.startswith(SKIP_PREFIXES) or rel in PERSONAL:
+        if rel.startswith(SKIP_PREFIXES) or rel in PERSONAL or (FILTER_SKIP and rel.startswith(FILTER_SKIP)):
             continue
         if child.is_file():
             yield child
 
+PRIVATE_LIST = HOME / ".config/dots-sync/private"
+PLACEHOLDER_LIST = HOME / ".config/dots-sync/placeholders"
+
+def load_placeholders() -> tuple[tuple[str, str], ...]:
+    try:
+        lines = PLACEHOLDER_LIST.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ()
+    pairs = []
+    for line in lines:
+        parts = line.split()
+        if len(parts) == 2 and not line.lstrip().startswith("#"):
+            pairs.append((parts[0], parts[1]))
+    return tuple(pairs)
+
+PLACEHOLDERS = load_placeholders()
+
+FILTER_DIR = HOME / ".config/dots-sync"
+
+
+def load_filter() -> dict:
+    try:
+        return json.loads((FILTER_DIR / "filter.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+FILTER = load_filter()
+FILTER_SKIP = tuple(FILTER.get("skip", []))
+
+def private_words() -> tuple[bytes, ...]:
+    try:
+        lines = PRIVATE_LIST.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ()
+    return tuple(w.strip().lower().encode("utf-8") for w in lines
+                 if w.strip() and not w.lstrip().startswith("#"))
 
 def main() -> int:
     check = "--check" in sys.argv
     only = tuple(a for a in sys.argv[1:] if not a.startswith("-"))
     changed = 0
+    private = private_words()
+    held = []
 
     for rel_src, rel_dst in MANIFEST:
         src = HOME / rel_src
@@ -379,6 +385,11 @@ def main() -> int:
             body = clean(path)
             if body is None:
                 continue
+            if private:
+                probe = (str(path).encode("utf-8") + b"\n" + body).lower()
+                if any(w in probe for w in private):
+                    held.append(str(path.relative_to(HOME)))
+                    continue
 
             target = dst if src.is_file() else dst / path.relative_to(src)
             if target.exists() and target.read_bytes() == body:
@@ -395,8 +406,11 @@ def main() -> int:
             shutil.copymode(path, target)
 
     print(f"{changed} file(s) {'to update' if check else 'updated'}")
+    if held:
+        print(f"HELD BACK, private ({len(held)}), repo copies left as they were:")
+        for rel in held:
+            print("  " + rel)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

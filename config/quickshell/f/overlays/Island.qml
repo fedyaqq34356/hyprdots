@@ -3,7 +3,6 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
 import "root:/design"
-import "root:/gtavi"
 import "root:/services"
 
 Scope {
@@ -63,6 +62,8 @@ Scope {
             return "remind";
         if (root.callState === "ring")
             return "call";
+        if (Jarvis.active)
+            return "jarvis";
         if (root.mediaBig)
             return "media";
         if (root.demoKind !== "")
@@ -857,45 +858,6 @@ Scope {
     property bool gtaOn: false
     property bool gtaHover: false
     property string gtaShort: ""
-
-    function gtaText() {
-        const rem = GtaConfig.releaseFallbackMs - Date.now();
-        if (rem <= 0)
-            return "OUT NOW";
-        return Math.floor(rem / 86400000) + "d "
-             + String(Math.floor(rem / 3600000) % 24).padStart(2, "0") + "h";
-    }
-
-    function startGta() {
-        root.gtaShort = root.gtaText();
-        root.gtaOn = true;
-        gtaLife.restart();
-    }
-
-    Timer {
-        id: gtaLife
-        interval: 10000
-        onTriggered: root.gtaHover ? restart() : (root.gtaOn = false)
-    }
-
-    Timer {
-        interval: 30000
-        repeat: true
-        running: root.gtaOn
-        onTriggered: root.gtaShort = root.gtaText()
-    }
-
-    Process {
-        running: true
-        command: ["sh", "-c",
-            "m=\"${XDG_RUNTIME_DIR:-/tmp}/gtavi-island-shown\"; "
-            + "if [ -e \"$m\" ]; then echo seen; else : > \"$m\"; echo first; fi"]
-        stdout: StdioCollector {
-            onStreamFinished: if (text.trim() === "first") gtaDelay.start()
-        }
-    }
-
-    Timer { id: gtaDelay; interval: 2500; onTriggered: root.startGta() }
 
     IpcHandler {
         target: "island"

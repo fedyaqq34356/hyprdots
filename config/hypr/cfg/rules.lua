@@ -38,7 +38,7 @@ win({ class = "^(yazi)$" }, { float = true, center = true, size = "1280 820" })
 layer("^(qs-settings|qs-calendar|qs-media|qs-eq|qs-files|qs-guide|qs-notifcenter|qs-print|qs-timer|qs-islandsettings|qs-quick|qs-polkit)$",
     { blur = true, ignore_alpha = 0.80 })
 
-win({ class = "^(hyprdots-update)$" }, { float = true, center = true, size = "820 560" })
+win({ class = "^(rosa-update)$" }, { float = true, center = true, size = "820 560" })
 
 win({ class = "^(steam_app_\\d+|arma3_x64\\.exe|arma3)$" }, { immediate = true, idle_inhibit = "fullscreen" })
 

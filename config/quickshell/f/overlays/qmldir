@@ -33,5 +33,5 @@ IslandSearch IslandSearch.qml
 LockFace LockFace.qml
 IslandSand IslandSand.qml
 LockView LockView.qml
-Ferro Ferro.qml
+IslandCrab IslandCrab.qml
 WallPour WallPour.qml

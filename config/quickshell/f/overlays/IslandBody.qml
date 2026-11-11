@@ -195,12 +195,12 @@ Item {
             case "media":  return mediaCard;
             case "osd":    return osdCard;
             case "timer":  return timerCard;
-            case "gta":    return gtaCard;
             case "alarm":  return alarmCard;
             case "remind": return remindCard;
             case "record": return recordCard;
             case "notif":  return notifCard;
             case "call":   return callCard;
+            case "jarvis": return jarvisCard;
             case "bt":     return btCard;
             case "peri":   return periCard;
             case "power":  return powerCard;
@@ -219,7 +219,6 @@ Item {
     Component { id: mediaCard;  MediaCard  { tint: body.tint; demo: body.demo; big: body.big } }
     Component { id: osdCard;    OsdCard    { tint: body.tint; glyph: body.glyph } }
     Component { id: timerCard;  TimerCard  { tint: body.tint; demo: body.demo } }
-    Component { id: gtaCard;    GtaCard    {} }
     Component { id: alarmCard;  AlarmCard  {} }
     Component { id: remindCard; RemindCard { tint: body.tint } }
     Component { id: recordCard; RecordCard { demo: body.demo } }
@@ -279,6 +278,7 @@ Item {
             onFocusWin: (w) => body.focusWin(w)
         }
     }
+    Component { id: jarvisCard; JarvisCard { tint: body.tint } }
     Component { id: weatherCard; WeatherCard { tint: body.tint; info: body.skyInfo } }
     Component {
         id: shotCard

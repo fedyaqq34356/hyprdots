@@ -1,26 +1,28 @@
 <div align="center">
 
-<br>
-
-# hyprdots
-
-**A liquid dynamic island for Hyprland.**
-
-One Quickshell process draws the bar, the island, the panels and the lock screen,
-and every colour on screen comes from the wallpaper.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/banner-dark.png">
+  <img src="assets/brand/banner-light.png" alt="Rosa: a dew drop on a leaf next to the island" width="100%">
+</picture>
 
 <br>
 
-<a href="docs/GUIDE.md"><img src="https://img.shields.io/badge/guide-English-E4E3D8?style=flat-square&labelColor=13140E" alt="Guide"></a>
-<a href="docs/GUIDE.ru.md"><img src="https://img.shields.io/badge/руководство-Русский-E4E3D8?style=flat-square&labelColor=13140E" alt="Руководство"></a>
-<a href="docs/UPDATE.md"><img src="https://img.shields.io/badge/what's-new-C6C8B5?style=flat-square&labelColor=13140E" alt="What changed"></a>
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-909281?style=flat-square&labelColor=13140E" alt="License"></a>
+**A Hyprland desktop built around one liquid island.**
 
-<img src="https://img.shields.io/badge/Hyprland-0.56-13140E?style=flat-square&labelColor=45483A" alt="Hyprland">
-<img src="https://img.shields.io/badge/Quickshell-0.3-13140E?style=flat-square&labelColor=45483A" alt="Quickshell">
-<img src="https://img.shields.io/badge/Arch-systemd-13140E?style=flat-square&labelColor=45483A" alt="Arch">
-<img src="https://img.shields.io/badge/Artix-OpenRC-13140E?style=flat-square&labelColor=45483A" alt="Artix">
-<img src="https://img.shields.io/badge/matugen-Material%20You-13140E?style=flat-square&labelColor=45483A" alt="matugen">
+Every colour comes from your wallpaper. Every part can be switched off. Nothing makes noise it doesn't need to.
+
+<br>
+
+<a href="docs/GUIDE.md"><img src="https://img.shields.io/badge/guide-English-E3DACB?style=flat-square&labelColor=1A1816" alt="Guide"></a>
+<a href="docs/GUIDE.ru.md"><img src="https://img.shields.io/badge/руководство-Русский-E3DACB?style=flat-square&labelColor=1A1816" alt="Руководство"></a>
+<a href="docs/UPDATE.md"><img src="https://img.shields.io/badge/what's-new-D27352?style=flat-square&labelColor=1A1816" alt="What changed"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-B0A08E?style=flat-square&labelColor=1A1816" alt="License"></a>
+
+<img src="https://img.shields.io/badge/Hyprland-0.56-1A1816?style=flat-square&labelColor=D27352" alt="Hyprland">
+<img src="https://img.shields.io/badge/Quickshell-0.3-1A1816?style=flat-square&labelColor=D27352" alt="Quickshell">
+<img src="https://img.shields.io/badge/Arch-systemd-1A1816?style=flat-square&labelColor=D27352" alt="Arch">
+<img src="https://img.shields.io/badge/Artix-OpenRC-1A1816?style=flat-square&labelColor=D27352" alt="Artix">
+<img src="https://img.shields.io/badge/matugen-Material%20You-1A1816?style=flat-square&labelColor=D27352" alt="matugen">
 
 <br>
 <br>
@@ -28,14 +30,27 @@ and every colour on screen comes from the wallpaper.
 <img src="assets/island/island-hero.jpg" alt="The dynamic island expanded into a music card" width="100%">
 
 <br>
+<br>
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/rosa/main/install.sh)
 ```
 
 <sub>Arch or Artix · AMD, Intel or NVIDIA, detected on its own · your old configs are backed up first · <a href="#uninstall">one command to undo</a></sub>
 
 </div>
+
+<br>
+
+## Quiet by design
+
+<img src="assets/brand/rosa-film.gif" alt="A drop falls on a leaf, becomes the island, the island opens into a player, splits into windows, notes, a calendar, song lyrics and three liquid gauges" width="100%">
+
+Rosa started as one rule: the desktop stays out of the way until it has something to say.
+Everything that happens on the machine passes through a single island at the top of the screen.
+It grows when there is news and shrinks back into a pill when there isn't. Panels that are closed
+are not loaded at all, a hidden bar stops reading the spectrum, and the island goes still while a
+game runs fullscreen.
 
 <br>
 
@@ -367,7 +382,7 @@ stops animating while a game is fullscreen.
 ## Install
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/hyprdots/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/fedyaqq34356/rosa/main/install.sh)
 ```
 
 The installer needs `pacman` and a normal user, not root. It detects Arch (systemd) or
@@ -377,15 +392,16 @@ is replaced, and the colour scheme is generated from your first wallpaper. Add `
 see every step without running it. The [guide](docs/GUIDE.md) has a full walk-through from a
 blank disk, every flag and every keybinding.
 
-**Update:** press the update chip that appears next to the workspaces, or run `install.sh --update`.
+**Update:** press the update chip that appears next to the workspaces, or run `rosa-update`.
+Installs from the time this project was called hyprdots move over on their own.
 
 ### Uninstall
 
 ```bash
-bash ~/.local/share/hyprdots/uninstall.sh
+bash ~/.local/share/rosa/uninstall.sh
 ```
 
-Each file the installer wrote moves to `~/.config/hyprdots-removed-<timestamp>`, and the
+Each file the installer wrote moves to `~/.config/rosa-removed-<timestamp>`, and the
 configs you had before the first install come back. `--system` also removes the root helpers.
 Packages stay installed.
 

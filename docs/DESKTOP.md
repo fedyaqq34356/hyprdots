@@ -83,8 +83,8 @@ Log in on the TTY, then:
 
 ```sh
 nmtui
-git clone https://github.com/fedyaqq34356/hyprdots ~/Projects/hyprdots   # after amd-desktop is merged
-cd ~/Projects/hyprdots && ./install.sh
+git clone https://github.com/fedyaqq34356/rosa ~/Projects/rosa   # after amd-desktop is merged
+cd ~/Projects/rosa && ./install.sh
 sudo pacman -S sddm sddm-openrc plymouth timeshift grub-btrfs
 sudo rc-update add sddm default
 ```
@@ -147,9 +147,9 @@ The PlayStation Link dongle stays with the PS5, so on the desktop the headset is
 bluetoothctl
   power on
   scan on
-  pair @PULSE_MAC@
-  trust @PULSE_MAC@
-  connect @PULSE_MAC@
+  pair <headset MAC>
+  trust <headset MAC>
+  connect <headset MAC>
 ```
 
 - Default profile is A2DP (AAC/SBC-XQ). WirePlumber switches to HFP (mSBC 16 kHz) only while an app actually records from the headset microphone, and goes back to A2DP after.

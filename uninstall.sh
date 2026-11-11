@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-STATE_DIR="$HOME/.config/hyprdots"
+STATE_DIR="$HOME/.config/rosa"
+[[ -d "$STATE_DIR" ]] || STATE_DIR="$HOME/.config/hyprdots"
 SRC_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 STAMP=$(date +%Y%m%d-%H%M%S)
-TRASH="$HOME/.config/hyprdots-removed-$STAMP"
+TRASH="$HOME/.config/rosa-removed-$STAMP"
 
 DRY_RUN=0
 ASSUME_YES=0
@@ -25,7 +26,7 @@ ${BOLD}usage:${RESET} uninstall.sh [options]
 
   Removes every file install.sh put into your home directory and puts back
   the configuration you had before the first install. Removed files are
-  moved to ~/.config/hyprdots-removed-<date>, nothing is deleted outright.
+  moved to ~/.config/rosa-removed-<date>, nothing is deleted outright.
 
   --system      also remove the root helpers install.sh added
                 (sudoers rules, /usr/local/bin helpers, zram, amdgpu KMS drop-in)

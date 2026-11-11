@@ -6,6 +6,10 @@ import sys
 import time
 from pathlib import Path
 
+_islandd = os.path.expanduser("~/.local/bin/islandd")
+if os.access(_islandd, os.X_OK):
+    os.execv(_islandd, [sys.argv[0], "sort"])
+
 DOWNLOADS = Path.home() / "Downloads"
 INTERVAL = 5
 

@@ -82,6 +82,104 @@ impl Downloads {
     }
 }
 
+struct Camera {
+    dir: PathBuf,
+    fd: i32,
+    devs: HashMap<i32, String>,
+    on: Option<bool>,
+    due: Option<Instant>,
+}
+
+impl Camera {
+    fn new(dir: &Path) -> Camera {
+        let fd = unsafe { libc::inotify_init1(libc::IN_NONBLOCK | libc::IN_CLOEXEC) };
+        let mut cam = Camera { dir: dir.to_path_buf(), fd, devs: HashMap::new(), on: None, due: None };
+        if fd >= 0 {
+            cam.add(&cam.dir.clone(), libc::IN_CREATE | libc::IN_DELETE);
+            cam.rewatch();
+        }
+        cam
+    }
+
+    fn add(&mut self, p: &Path, mask: u32) -> i32 {
+        let mut c = p.as_os_str().as_bytes().to_vec();
+        c.push(0);
+        unsafe { libc::inotify_add_watch(self.fd, c.as_ptr().cast(), mask) }
+    }
+
+    fn rewatch(&mut self) {
+        let have: HashSet<String> = self.devs.values().cloned().collect();
+        for e in fs::read_dir(&self.dir).into_iter().flatten().flatten() {
+            let n = e.file_name().to_string_lossy().into_owned();
+            if !n.starts_with("video") || have.contains(&n) {
+                continue;
+            }
+            let wd = self.add(&e.path(), libc::IN_OPEN | libc::IN_CLOSE_WRITE | libc::IN_CLOSE_NOWRITE);
+            if wd >= 0 {
+                self.devs.insert(wd, n);
+            }
+        }
+    }
+
+    fn drain(&mut self) {
+        let mut buf = [0u8; 4096];
+        let mut changed = false;
+        loop {
+            let n = unsafe { libc::read(self.fd, buf.as_mut_ptr().cast(), buf.len()) };
+            if n <= 0 {
+                break;
+            }
+            let mut off = 0usize;
+            while off + 16 <= n as usize {
+                let wd = i32::from_ne_bytes(buf[off..off + 4].try_into().unwrap());
+                let mask = u32::from_ne_bytes(buf[off + 4..off + 8].try_into().unwrap());
+                let len = u32::from_ne_bytes(buf[off + 12..off + 16].try_into().unwrap()) as usize;
+                let name = &buf[off + 16..(off + 16 + len).min(n as usize)];
+                let name = name.split(|b| *b == 0).next().unwrap_or(&[]);
+                if mask & libc::IN_IGNORED != 0 {
+                    self.devs.remove(&wd);
+                }
+                if mask & (libc::IN_CREATE | libc::IN_DELETE) != 0 && name.starts_with(b"video") {
+                    changed = true;
+                }
+                off += 16 + len;
+            }
+        }
+        if changed {
+            self.rewatch();
+        }
+        self.due.get_or_insert(Instant::now() + Duration::from_millis(150));
+    }
+
+    fn busy(&self) -> bool {
+        let mut prefix = self.dir.as_os_str().as_bytes().to_vec();
+        prefix.extend(b"/video");
+        let Ok(procs) = fs::read_dir("/proc") else { return false };
+        for p in procs.flatten() {
+            let pid = p.file_name();
+            if !pid.as_bytes().iter().all(u8::is_ascii_digit) {
+                continue;
+            }
+            let Ok(fds) = fs::read_dir(p.path().join("fd")) else { continue };
+            for fd in fds.flatten() {
+                if fs::read_link(fd.path()).is_ok_and(|l| l.as_os_str().as_bytes().starts_with(&prefix)) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn check(&mut self) {
+        self.due = None;
+        let on = self.busy();
+        if self.on != Some(on) {
+            self.on = Some(on);
+            emit(&json!({"t": "cam", "on": on}));
+        }
+    }
+}
+
 fn vpn_iface() -> String {
     let mut names: Vec<String> = fs::read_dir("/sys/class/net")
         .map(|rd| rd.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect())
@@ -240,12 +338,68 @@ impl Outbound {
     }
 }
 
+struct Clip {
+    file: PathBuf,
+    fd: i32,
+}
+
+impl Clip {
+    fn new() -> Clip {
+        let dir = PathBuf::from(std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".into())).join("qs-clip");
+        let _ = fs::create_dir_all(&dir);
+        let _ = fs::set_permissions(&dir, std::os::unix::fs::PermissionsExt::from_mode(0o700));
+        let fd = unsafe { libc::inotify_init1(libc::IN_NONBLOCK | libc::IN_CLOEXEC) };
+        if fd >= 0 {
+            let mut c = dir.as_os_str().as_bytes().to_vec();
+            c.push(0);
+            unsafe { libc::inotify_add_watch(fd, c.as_ptr().cast(), libc::IN_MOVED_TO | libc::IN_CLOSE_WRITE) };
+        }
+        Clip { file: dir.join("event"), fd }
+    }
+
+    fn drain(&self) {
+        let mut buf = [0u8; 4096];
+        let mut hit = false;
+        loop {
+            let n = unsafe { libc::read(self.fd, buf.as_mut_ptr().cast(), buf.len()) };
+            if n <= 0 {
+                break;
+            }
+            let mut off = 0usize;
+            while off + 16 <= n as usize {
+                let len = u32::from_ne_bytes(buf[off + 12..off + 16].try_into().unwrap()) as usize;
+                let name = &buf[off + 16..(off + 16 + len).min(n as usize)];
+                if name.split(|b| *b == 0).next() == Some(b"event") {
+                    hit = true;
+                }
+                off += 16 + len;
+            }
+        }
+        if hit {
+            if let Ok(line) = fs::read_to_string(&self.file) {
+                let line = line.trim_end_matches('\n');
+                if !line.is_empty() {
+                    emit(&json!({"t": "clip", "line": line}));
+                }
+            }
+        }
+    }
+}
+
 pub fn run() {
     let mut dl = Downloads::new();
+    let clip = Clip::new();
+    let mut cam = Camera::new(Path::new("/dev"));
     let mut out = Outbound::new();
     let mut vpn: Option<String> = None;
     let (mut next_vpn, mut next_out) = (Instant::now(), Instant::now());
+    let mut remind = crate::remind::Watcher::new();
+    #[cfg(feature = "jarvis")]
+    let mut habits = crate::jarvis::habits::Watcher::new();
+    #[cfg(feature = "jarvis")]
+    let mut life = crate::jarvis::life::Watcher::new();
     dl.check();
+    cam.check();
 
     loop {
         let now = Instant::now();
@@ -262,14 +416,92 @@ pub fn run() {
             next_out = now + OUT_EVERY;
         }
 
-        let wait = next_vpn.min(next_out).saturating_duration_since(Instant::now());
-        let mut p = libc::pollfd { fd: dl.fd, events: libc::POLLIN, revents: 0 };
-        let r = unsafe { libc::poll(&mut p, 1, wait.as_millis() as i32 + 1) };
-        if r > 0 && p.revents & libc::POLLIN != 0 {
+        if cam.due.is_some_and(|d| Instant::now() >= d) {
+            cam.check();
+        }
+        if Instant::now() >= remind.next {
+            remind.check();
+        }
+        #[cfg(feature = "jarvis")]
+        if Instant::now() >= habits.next {
+            habits.check();
+        }
+        #[cfg(feature = "jarvis")]
+        if Instant::now() >= life.next {
+            life.check();
+        }
+
+        let mut next = next_vpn.min(next_out).min(remind.next);
+        #[cfg(feature = "jarvis")]
+        {
+            next = next.min(habits.next).min(life.next);
+        }
+        if let Some(d) = cam.due {
+            next = next.min(d);
+        }
+        let wait = next.saturating_duration_since(Instant::now());
+        let mut p = [
+            libc::pollfd { fd: dl.fd, events: libc::POLLIN, revents: 0 },
+            libc::pollfd { fd: cam.fd, events: libc::POLLIN, revents: 0 },
+            libc::pollfd { fd: clip.fd, events: libc::POLLIN, revents: 0 },
+        ];
+        let r = unsafe { libc::poll(p.as_mut_ptr(), 3, wait.as_millis() as i32 + 1) };
+        if r > 0 && p[2].revents & libc::POLLIN != 0 {
+            clip.drain();
+        }
+        if r > 0 && p[1].revents & libc::POLLIN != 0 {
+            cam.drain();
+        }
+        if r > 0 && p[0].revents & libc::POLLIN != 0 {
             dl.drain();
             std::thread::sleep(Duration::from_millis(50));
             dl.drain();
             dl.check();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn settle(c: &mut Camera) -> Option<bool> {
+        std::thread::sleep(Duration::from_millis(50));
+        c.drain();
+        std::thread::sleep(Duration::from_millis(200));
+        if c.due.is_some_and(|d| Instant::now() >= d) {
+            c.check();
+        }
+        c.on
+    }
+
+    #[test]
+    fn camera_open_close_hotplug() {
+        let dir = std::env::temp_dir().join(format!("islandd-cam-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("video0"), b"").unwrap();
+        let mut c = Camera::new(&dir);
+        c.check();
+        assert_eq!(c.on, Some(false));
+        assert_eq!(c.devs.len(), 1);
+
+        let f = fs::File::open(dir.join("video0")).unwrap();
+        assert_eq!(settle(&mut c), Some(true));
+        drop(f);
+        assert_eq!(settle(&mut c), Some(false));
+
+        fs::write(dir.join("video2"), b"").unwrap();
+        settle(&mut c);
+        assert_eq!(c.devs.len(), 2);
+        let g = fs::File::open(dir.join("video2")).unwrap();
+        assert_eq!(settle(&mut c), Some(true));
+        drop(g);
+        assert_eq!(settle(&mut c), Some(false));
+
+        fs::remove_file(dir.join("video2")).unwrap();
+        settle(&mut c);
+        assert_eq!(c.devs.len(), 1);
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

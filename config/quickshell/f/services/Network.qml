@@ -276,7 +276,7 @@ Singleton {
 
     Process {
         id: monitor
-        command: ["nmcli", "monitor"]
+        command: ["setpriv", "--pdeathsig", "TERM", "nmcli", "monitor"]
         running: root.fallback
         stdout: SplitParser {
             onRead: debounce.restart()
