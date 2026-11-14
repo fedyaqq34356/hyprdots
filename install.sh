@@ -244,6 +244,7 @@ detect_aur_helper() {
     for helper in paru yay; do
         command -v "$helper" >/dev/null && { echo "$helper"; return; }
     done
+    return 0
 }
 
 bootstrap_aur_helper() {
