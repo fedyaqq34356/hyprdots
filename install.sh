@@ -387,7 +387,7 @@ install_power() {
 configure_parser() {
     local hypr="$HOME/.config/hypr" ver
     [[ -f "$hypr/hyprland.lua" ]] || return 0
-    ver=$(Hyprland --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    ver=$(Hyprland --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1) || ver=""
     if [[ -n "$ver" ]] && printf '%s\n0.55\n' "$ver" | sort -V -C; then
         [[ "$ver" == 0.55 ]] && { ok "config: Lua (Hyprland $ver)"; return 0; }
         run rm -rf "$hypr/hyprland.lua" "$hypr/cfg"
@@ -686,7 +686,7 @@ generate_theme() {
     if [[ ! -f "$wallpaper" ]]; then
         wallpaper=$(find "$HOME/Pictures/Wallpapers" -maxdepth 1 -type f \
             \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
-            | sort | head -n1)
+            2>/dev/null | sort | head -n1) || wallpaper=""
     fi
     [[ -f "$wallpaper" ]] || { warn "no wallpaper found, colours will be generated on the first Super+W"; return; }
 

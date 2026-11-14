@@ -7,8 +7,21 @@ local function key(mods, k)
     return (mods:gsub("%$mainMod", v.mainMod):gsub("%s+", " + ")) .. " + " .. k
 end
 
+local over = {}
+local uf = io.open(v.hypr .. "/config/binds-user.conf")
+if uf then
+    for line in uf:lines() do
+        local from, to = line:match("^%s*(.-)%s*=%s*(.-)%s*$")
+        if from and from ~= "" and to ~= "" then
+            over[from] = to
+        end
+    end
+    uf:close()
+end
+
 local function bind(mods, k, d, opts)
-    hl.bind(key(mods, k), d, opts)
+    local kk = key(mods, k)
+    hl.bind(over[kk] or kk, d, opts)
 end
 
 local function exec(cmd) return dsp.exec_cmd(cmd) end
