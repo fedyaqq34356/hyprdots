@@ -170,7 +170,8 @@ fi
 
 PULSE_MAC=""
 command -v bluetoothctl >/dev/null \
-    && PULSE_MAC=$(timeout 3 bluetoothctl devices 2>/dev/null | awk 'tolower($0) ~ /pulse elite/ { print $2; exit }')
+    && PULSE_MAC=$(timeout 3 bluetoothctl devices 2>/dev/null | awk 'tolower($0) ~ /pulse elite/ { print $2; exit }') \
+    || PULSE_MAC=""
 if [[ "$PULSE" == auto ]]; then
     PULSE=0
     [[ -e "$HOME/.config/rosa/pulse-elite" ]] && PULSE=1
