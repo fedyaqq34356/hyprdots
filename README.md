@@ -13,6 +13,7 @@ Every colour comes from your wallpaper. Every part can be switched off. Nothing 
 
 <br>
 
+<a href="https://fedyaqq34356.github.io/rosa/"><img src="https://img.shields.io/badge/website-rosa-D27352?style=flat-square&labelColor=1A1816" alt="Website"></a>
 <a href="docs/GUIDE.md"><img src="https://img.shields.io/badge/guide-English-E3DACB?style=flat-square&labelColor=1A1816" alt="Guide"></a>
 <a href="docs/GUIDE.ru.md"><img src="https://img.shields.io/badge/руководство-Русский-E3DACB?style=flat-square&labelColor=1A1816" alt="Руководство"></a>
 <a href="docs/UPDATE.md"><img src="https://img.shields.io/badge/what's-new-D27352?style=flat-square&labelColor=1A1816" alt="What changed"></a>
