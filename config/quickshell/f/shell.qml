@@ -77,10 +77,20 @@ ShellRoot {
     LazyLoader { id: timerL; TimerPanel {} }
     LazyLoader { id: settingsL; Settings {} }
     LazyLoader { id: guideL; Guide {} }
+    LazyLoader { id: keysL; Hotkeys {} }
     LazyLoader { id: eqL; Eq {} }
     LazyLoader { id: barBuilderL; BarBuilder {} }
     LazyLoader { id: islandL; IslandPanel {} }
     LazyLoader { id: aulaL; AulaPanel {} }
+
+    Instantiator {
+        model: [wallpapersL, filesL, printL, sysRingsL, procsL, speedL, batteryL,
+                displaysL, timerL, settingsL, guideL, keysL, eqL, barBuilderL, islandL, aulaL]
+        delegate: PanelReaper {
+            required property var modelData
+            loader: modelData
+        }
+    }
 
     readonly property var launcher: launcherL.item
     readonly property var clipboard: clipboardL.item
@@ -553,6 +563,12 @@ ShellRoot {
         appid: "quickshell"
         name: "guide"
         onPressed: panelDo(guideL, p => p.open())
+    }
+
+    GlobalShortcut {
+        appid: "quickshell"
+        name: "keys"
+        onPressed: panelDo(keysL, p => p.toggle())
     }
 
     GlobalShortcut {

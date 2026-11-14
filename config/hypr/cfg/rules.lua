@@ -35,7 +35,7 @@ win({ class = "^(kitty)$" }, { border_color = c.accent .. " rgba(00000000)", bor
 
 win({ class = "^(yazi)$" }, { float = true, center = true, size = "1280 820" })
 
-layer("^(qs-settings|qs-calendar|qs-media|qs-eq|qs-files|qs-guide|qs-notifcenter|qs-print|qs-timer|qs-islandsettings|qs-quick|qs-polkit)$",
+layer("^(qs-settings|qs-calendar|qs-media|qs-eq|qs-files|qs-guide|qs-keys|qs-notifcenter|qs-print|qs-timer|qs-islandsettings|qs-quick|qs-polkit)$",
     { blur = true, ignore_alpha = 0.80 })
 
 win({ class = "^(rosa-update)$" }, { float = true, center = true, size = "820 560" })

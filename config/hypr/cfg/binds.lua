@@ -129,6 +129,7 @@ bind("$mainMod CTRL",  "P", qs("print"))
 bind("$mainMod SHIFT", "K", qs("aula"))
 
 bind("$mainMod SHIFT", "P", qs("settings"))
+bind("$mainMod",       "slash", qs("keys"))
 bind("$mainMod SHIFT", "W", qs("deskEdit"))
 bind("$mainMod SHIFT", "G", qs("draw"))
 bind("$mainMod SHIFT", "A", qs("dock"))
