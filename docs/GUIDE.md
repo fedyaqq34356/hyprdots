@@ -719,7 +719,9 @@ the recording indicator and the tray; Wi-Fi, microphone and volume; keyboard lay
 Contrast follows how often something is read — battery and layout carry it, glyphs stay at 75%
 opacity, and only a problem state takes colour, so a dropped Wi-Fi link or a muted microphone is
 the one thing that stands out. The layout badge (`EN` / `RU` / `UA` …) follows
-`Alt`+`Shift` and can also be clicked to cycle layouts.
+`Alt`+`Shift` and can also be clicked to cycle layouts. The default is `us,ru`; to change it, write
+`kb_layout = us,ru,ua` (and `kb_variant`, `kb_options` if needed) into
+`~/.config/hypr/config/keyboard.conf`. Updates never touch that file.
 
 `Super`+`Shift`+`M` opens the audio panel on the same orbit view: the current output sits in the
 middle with its volume drawn as an arc around it, and every other sink circles it. Click a device to

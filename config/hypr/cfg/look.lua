@@ -38,6 +38,22 @@ if mf then
     mf:close()
 end
 
+local kb = {
+    kb_layout  = "us,ru",
+    kb_variant = ",",
+    kb_options = "grp:alt_shift_toggle",
+}
+local kf = io.open(v.hypr .. "/config/keyboard.conf")
+if kf then
+    for line in kf:lines() do
+        local key, value = line:match("^%s*(kb_[%w_]+)%s*=%s*(.-)%s*$")
+        if key and kb[key] ~= nil then
+            kb[key] = value
+        end
+    end
+    kf:close()
+end
+
 hl.config({
     general = {
         gaps_in  = 4,
@@ -95,9 +111,9 @@ hl.config({
     },
 
     input = {
-        kb_layout  = "us,ru",
-        kb_variant = ",",
-        kb_options = "grp:alt_shift_toggle",
+        kb_layout  = kb.kb_layout,
+        kb_variant = kb.kb_variant,
+        kb_options = kb.kb_options,
 
         follow_mouse = 1,
         sensitivity  = 0.3,
